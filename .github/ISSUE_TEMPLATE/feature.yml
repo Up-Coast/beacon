@@ -1,0 +1,39 @@
+name: Feature request
+description: Something you want the app to do
+labels: ["beacon", "type:feature-request"]
+body:
+  - type: textarea
+    id: want
+    attributes:
+      label: What do you want to be able to do?
+      description: Describe the thing you're trying to get done, rather than the button you think it needs.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: What makes that hard today?
+      description: Knowing this often turns up a better answer than the one you asked for.
+    validations:
+      required: false
+
+  - type: input
+    id: area
+    attributes:
+      label: Which part of the app is this about?
+      description: Or say "something new" if the app doesn't do this at all.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: How much is not having this affecting you?
+      options:
+        - I can't do what I came to do
+        - I found a way around it, but it costs me time
+        - It bothers me, but I can keep working
+        - I noticed it — it doesn't really affect me
+    validations:
+      required: true

@@ -1,0 +1,12 @@
+{
+  "name": "beacon",
+  "displayName": "Beacon",
+  "version": "0.1.0",
+  "description": "Bug, feature-request and feedback reporting for macOS and iOS apps: a setup skill that puts Beacon into an app, and the triage skill that works the reports by a written policy.",
+  "author": { "name": "Up Coast", "url": "https://upcoast.ca" },
+  "homepage": "https://github.com/Up-Coast/beacon",
+  "repository": "https://github.com/Up-Coast/beacon",
+  "license": "MIT",
+  "keywords": ["bug-reports", "feedback", "triage", "swift", "macos", "ios", "github-issues"],
+  "skills": "./.claude/skills"
+}

@@ -1,0 +1,24 @@
+# Beacon's own CI.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: swift --version
+      - run: swift build
+      - run: swift test
+
+      # Beacon indexes itself: if the indexer breaks, this fails before it
+      # ships to anyone who depends on it.
+      - name: Index this package with its own indexer
+        run: |
+          swift run beacon-index --source . --output /tmp/BeaconIndex.json --app-name Beacon
+          test -s /tmp/BeaconIndex.json

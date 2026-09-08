@@ -1,0 +1,87 @@
+# The same three required fields the app enforces, for anyone filing by
+# hand on github.com. The app is the better road — it collects the version,
+# the settings and the log for you — but a report typed here should not be
+# allowed to skip what makes a report actionable.
+name: Bug report
+description: Something in the app is broken
+labels: ["beacon", "type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Filing from inside the app is easier and better — it picks up your
+        version, your settings and what the app was doing. Use this form if
+        you can't get to the app.
+
+        Reports are not anonymous, and they're visible to everyone with
+        access to this repository.
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      description: This is the one that tells us whether the app is broken or just confusing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened?
+      description: Say what you saw on screen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: What did you do to get there?
+      description: One action per line, starting from where you were.
+      placeholder: |
+        1. Open the project called Harbour
+        2. Click Save in the toolbar
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: Does it happen again?
+      description: >
+        Nobody can work on a bug they can't make happen, so this answer
+        changes more than any other.
+      options:
+        - Every time I follow those steps
+        - Sometimes — it doesn't always happen
+        - It happened once and I haven't seen it since
+        - I haven't tried to make it happen again
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: How much is this affecting you?
+      options:
+        - I can't do what I came to do
+        - I found a way around it, but it costs me time
+        - It bothers me, but I can keep working
+        - I noticed it — it doesn't really affect me
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version and build
+      placeholder: "1.4.2 (318)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extras
+    attributes:
+      label: Anything to show us?
+      description: Drag in a screenshot or a recording. A picture usually beats another paragraph.
+    validations:
+      required: false

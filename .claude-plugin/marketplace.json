@@ -1,0 +1,12 @@
+{
+  "name": "up-coast",
+  "owner": { "name": "Up Coast", "url": "https://upcoast.ca" },
+  "plugins": [
+    {
+      "name": "beacon",
+      "description": "Bug, feature-request and feedback reporting for macOS and iOS apps, with the skills that set it up and triage the reports.",
+      "version": "0.1.0",
+      "source": { "source": "github", "repo": "Up-Coast/beacon", "ref": "0.1.0" }
+    }
+  ]
+}

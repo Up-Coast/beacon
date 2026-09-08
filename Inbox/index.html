@@ -1,0 +1,688 @@
+<title>Beacon</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F2F4F6;
+    --surface: #FFFFFF;
+    --surface-2: #E9EDF1;
+    --line: #D3DAE1;
+    --ink: #16202B;
+    --ink-2: #4E5C6B;
+    --ink-3: #7B8794;
+    --accent: #D9481F;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #FBE7E0;
+    --ok: #1F7A4D;
+    --ok-soft: #DDF2E6;
+    --wait: #A86B08;
+    --wait-soft: #FBEFD5;
+    --hold: #4B5B6E;
+    --hold-soft: #E3E8EE;
+    --focus: #1F5FBF;
+    --shadow: 0 1px 2px rgba(22,32,43,.06), 0 8px 24px -12px rgba(22,32,43,.18);
+    --display: "Bricolage Grotesque", "Avenir Next", "Helvetica Neue", sans-serif;
+    --body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F161E; --surface: #17212B; --surface-2: #1F2B37; --line: #2C3946;
+      --ink: #EEF2F5; --ink-2: #AEBBC7; --ink-3: #7F8D9B;
+      --accent: #F0673F; --accent-ink: #120A06; --accent-soft: #3A1E14;
+      --ok: #5FCB8E; --ok-soft: #14301F; --wait: #E8B04A; --wait-soft: #33250A;
+      --hold: #AEBBC7; --hold-soft: #263240; --focus: #7FB0FF;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F161E; --surface: #17212B; --surface-2: #1F2B37; --line: #2C3946;
+    --ink: #EEF2F5; --ink-2: #AEBBC7; --ink-3: #7F8D9B;
+    --accent: #F0673F; --accent-ink: #120A06; --accent-soft: #3A1E14;
+    --ok: #5FCB8E; --ok-soft: #14301F; --wait: #E8B04A; --wait-soft: #33250A;
+    --hold: #AEBBC7; --hold-soft: #263240; --focus: #7FB0FF;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+  h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  code, .mono { font-family: var(--mono); font-size: .86em; }
+  [hidden] { display: none !important; }
+
+  .top {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    padding: 14px 24px; border-bottom: 1px solid var(--line); background: var(--surface);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+  .brand svg { width: 22px; height: 22px; }
+  .identity { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--ink-2); font-size: 13px; }
+  .identity .chip { padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); white-space: nowrap; }
+  .identity .chip.app { color: var(--ink); font-weight: 600; }
+  .identity .chip.missing { border-style: dashed; color: var(--ink-3); }
+
+  .wrap { display: grid; grid-template-columns: minmax(0, 640px) minmax(280px, 380px); gap: 32px; padding: 28px 24px 64px; max-width: 1120px; margin: 0 auto; }
+  @media (max-width: 880px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+  .panel > header { padding: 20px 24px 0; }
+  .panel > header h1 { font-size: 26px; font-weight: 700; letter-spacing: -.015em; }
+  .panel > header p { margin: 6px 0 0; color: var(--ink-2); max-width: 58ch; }
+  form { padding: 20px 24px 24px; display: grid; gap: 22px; }
+
+  .kinds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 560px) { .kinds { grid-template-columns: 1fr; } }
+  .kind { display: grid; gap: 4px; text-align: left; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); cursor: pointer; }
+  .kind strong { font-family: var(--display); font-size: 15px; }
+  .kind span { color: var(--ink-2); font-size: 13px; line-height: 1.35; }
+  .kind[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+
+  .field { display: grid; gap: 6px; }
+  .field > label, .field > .label { font-weight: 600; font-size: 14px; }
+  .field .hint { color: var(--ink-3); font-size: 13px; margin: -2px 0 0; }
+  select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); min-height: 44px; }
+  textarea, input[type=text] { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); resize: vertical; min-height: 44px; }
+  textarea { min-height: 78px; }
+  .field.invalid textarea, .field.invalid input, .field.invalid .steps { border-color: var(--accent); }
+  .problem { color: var(--accent); font-size: 13.5px; margin: 0; }
+  .note { color: var(--wait); font-size: 13.5px; margin: 0; }
+
+  .steps { display: grid; gap: 8px; }
+  .step { display: grid; grid-template-columns: 28px 1fr 32px; gap: 8px; align-items: center; }
+  .step .n { color: var(--ink-3); font-family: var(--mono); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+  .step .x { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; border-radius: 6px; height: 32px; }
+  .step .x:hover { background: var(--surface-2); color: var(--ink); }
+  .linkish { border: 0; background: none; color: var(--focus); cursor: pointer; padding: 0; justify-self: start; font-weight: 500; }
+
+  .choices { display: grid; gap: 8px; }
+  .choice { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+  .choice input { margin: 4px 0 0; accent-color: var(--accent); }
+  .choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+
+  .send { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid var(--line); }
+  .primary { padding: 11px 20px; border: 0; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-family: var(--display); font-size: 15px; cursor: pointer; }
+  .primary[disabled] { opacity: .55; cursor: default; }
+  .destination { color: var(--ink-2); font-size: 13px; max-width: 46ch; }
+
+  .receipt { padding: 24px; display: grid; gap: 10px; }
+  .receipt h2 { font-size: 22px; }
+  .receipt .ref { font-family: var(--mono); font-size: 20px; color: var(--accent); }
+  .receipt p { margin: 0; color: var(--ink-2); }
+
+  aside h2 { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); margin-bottom: 12px; }
+  .queue { display: grid; gap: 10px; }
+  .item { display: grid; gap: 6px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .item .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .item .title { font-weight: 600; overflow-wrap: anywhere; }
+  .item .meta { color: var(--ink-3); font-size: 12.5px; font-family: var(--mono); }
+  .item .reply { color: var(--ink-2); font-size: 13.5px; border-left: 2px solid var(--line); padding-left: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; }
+  .pill.new { background: var(--accent-soft); color: var(--accent); }
+  .pill.triaging { background: var(--wait-soft); color: var(--wait); }
+  .pill.fixed { background: var(--ok-soft); color: var(--ok); }
+  .pill.waiting { background: var(--wait-soft); color: var(--wait); }
+  .pill.hold { background: var(--hold-soft); color: var(--hold); }
+  .empty { color: var(--ink-3); font-size: 14px; padding: 14px; border: 1px dashed var(--line); border-radius: 10px; }
+  .offline { color: var(--ink-3); font-size: 13px; margin-top: 12px; }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, 96px); gap: 10px; }
+  .thumb { position: relative; width: 96px; height: 96px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface-2); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb .x { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border: 0; border-radius: 999px; background: var(--ink); color: var(--bg); cursor: pointer; line-height: 1; }
+  .thumb .size { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 6px; font: 11px var(--mono); color: var(--bg); background: rgba(22,32,43,.7); }
+  .attach { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); cursor: pointer; font-weight: 500; justify-self: start; }
+  .attach:hover { border-color: var(--ink-3); }
+  .board { grid-column: 1 / -1; display: grid; gap: 16px; }
+  .board h1 { font-size: 26px; font-weight: 700; letter-spacing: -.015em; }
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .filters select, .filters input { width: auto; min-width: 150px; min-height: 38px; padding: 6px 10px; }
+  .filters .count { color: var(--ink-3); font-size: 13px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .board details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .board summary { list-style: none; cursor: pointer; padding: 12px 14px; display: grid; gap: 6px; }
+  .board summary::-webkit-details-marker { display: none; }
+  .board details[open] summary { border-bottom: 1px solid var(--line); }
+  .detail { padding: 14px; display: grid; gap: 14px; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 16px; font-size: 13.5px; }
+  .facts div { display: grid; gap: 2px; }
+  .facts dt { color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .facts dd { margin: 0; overflow-wrap: anywhere; }
+  .words { display: grid; gap: 10px; max-width: 72ch; }
+  .words h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-2); }
+  .words p, .words ol { margin: 0; white-space: pre-wrap; }
+  .words ol { padding-left: 22px; display: grid; gap: 4px; }
+  .pictures { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pictures img { max-width: 320px; max-height: 240px; border: 1px solid var(--line); border-radius: 8px; }
+  .pictures .loading { color: var(--ink-3); font-size: 13px; }
+  .pill.waiting { background: var(--wait-soft); color: var(--wait); }
+  @media (prefers-reduced-motion: no-preference) { .kind, .choice, .item { transition: border-color .12s, background .12s; } }
+</style>
+
+<header class="top">
+  <div class="brand" aria-label="Beacon">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2c1 4 4 6 4 10a4 4 0 0 1-8 0c0-2 1-3 1-3s1 3 3 3c0-3-2-5 0-10Z" fill="var(--accent)"/><path d="M6 20h12" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"/></svg>
+    Beacon
+  </div>
+  <div class="identity" id="identity" aria-label="Which app and machine this report is about"></div>
+</header>
+
+<main class="wrap">
+  <section class="panel" aria-labelledby="formTitle">
+    <header>
+      <h1 id="formTitle">Tell us what happened</h1>
+      <p>Be specific rather than technical. The version, build and machine come along on their own. Send it and carry on; it is picked up and worked on without waiting for a person.</p>
+    </header>
+
+    <form id="form" novalidate>
+      <div class="kinds" role="group" aria-label="What kind of report">
+        <button type="button" class="kind" data-kind="bug" aria-pressed="true"><strong>Something's broken</strong><span>The app did something you didn't expect, or stopped working.</span></button>
+        <button type="button" class="kind" data-kind="feature-request" aria-pressed="false"><strong>Something's missing</strong><span>You want the app to do something it doesn't do yet.</span></button>
+        <button type="button" class="kind" data-kind="feedback" aria-pressed="false"><strong>Something else</strong><span>Anything else you want to tell us.</span></button>
+      </div>
+
+      <div class="field" data-for="app">
+        <label for="appPick">Which app</label>
+        <select id="appPick"><option value="">Choose the app…</option></select>
+      </div>
+
+      <div class="field" data-for="reporter">
+        <label for="reporter">Who you are</label>
+        <input type="text" id="reporter" autocomplete="email" placeholder="Your name or email, so we can come back to you">
+        <p class="hint">Reports aren't anonymous. Anyone on the team can read them, and we may write back about this one.</p>
+      </div>
+
+      <div data-section="bug">
+        <div class="field" data-for="what-happened">
+          <label for="whatHappened">What actually happened</label>
+          <textarea id="whatHappened" placeholder="What was on the screen. “The window went white and stayed white for about a minute.”"></textarea>
+        </div>
+        <div class="field" data-for="expected" style="margin-top:22px">
+          <label for="expected">What you expected instead</label>
+          <textarea id="expected" placeholder="Say what you thought would happen, even if it turns out you were wrong. That's how we find where the app isn't explaining itself."></textarea>
+        </div>
+        <div class="field" data-for="steps" style="margin-top:22px">
+          <div class="label">The steps you took</div>
+          <p class="hint">Start from where you were. Include the boring ones; the step everybody leaves out is usually the one that matters.</p>
+          <div class="steps" id="steps"></div>
+          <button type="button" class="linkish" id="addStep">+ Add a step</button>
+        </div>
+        <div class="field" data-for="reproducibility" style="margin-top:22px">
+          <div class="label">Does it happen again?</div>
+          <div class="choices" id="reproducibility"></div>
+        </div>
+      </div>
+
+      <div data-section="feature-request" hidden>
+        <div class="field" data-for="what-i-want">
+          <label for="whatIWant">What you want to be able to do</label>
+          <textarea id="whatIWant" placeholder="Describe it as the thing you're trying to get done, not the button."></textarea>
+        </div>
+        <div class="field" data-for="why" style="margin-top:22px">
+          <label for="why">Why (optional, but it helps)</label>
+          <textarea id="why" placeholder="What are you trying to do that the app makes hard right now?"></textarea>
+        </div>
+      </div>
+
+      <div data-section="feedback" hidden>
+        <div class="field" data-for="message">
+          <label for="message">What's on your mind</label>
+          <textarea id="message" placeholder="A sentence or two is plenty."></textarea>
+        </div>
+      </div>
+
+      <div class="field" data-for="attachments">
+        <div class="label">Show us</div>
+        <p class="hint">A picture of what you're looking at beats another paragraph. Screenshots or photos of the screen; on a Mac you can also paste one straight in.</p>
+        <div class="thumbs" id="thumbs"></div>
+        <label class="attach" for="files">Add images<input type="file" id="files" accept="image/*" multiple hidden></label>
+      </div>
+
+      <div class="field" data-for="area">
+        <label for="area">Which part of the app</label>
+        <input type="text" id="area" placeholder="The screen or feature you were in, in your own words. “Not sure” is fine.">
+      </div>
+
+      <div class="field" data-for="impact">
+        <div class="label">How much this affects you</div>
+        <div class="choices" id="impact"></div>
+      </div>
+
+      <div class="send">
+        <button type="submit" class="primary" id="submit">Send report</button>
+        <div class="destination" id="destination">This goes to the team's inbox, where it is picked up automatically.</div>
+      </div>
+    </form>
+
+    <div class="receipt" id="receipt" hidden>
+      <h2>Sent. Thank you.</h2>
+      <div class="ref" id="receiptRef"></div>
+      <p id="receiptText"></p>
+      <p><button type="button" class="linkish" id="again">Report something else</button></p>
+    </div>
+  </section>
+
+  <section class="board" id="board" hidden aria-labelledby="boardTitle">
+    <h1 id="boardTitle">Reports</h1>
+    <div class="filters">
+      <select id="fApp" aria-label="App"><option value="">Every app</option></select>
+      <select id="fStatus" aria-label="Status"><option value="">Every status</option></select>
+      <select id="fKind" aria-label="Kind"><option value="">Every kind</option><option value="bug">Bugs</option><option value="feature-request">Requests</option><option value="feedback">Feedback</option></select>
+      <input type="text" id="fSearch" placeholder="Search words">
+      <span class="count" id="fCount"></span>
+    </div>
+    <div class="queue" id="queue"><div class="empty">No reports yet.</div></div>
+  </section>
+  <p class="offline" id="dbState" hidden>This page can't reach the inbox right now. It only works when opened signed in to Claude, as a member of the organisation that owns this page.</p>
+</main>
+
+<script>
+(() => {
+  // ---- The rules, kept identical to BeaconCore/Completeness.swift. ----
+  // Change them there first; this copy exists because a browser can't run Swift.
+  const MIN_CHARS = 12;
+  const PLACEHOLDERS = new Set([
+    "n/a","na","none","nothing","idk","i don't know","i dont know","test","asdf","asd","qwerty",
+    "x","xx","xxx","-","--",".","?","??","todo","tbd","see above","same","same as above",
+    "it broke","broke","doesn't work","does not work","not working","it doesn't work","error","bug","help",
+  ]);
+  const emptyInSubstance = (t) => {
+    const trimmed = (t || "").trim();
+    if (!trimmed) return true;
+    const bare = trimmed.toLowerCase().replace(/^[.!?,;:"' ]+|[.!?,;:"' ]+$/g, "");
+    return PLACEHOLDERS.has(bare);
+  };
+  const tooShort = (t) => (t || "").trim().length < MIN_CHARS;
+
+  const IMPACT = [
+    ["blocked", "I can't do what I came to do"],
+    ["slowed", "I found a way around it, but it costs me time"],
+    ["irritating", "It bothers me, but I can keep working"],
+    ["noticed", "I noticed it — it doesn't really affect me"],
+  ];
+  const REPRO = [
+    ["every-time", "Every time I follow those steps"],
+    ["sometimes", "Sometimes — it doesn't always happen"],
+    ["once", "It happened once and I haven't seen it since"],
+    ["unknown", "I haven't tried to make it happen again"],
+  ];
+  const IMPACT_LABEL = Object.fromEntries(IMPACT);
+  const REPRO_LABEL = Object.fromEntries(REPRO);
+  const STATUS = {
+    new:                   ["new", "Received"],
+    filed:                 ["hold", "Filed"],
+    triaging:              ["triaging", "Being looked at"],
+    "auto-fixed":          ["fixed", "Fixed"],
+    "needs-human":         ["waiting", "Needs a person"],
+    "needs-info":          ["waiting", "Needs more from the tester"],
+    "cannot-reproduce":    ["waiting", "Couldn't reproduce"],
+    "working-as-intended": ["hold", "Working as designed"],
+    "expectation-mismatch":["hold", "App isn't explaining itself"],
+    triaged:               ["hold", "Triaged"],
+  };
+  const KIND = { bug: "Bug", "feature-request": "Request", feedback: "Feedback" };
+  const isBoard = q.get("view") === "board";
+
+  // ---- What the app put in the link. ----
+  const q = new URLSearchParams(location.search);
+  const ctx = {
+    app: q.get("app") || "", bundle: q.get("bundle") || "", version: q.get("version") || "",
+    build: q.get("build") || "", commit: q.get("commit") || "", repository: q.get("repo") || "",
+    os: q.get("os") || "", osVersion: q.get("osVersion") || "", device: q.get("device") || "",
+    architecture: q.get("arch") || "", locale: q.get("locale") || navigator.language || "",
+    timeZone: q.get("tz") || (Intl.DateTimeFormat().resolvedOptions().timeZone || ""),
+    appearance: q.get("appearance") || "", textSize: q.get("textSize") || "",
+  };
+  const $ = (s) => document.querySelector(s);
+  if (isBoard) {
+    document.querySelector("section.panel").hidden = true;
+    document.getElementById("board").hidden = false;
+    document.title = "Beacon reports";
+  }
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) k === "text" ? (n.textContent = v) : n.setAttribute(k, v);
+    n.append(...kids); return n;
+  };
+
+  // ---- Which app. The list lives in the database (`apps`), one home for
+  // every app this inbox serves; `?app=<id or name>` preselects it, and a
+  // link that also carries a version came from inside the app, so the
+  // choice is locked. ----
+  const identity = $("#identity");
+  const appPick = $("#appPick");
+  let apps = [];
+  const chosenApp = () => apps.find((a) => a.id === appPick.value) || null;
+  const renderIdentity = () => {
+    const app = chosenApp();
+    identity.replaceChildren();
+    if (!app) { identity.append(el("span", { class: "chip missing", text: "Choose the app below" })); return; }
+    identity.append(el("span", { class: "chip app", text: `${app.name} ${ctx.version}${ctx.build ? ` (${ctx.build})` : ""}`.trim() }));
+    if (ctx.os) identity.append(el("span", { class: "chip", text: `${ctx.os} ${ctx.osVersion}`.trim() }));
+    if (ctx.device) identity.append(el("span", { class: "chip", text: ctx.device }));
+  };
+  const fillAppPicker = () => {
+    const wanted = ctx.app.trim().toLowerCase();
+    appPick.replaceChildren(el("option", { value: "", text: "Choose the app…" }),
+      ...apps.map((a) => el("option", { value: a.id, text: a.name })));
+    const match = apps.find((a) => a.id === wanted || a.name.toLowerCase() === wanted);
+    if (match) { appPick.value = match.id; appPick.disabled = Boolean(ctx.version); }
+    renderIdentity();
+  };
+  appPick.addEventListener("change", renderIdentity);
+  renderIdentity();
+  if (q.get("reporter")) $("#reporter").value = q.get("reporter");
+  if (q.get("area")) $("#area").value = q.get("area");
+
+  // ---- Form state. ----
+  let kind = "bug";
+  document.querySelectorAll(".kind").forEach((b) => b.addEventListener("click", () => {
+    kind = b.dataset.kind;
+    document.querySelectorAll(".kind").forEach((k) => k.setAttribute("aria-pressed", String(k === b)));
+    document.querySelectorAll("[data-section]").forEach((s) => (s.hidden = s.dataset.section !== kind));
+    clearProblems();
+  }));
+
+  const radios = (host, name, options, checked) => {
+    for (const [value, label] of options) {
+      const input = el("input", { type: "radio", name, value });
+      if (value === checked) input.checked = true;
+      host.append(el("label", { class: "choice" }, input, el("span", { text: label })));
+    }
+  };
+  radios($("#impact"), "impact", IMPACT, "slowed");
+  radios($("#reproducibility"), "reproducibility", REPRO, "unknown");
+
+  const stepsHost = $("#steps");
+  const addStep = (value = "") => {
+    const row = el("div", { class: "step" });
+    const input = el("input", { type: "text", placeholder: "What you did, as one action" });
+    input.value = value;
+    const remove = el("button", { type: "button", class: "x", "aria-label": "Remove this step", text: "×" });
+    remove.addEventListener("click", () => { row.remove(); renumber(); });
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addStep().focus(); } });
+    row.append(el("span", { class: "n" }), input, remove);
+    stepsHost.append(row); renumber(); return input;
+  };
+  const renumber = () => stepsHost.querySelectorAll(".step .n").forEach((n, i) => (n.textContent = String(i + 1)));
+  const cleanSteps = () => [...stepsHost.querySelectorAll("input")].map((i) => i.value.trim()).filter(Boolean);
+  addStep(); addStep(); addStep();
+  $("#addStep").addEventListener("click", () => addStep().focus());
+
+  const checked = (name) => (document.querySelector(`input[name=${name}]:checked`) || {}).value;
+
+  // ---- Images. Shrunk here, on the reporter's own device, so each one
+  // fits a database document (256 KiB) with room for its metadata. ----
+  const IMAGE_MAX_EDGE = 1600, IMAGE_TARGET_BYTES = 180 * 1024, IMAGE_MAX_COUNT = 6;
+  const attachments = [];
+  const bytesOf = (dataURL) => Math.round((dataURL.length - dataURL.indexOf(",") - 1) * 3 / 4);
+  const shrink = async (file) => {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    let dataURL = "";
+    for (const quality of [0.85, 0.75, 0.65, 0.55, 0.45]) {
+      dataURL = canvas.toDataURL("image/jpeg", quality);
+      if (bytesOf(dataURL) <= IMAGE_TARGET_BYTES) break;
+    }
+    if (bytesOf(dataURL) > IMAGE_TARGET_BYTES) throw new Error("still too large after shrinking");
+    const stem = (file.name || "image").replace(/\.[^.]+$/, "") || "image";
+    return { filename: stem + ".jpg", contentType: "image/jpeg", dataURL, byteCount: bytesOf(dataURL),
+             width: canvas.width, height: canvas.height, originalByteCount: file.size };
+  };
+  const thumbs = $("#thumbs");
+  const renderThumbs = () => {
+    thumbs.replaceChildren(...attachments.map((a, i) => {
+      const img = el("img", { alt: a.filename }); img.src = a.dataURL;
+      const x = el("button", { type: "button", class: "x", "aria-label": "Remove " + a.filename, text: "×" });
+      x.addEventListener("click", () => { attachments.splice(i, 1); renderThumbs(); });
+      return el("div", { class: "thumb" }, img, x, el("span", { class: "size", text: Math.round(a.byteCount / 1024) + " KB" }));
+    }));
+  };
+  const addImages = async (files) => {
+    const field = document.querySelector('.field[data-for="attachments"]');
+    field.querySelectorAll(".problem").forEach((p) => p.remove());
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) continue;
+      if (attachments.length >= IMAGE_MAX_COUNT) { field.append(el("p", { class: "problem", text: `Up to ${IMAGE_MAX_COUNT} images per report. Remove one to add another.` })); break; }
+      try { attachments.push(await shrink(file)); }
+      catch (err) { field.append(el("p", { class: "problem", text: `${file.name || "That image"} couldn't be added: ${err.message}.` })); }
+    }
+    renderThumbs();
+  };
+  $("#files").addEventListener("change", (e) => { addImages([...e.target.files]); e.target.value = ""; });
+  document.addEventListener("paste", (e) => {
+    const files = [...(e.clipboardData && e.clipboardData.items || [])].filter((i) => i.kind === "file").map((i) => i.getAsFile()).filter(Boolean);
+    if (files.length) { e.preventDefault(); addImages(files); }
+  });
+
+  // ---- The gate. Messages verbatim from Completeness.swift. ----
+  const check = () => {
+    const issues = [];
+    const add = (field, message, blocking) => issues.push({ field, message, blocking });
+    if (emptyInSubstance($("#reporter").value) || $("#reporter").value.trim().length < 3)
+      add("reporter", "Say who you are, so someone can write back if they need to.", true);
+    if (kind === "bug") {
+      const happened = $("#whatHappened").value, expected = $("#expected").value, steps = cleanSteps();
+      if (emptyInSubstance(happened)) add("what-happened", "Say what actually happened. Even “the window went white and stayed white” is enough to start from.", true);
+      else if (tooShort(happened)) add("what-happened", "A few more words about what happened would help — what did you see on screen?", true);
+      if (emptyInSubstance(expected)) add("expected", "Say what you expected instead. This is the one that tells us whether the app is broken or just confusing.", true);
+      else if (tooShort(expected)) add("expected", "What did you think would happen? A short sentence is fine.", true);
+      if (steps.length === 0) add("steps", "Add the steps you took. Start from where you were when you opened the app.", true);
+      else if (steps.length === 1 && tooShort(steps[0])) add("steps", "One short step isn't enough to follow. What did you do just before this, and what did you click?", true);
+      else if (steps.every(emptyInSubstance)) add("steps", "The steps need to say what you did — each one an action.", true);
+      if (checked("reproducibility") === "unknown") add("reproducibility", "If you can, try it once more. A bug nobody can make happen again can't be worked on — so this one answer changes more than any other.", false);
+    } else if (kind === "feature-request") {
+      const want = $("#whatIWant").value;
+      if (emptyInSubstance(want) || tooShort(want)) add("what-i-want", "Say what you want to be able to do. Describe it as the thing you're trying to get done, not the button.", true);
+      if (emptyInSubstance($("#why").value)) add("why", "What are you trying to do that the app makes hard right now? Knowing this often finds a better answer than the one you asked for.", false);
+    } else {
+      const m = $("#message").value;
+      if (emptyInSubstance(m) || tooShort(m)) add("message", "Tell us what's on your mind — a sentence or two is plenty.", true);
+    }
+    if (!chosenApp()) add("app", "Pick which app this is about.", true);
+    return issues;
+  };
+  const clearProblems = () => document.querySelectorAll(".field").forEach((f) => {
+    f.classList.remove("invalid"); f.querySelectorAll(".problem, .note").forEach((p) => p.remove());
+  });
+  const showProblems = (issues) => {
+    clearProblems();
+    for (const issue of issues) {
+      const field = document.querySelector(`.field[data-for="${issue.field}"]`);
+      if (!field) continue;
+      if (issue.blocking) field.classList.add("invalid");
+      field.append(el("p", { class: issue.blocking ? "problem" : "note", text: issue.message }));
+    }
+    const first = document.querySelector(".field.invalid");
+    if (first) first.scrollIntoView({ block: "center", behavior: "smooth" });
+  };
+
+  // ---- The report, in the same shape BeaconCore/Report.swift files. ----
+  const reference = () => {
+    const bytes = crypto.getRandomValues(new Uint8Array(3));
+    return "BN-" + [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+  };
+  const derivedTitle = (text) => {
+    const line = (text.split(/\r?\n/)[0] || text).split(".")[0].trim();
+    if (line.length <= 72) return line;
+    let cut = line.slice(0, 72); const sp = cut.lastIndexOf(" "); if (sp > 0) cut = cut.slice(0, sp);
+    return cut + "…";
+  };
+  const buildReport = () => {
+    const body = kind === "bug"
+      ? { kind, whatHappened: $("#whatHappened").value.trim(), expected: $("#expected").value.trim(), steps: cleanSteps(), reproducibility: checked("reproducibility") }
+      : kind === "feature-request"
+        ? { kind, whatIWant: $("#whatIWant").value.trim(), why: $("#why").value.trim() }
+        : { kind, message: $("#message").value.trim() };
+    const source = body.whatHappened || body.whatIWant || body.message;
+    const app = chosenApp();
+    return {
+      app: { id: app.id, name: app.name, repository: app.repository || ctx.repository, platform: app.platform || "" },
+      reference: reference(), kind, filedAt: new Date().toISOString(), status: "new",
+      title: derivedTitle(source), reporter: $("#reporter").value.trim(), impact: checked("impact"),
+      area: $("#area").value.trim(), body, context: ctx, attachmentCount: attachments.length,
+      userAgent: navigator.userAgent, source: "beacon-inbox",
+    };
+  };
+
+  // ---- Where it goes. ----
+  let db = null, artifact = null;
+  const submitButton = $("#submit");
+  const form = $("#form");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const issues = check();
+    showProblems(issues);
+    if (issues.some((i) => i.blocking)) return;
+    if (!db) { $("#dbState").hidden = false; return; }
+    submitButton.disabled = true; submitButton.textContent = "Sending…";
+    const report = buildReport();
+    try {
+      await db.doc("reports/" + report.reference).set(report);
+      // One document per image: each must fit 256 KiB on its own, and the
+      // report stays small enough to list without pulling every picture.
+      const images = db.doc("reports/" + report.reference).collection("attachments");
+      for (const [i, a] of attachments.entries()) {
+        await images.doc(String(i + 1)).set({ ...a, reference: report.reference, order: i + 1 });
+      }
+    } catch (err) {
+      submitButton.disabled = false; submitButton.textContent = "Send report";
+      showProblems([{ field: "reporter", blocking: true, message: "The report couldn't be sent: " + (err && err.message || err) + ". Nothing you typed was lost — try again in a moment." }]);
+      return;
+    }
+    // The doorbell: a new version of the artifact is what wakes a watching
+    // Claude session. The report itself is already safe in the store.
+    let rang = false;
+    if (artifact) {
+      try {
+        await artifact.publish({ "data/doorbell.json": JSON.stringify({ reference: report.reference, filedAt: report.filedAt }) });
+        rang = true;
+      } catch (err) { console.warn("doorbell", err && err.code, err && err.message); }
+    }
+    sessionStorage.setItem("beacon.receipt", JSON.stringify({ reference: report.reference, rang }));
+    showReceipt(report.reference, rang);
+    form.reset(); stepsHost.replaceChildren(); addStep(); addStep(); addStep(); clearProblems();
+    attachments.length = 0; renderThumbs();
+    if (q.get("reporter")) $("#reporter").value = q.get("reporter");
+    submitButton.disabled = false; submitButton.textContent = "Send report";
+  });
+  const showReceipt = (ref, rang) => {
+    form.hidden = true;
+    $("#receipt").hidden = false;
+    $("#receiptRef").textContent = ref;
+    $("#receiptText").textContent = "Your report is in. Nothing more is needed from you; if you spot something else, send that too.";
+  };
+  $("#again").addEventListener("click", () => { $("#receipt").hidden = true; form.hidden = false; });
+  try {
+    const saved = sessionStorage.getItem("beacon.receipt");
+    if (saved) { const r = JSON.parse(saved); sessionStorage.removeItem("beacon.receipt"); showReceipt(r.reference, r.rang); }
+  } catch {}
+
+  // ---- The board: the founder's view of every report. ----
+  const queue = $("#queue");
+  let allReports = [];
+  const fmtWhen = (iso) => iso ? new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "";
+  const fact = (label, value) => value ? el("div", {}, el("dt", { text: label }), el("dd", { text: value })) : null;
+  const words = (label, text) => text ? el("div", {}, el("h3", { text: label }), el("p", { text })) : null;
+  const pill = (r) => { const [cls, label] = STATUS[r.status] || ["hold", r.status || "—"]; return el("span", { class: "pill " + cls, text: label }); };
+  const metaLine = (r) => [r.reference, KIND[r.kind] || r.kind,
+    `${(r.app && r.app.name) || ""} ${(r.context && r.context.version) || ""}`.trim(),
+    r.reporter, fmtWhen(r.filedAt),
+    r.attachmentCount ? `${r.attachmentCount} image${r.attachmentCount === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ");
+
+  const renderDetail = (r) => {
+    const c = r.context || {}, b = r.body || {}, a = r.app || {};
+    const facts = el("dl", { class: "facts" }, ...[
+      fact("Impact", IMPACT_LABEL[r.impact]),
+      fact("Reporter", r.reporter),
+      fact("App", `${a.name || ""} ${c.version || ""}${c.build ? ` (${c.build})` : ""}`.trim()),
+      fact("Commit", c.commit),
+      fact("Machine", [c.os, c.osVersion, c.device].filter(Boolean).join(" ")),
+      fact("Locale", [c.locale, c.timeZone].filter(Boolean).join(" · ")),
+      fact("Appearance", [c.appearance, c.textSize].filter(Boolean).join(" · ")),
+      fact("Area", r.area),
+      fact("Filed", fmtWhen(r.filedAt)),
+      fact("Repository", a.repository),
+      fact("Fix", r.fixCommit),
+    ].filter(Boolean));
+    const prose = el("div", { class: "words" });
+    if (r.kind === "bug") {
+      prose.append(...[words("What they expected", b.expected), words("What actually happened", b.whatHappened)].filter(Boolean));
+      if (b.steps && b.steps.length) prose.append(el("div", {}, el("h3", { text: "Steps to see it" }), el("ol", {}, ...b.steps.map((st) => el("li", { text: st })))));
+      if (b.reproducibility) prose.append(words("Does it happen again?", REPRO_LABEL[b.reproducibility] || b.reproducibility));
+    } else if (r.kind === "feature-request") {
+      prose.append(...[words("What they want to be able to do", b.whatIWant), words("Why", b.why)].filter(Boolean));
+    } else {
+      prose.append(...[words("What's on their mind", b.message)].filter(Boolean));
+    }
+    if (r.finding) prose.append(words("Finding", [r.finding.verdict, r.finding.intent, ...(r.finding.citations || [])].filter(Boolean).join("\n")));
+    if (r.triageNote) prose.append(words("Triage note", r.triageNote));
+    const detail = el("div", { class: "detail" }, facts, prose);
+    if (r.issueURL) {
+      const link = el("a", { href: r.issueURL, target: "_blank", rel: "noopener", text: `Issue #${r.issueNumber || ""}`.trim() });
+      detail.append(el("p", { style: "margin:0" }, link));
+    }
+    if (r.attachmentCount) detail.append(el("div", { class: "pictures", "data-ref": r.reference }, el("span", { class: "loading", text: "Loading images…" })));
+    return detail;
+  };
+  const loadPictures = async (host) => {
+    if (!db || host.dataset.loaded) return;
+    host.dataset.loaded = "1";
+    try {
+      const snap = await db.doc("reports/" + host.dataset.ref).collection("attachments").orderBy("order").get();
+      host.replaceChildren(...snap.docs.map((d) => { const a = d.data(); const img = el("img", { alt: a.filename || "" }); img.src = a.dataURL; return img; }));
+    } catch (err) { host.replaceChildren(el("span", { class: "loading", text: "Images couldn't be loaded: " + (err && err.message || err) })); }
+  };
+  const passes = (r) => {
+    const app = $("#fApp").value, status = $("#fStatus").value, kind = $("#fKind").value;
+    const needle = $("#fSearch").value.trim().toLowerCase();
+    if (app && !(r.app && r.app.id === app)) return false;
+    if (status && r.status !== status) return false;
+    if (kind && r.kind !== kind) return false;
+    if (needle && !JSON.stringify([r.title, r.body, r.reporter, r.area, r.reference]).toLowerCase().includes(needle)) return false;
+    return true;
+  };
+  const renderBoard = () => {
+    const shown = allReports.filter(passes);
+    $("#fCount").textContent = `${shown.length} of ${allReports.length}`;
+    if (!allReports.length) { queue.replaceChildren(el("div", { class: "empty", text: "No reports yet." })); return; }
+    if (!shown.length) { queue.replaceChildren(el("div", { class: "empty", text: "Nothing matches those filters." })); return; }
+    queue.replaceChildren(...shown.map((r) => {
+      const d = el("details", {},
+        el("summary", {}, el("div", { class: "row" }, el("span", { class: "title", text: r.title || r.reference }), pill(r)), el("div", { class: "meta", text: metaLine(r) })),
+        renderDetail(r));
+      d.addEventListener("toggle", () => { if (d.open) d.querySelectorAll(".pictures").forEach(loadPictures); });
+      return d;
+    }));
+  };
+  const fillFilters = () => {
+    const keep = $("#fApp").value;
+    $("#fApp").replaceChildren(el("option", { value: "", text: "Every app" }), ...apps.map((a) => el("option", { value: a.id, text: a.name })));
+    $("#fApp").value = keep;
+    if ($("#fStatus").options.length === 1) {
+      for (const [value, [, label]] of Object.entries(STATUS)) $("#fStatus").append(el("option", { value, text: label }));
+    }
+  };
+  ["fApp", "fStatus", "fKind"].forEach((id) => $("#" + id).addEventListener("change", renderBoard));
+  $("#fSearch").addEventListener("input", renderBoard);
+
+  (async () => {
+    const [d, a] = await Promise.all([claude.use("db"), claude.use("artifact")]);
+    db = d; artifact = a;
+    if (!db) { $("#dbState").hidden = false; return; }
+    db.collection("apps").orderBy("name").onSnapshot((snap) => {
+      apps = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      if (isBoard) fillFilters(); else fillAppPicker();
+    }, (err) => console.warn("apps", err));
+    if (isBoard) {
+      db.collection("reports").orderBy("filedAt", "desc").limit(500).onSnapshot((snap) => {
+        allReports = snap.docs.map((d) => d.data()); renderBoard();
+      }, (err) => { console.warn("board", err); $("#dbState").hidden = false; });
+    }
+  })();
+})();
+</script>

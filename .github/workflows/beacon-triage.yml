@@ -1,0 +1,65 @@
+# Scheduled triage of Beacon reports.
+#
+# Copy this into the APP's repository, not Beacon's. It runs the
+# beacon-triage skill on a schedule, so reports get worked whether or not
+# anybody's Mac is switched on.
+#
+# Before it will do anything you need, once:
+#   1. The Claude GitHub App installed on the repository.
+#   2. Either CLAUDE_CODE_OAUTH_TOKEN (a Claude subscription token, from
+#      `claude setup-token`) or ANTHROPIC_API_KEY in repository secrets.
+#      The subscription token bills against the subscription rather than
+#      per-token API usage.
+#   3. Triage/TRIAGE.md and .claude/skills/beacon-triage/ copied in from
+#      Beacon.
+#   4. ./Scripts/beacon-labels.sh <owner/repo> run once.
+#
+# This job runs on Linux and does everything up to the point where a fix
+# has to be proven by running the app. That step needs macOS — see
+# beacon-reproduce.yml, which this workflow's prompt hands off to.
+
+name: Beacon triage
+
+on:
+  schedule:
+    # 08:00 UTC on weekdays. Reports filed overnight are triaged before
+    # anyone starts, and nothing runs at the weekend unasked.
+    - cron: "0 8 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: "One issue number to triage, instead of the whole queue"
+        required: false
+
+concurrency:
+  # Two triage runs on one queue would both claim the same issue.
+  group: beacon-triage
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Triage needs history: it checks out the commit a report came
+          # from to reproduce against the build the reporter was running.
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: >
+            /beacon-triage
+            ${{ github.event.inputs.issue && format('Triage only issue #{0}.', github.event.inputs.issue) || 'Triage the whole open queue.' }}
+            The repository is ${{ github.repository }}.
+          claude_args: |
+            --max-turns 120
+            --allowedTools "Bash,Read,Grep,Glob,Edit,Write,WebFetch"

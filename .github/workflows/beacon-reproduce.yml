@@ -1,0 +1,83 @@
+# Reproduce a bug, and verify a fix, on a machine that is not yours.
+#
+# Copy this into the APP's repository. It exists to answer one question:
+# can a report be reproduced without the founder's Mac being involved?
+#
+# What it does: checks out the commit the report came from, builds the app,
+# seeds it with known data through BeaconSeed, runs the reporter's steps as
+# a UI test, and uploads screenshots and the test result to the run.
+#
+# Cost, because it matters: macOS runners bill at roughly ten times Linux
+# (about $0.062 a minute against $0.006 at GitHub's published rates), and
+# private-repository plans include 2,000–3,000 minutes a month. A ten-minute
+# reproduction is a few tens of cents. That is cheap per report and adds up
+# if it fires on every issue — so this workflow is deliberately triggered by
+# hand or by the triage job, never on a schedule.
+
+name: Beacon reproduce
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: "The issue number being reproduced"
+        required: true
+      commit:
+        description: "The commit the report came from (from the issue's metadata block)"
+        required: false
+      seed:
+        description: "Folder under Triage/seeds/ to start the app with"
+        required: false
+        default: "default"
+
+jobs:
+  reproduce:
+    # macOS 26 on Apple silicon. `macos-latest` moves when GitHub moves it;
+    # this is pinned so a reproduction run is repeatable months later.
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.commit || github.sha }}
+          fetch-depth: 0
+
+      - name: Show what we're reproducing against
+        run: |
+          echo "Issue:  #${{ github.event.inputs.issue }}"
+          echo "Commit: $(git rev-parse HEAD)"
+          sw_vers
+          xcodebuild -version
+
+      - name: Build
+        run: swift build --configuration debug 2>&1 | tail -40
+
+      - name: Run the reporter's steps
+        env:
+          # Both switches are required before BeaconSeed will replace
+          # anything — see Sources/BeaconCore/Seed.swift.
+          BEACON_SEED_ENABLE: "1"
+          BEACON_SEED_DIRECTORY: ${{ github.workspace }}/Triage/seeds/${{ github.event.inputs.seed }}
+        run: |
+          # Replace with the app's own UI-test invocation. The seed
+          # variables above are what make it start with data in place.
+          #
+          #   xcodebuild test \
+          #     -scheme YourAppUITests \
+          #     -destination 'platform=macOS' \
+          #     -only-testing:YourAppUITests/BeaconReproduction
+          #
+          # Until that is wired up, fail loudly rather than reporting a
+          # green run that proved nothing.
+          echo "::error::No reproduction target is wired up yet. Point this step at the app's UI test scheme."
+          exit 1
+
+      - name: Keep the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reproduction-${{ github.event.inputs.issue }}
+          path: |
+            **/*.xcresult
+            **/Screenshots/**
+          if-no-files-found: warn

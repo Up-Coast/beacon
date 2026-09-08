@@ -1,0 +1,7 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report from inside the app
+    url: https://github.com/Up-Coast/beacon/blob/main/docs/for-testers.md
+    about: >
+      The report button in the app collects your version, settings and logs
+      for you. It's faster and the report is far more likely to get fixed.

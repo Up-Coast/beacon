@@ -1,0 +1,6 @@
+.build/
+.swiftpm/
+*.xcresult
+.DS_Store
+# Generated from Examples/*/project.yml by xcodegen
+Examples/**/*.xcodeproj
