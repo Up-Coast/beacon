@@ -171,7 +171,9 @@ struct EnvironmentProbeTests {
         #expect(["arm64", "x86_64"].contains(snapshot.architecture))
         #if os(macOS)
         #expect(snapshot.operatingSystem == "macOS")
-        #expect(snapshot.deviceModel.hasPrefix("Mac"))
+        // hw.model is "Mac15,3" on hardware and "VirtualMac2,1" on a hosted
+        // runner; both are the machine, and both belong on a report.
+        #expect(snapshot.deviceModel.contains("Mac"))
         #else
         #expect(snapshot.operatingSystem == "iOS")
         // The device, never the architecture the simulator would otherwise
