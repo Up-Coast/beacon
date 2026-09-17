@@ -36,6 +36,7 @@ What is proven by a test, what is proven by having run it, what is written but h
 | The GitHub device flow, end to end against GitHub: an OAuth App registered with device flow on, `begin()` returning a code, the code accepted at github.com/login/device, the app authorized, and the token handed back to the app | 2026-09-17 |
 | The sign-in screen inside a shipping app: Actually Keto on an iPhone 17 Pro simulator showed the report button in Settings, the sign-in step, the code copied for the tester, and the failure path with a Client ID that is not registered | 2026-09-17 |
 | Beacon adopted by three iOS apps (Actually Keto, Neori, Dayletter): each builds against the tag, files to its own repository, and hides the button outside test builds | 2026-09-17 |
+| **A report filed from inside an app, the whole way.** In Actually Keto on an iPhone 17 Pro simulator: the report button, GitHub sign-in by device flow, the token kept in the keychain, consent, the bug form, the review screen naming the repository and the reporter, the on-device check, and issue #1 on `Up-Coast/keto-tracker` labelled `beacon`, `type:bug` and `impact:slowed`, carrying the app version, the device, the language and the settings. Reference `BN-B301B5`; the issue was closed afterwards | 2026-09-17 |
 | `beacon-index` against this package: 8 areas, 28 screens. CI runs it on every push | 2026-09-17 |
 | CI (build, test, self-index) green on `macos-26` | 2026-09-16 |
 | The whole package builds for macOS 26 and the iOS 26 Simulator under strict concurrency with no warnings | 2026-09-07 |
@@ -53,14 +54,13 @@ Nothing here is known to be broken. None of it has been proven right either.
 | The reporter's flow on macOS | Every view compiles and the same state machine runs, but nobody has walked it end to end in a real Mac app |
 | Screen recording on either platform | The macOS path has never recorded a real window, and the first run needs Screen Recording permission granted by hand. On iOS the simulator's recorder starts and stops but writes an empty file, so a physical device is needed |
 | The on-device check against the real model | It ran once on the iOS Simulator and asked nothing about a short, complete bug. What it says about a thin report is unknown, and the prompt will need tuning |
-| A report filed from inside an app | The device flow, the transport and the filing calls are each proven, but no report has yet travelled the whole way from an app's sheet to an issue. What stopped it was the keychain, not the flow: see the unsigned-build gap below |
 | `RelayTransport` | No relay is deployed |
 | The triage policy and skill | Written and copied into app repositories. Reports have been filed as issues, and no run of the policy over an open issue is recorded |
 | `beacon-reproduce.yml` | Ships failing at the run step until it is pointed at a host app's UI test scheme |
 
 ## Known gaps
 
-- **An unsigned build cannot sign in.** Beacon keeps the token in the keychain, and a build with no signing team has no keychain: `SecItemAdd` returns `errSecMissingEntitlement` and the sheet says so. This is iOS, not Beacon, but it makes a command-line `xcodebuild` build useless for testing the sheet. Xcode builds signed with a team, and TestFlight builds, are fine. The same limit is why the keychain tests skip themselves on the iOS Simulator.
+- **An unsigned build cannot sign in.** Beacon keeps the token in the keychain, and a build with no signing team has no keychain: `SecItemAdd` returns `errSecMissingEntitlement` and the sheet says so. This is iOS, not Beacon. A build made with `DEVELOPMENT_TEAM` set, as Xcode does, signs in and keeps the token; a plain `xcodebuild` run with no team cannot, and neither can a test host on the simulator, which is why the keychain tests skip themselves there.
 - **The committed page does not run.** In `Inbox/index.html`, `isBoard` reads `q` on the line above `q` is declared, so the script throws a `ReferenceError` at load and neither view works. The publish check (`new Function`) parses the script and does not run it, so it does not catch this.
 - **The page has no automated tests.** The only check before publishing is that the script parses.
 - **Nothing holds the page's copy of the rules equal to Swift.** `InboxLinkTests.everyKeyIsOneThePageReads` compares the Swift key list against a list copied into the test, not against `Inbox/index.html`. The completeness rules and their messages are copied by hand as well.
