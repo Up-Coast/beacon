@@ -127,3 +127,25 @@ struct RenderingTests {
         #expect(draft.body.contains("agreed to be contacted"))
     }
 }
+
+@Suite("The app, as its own bundle describes it")
+struct AppIdentityTests {
+
+    /// A bundle with no app keys must not invent a name: a report that
+    /// says it came from "" is at least honest about what it knows.
+    @Test func aBundleWithoutTheKeysGivesEmptyValuesRatherThanGuesses() {
+        let identity = AppIdentity.mainBundle(Bundle(for: RenderingProbe.self))
+        #expect(identity.version.isEmpty)
+        #expect(identity.commit == nil)
+    }
+
+    @Test func theCommitIsKeptBecauseNoBundleCanKnowIt() {
+        let identity = AppIdentity.mainBundle(Bundle(for: RenderingProbe.self),
+                                              commit: "abc123")
+        #expect(identity.commit == "abc123")
+    }
+}
+
+/// A class in this bundle, so the test can name a real bundle that is not
+/// an app.
+final class RenderingProbe {}
