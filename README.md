@@ -29,9 +29,7 @@ Adopting Beacon is three things: configure it once at launch, put a button in a 
 import Beacon
 
 Beacon.configure(BeaconConfiguration(
-    app: AppIdentity(name: "Harbour",
-                     bundleIdentifier: Bundle.main.bundleIdentifier ?? "",
-                     version: "1.4.2", build: "318"),
+    app: AppIdentity.mainBundle(),
     organizationName: "the Harbour team",
     currentReporter: { Reporter(accountID: "tester@example.com") },
     transport: LocalBundleTransport(folderProvider: { nil })))

@@ -16,7 +16,7 @@ In `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Up-Coast/beacon.git", from: "0.1.0"),
+    .package(url: "https://github.com/Up-Coast/beacon.git", from: "0.2.0"),
 ],
 targets: [
     .target(name: "YourApp", dependencies: [.product(name: "Beacon", package: "beacon")]),
@@ -35,12 +35,7 @@ import Beacon
 @main struct HarbourApp: App {
     init() {
         Beacon.configure(BeaconConfiguration(
-            app: AppIdentity(
-                name: "Harbour",
-                bundleIdentifier: Bundle.main.bundleIdentifier ?? "",
-                version: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
-                build: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "",
-                commit: BuildInfo.commit),
+            app: AppIdentity.mainBundle(commit: BuildInfo.commit),
             organizationName: "the Harbour team",
             currentReporter: {
                 guard let account = Account.signedIn else { return nil }
@@ -53,7 +48,7 @@ import Beacon
 }
 ```
 
-`BuildInfo` and `Account` stand for your own code.
+`BuildInfo` and `Account` stand for your own code. `AppIdentity.mainBundle` reads the name, bundle identifier, version and build from the app's own bundle.
 
 | Field | What to pass |
 |---|---|

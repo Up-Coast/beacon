@@ -62,6 +62,12 @@ Settings, host notes, folders, the log, screenshots, recordings and secrets appl
 | `build` | `String` | `CFBundleVersion`. |
 | `commit` | `String?` | The git commit the build was made from. Triage checks out this commit to reproduce a report. Write it into the build at build time. |
 
+`AppIdentity.mainBundle(_:commit:)` fills the first four fields from a bundle, `.main` by default. It reads `CFBundleDisplayName`, falling back to `CFBundleName`, the bundle identifier, `CFBundleShortVersionString` and `CFBundleVersion`. Pass `commit` yourself.
+
+```swift
+app: AppIdentity.mainBundle(commit: BuildInfo.commit)
+```
+
 ### `Reporter`
 
 `Reporter(accountID:displayName:contact:)`.
