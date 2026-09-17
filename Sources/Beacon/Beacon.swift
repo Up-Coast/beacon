@@ -45,6 +45,12 @@ public enum Beacon {
             + "(\(configuration.app.build)) \u{2014} reports go to "
             + configuration.transport.destinationDescription,
             category: "beacon")
+        if let gitHubAccount, !gitHubAccount.canKeepASignIn {
+            BeaconLog.shared.warning(
+                "this build cannot keep a GitHub sign-in, so nobody can report from it: "
+                + GitHubTokenStore.explain(gitHubAccount.keychainStatus),
+                category: "beacon")
+        }
         Task { await BeaconAvailability.shared.resolve(for: audience) }
     }
 

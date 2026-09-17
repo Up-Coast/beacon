@@ -51,6 +51,21 @@ public struct GitHubAccount: Sendable {
         GitHubDeviceFlow(clientID: clientID)
     }
 
+    /// Whether this build has a keychain to keep a sign-in in, asked
+    /// before anybody is sent to GitHub. An app built without a signing
+    /// team has none, and a tester who signs in anyway watches it fail at
+    /// the last step and concludes that GitHub reporting is broken.
+    public var canKeepASignIn: Bool { keychainStatus == errSecSuccess }
+
+    /// The keychain's answer to a harmless write, for the message that
+    /// explains a refusal.
+    public var keychainStatus: OSStatus {
+        let probe = ".can-keep-a-sign-in"
+        let status = GitHubTokenStore.write("probe", account: probe, service: service)
+        GitHubTokenStore.delete(account: probe, service: service)
+        return status
+    }
+
     /// Keep a token the device flow returned. GitHub is asked whose it is,
     /// so the login on every report is the one GitHub vouches for rather
     /// than anything typed. Returns that login.

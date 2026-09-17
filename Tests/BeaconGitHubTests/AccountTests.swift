@@ -55,6 +55,16 @@ struct GitHubAccountTests {
         #expect(GitHubTokenStore.read(account: "octocat", service: account.service) == nil)
     }
 
+    /// Asked before anybody is sent to GitHub, so a build that cannot
+    /// keep a token never sends someone through a sign-in that ends in
+    /// failure.
+    @Test func abuildWithAKeychainSaysItCanKeepASignIn() {
+        let account = makeAccount()
+        #expect(account.canKeepASignIn)
+        #expect(account.keychainStatus == errSecSuccess)
+        #expect(account.login == nil)   // the probe leaves nothing behind
+    }
+
     @Test func signingOutLeavesNothingBehind() throws {
         let account = makeAccount()
         try account.remember(token: "gho_example", login: "octocat")

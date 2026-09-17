@@ -74,6 +74,8 @@ You can use one option or both.
 
 Only a Mac can reproduce a report and prove a fix by building and running a macOS or iOS app.
 
+The copied `beacon-triage.yml` is safe to commit before you have done any of this. Until the secret exists, each scheduled run stops at its first job, writes a notice saying triage is not set up yet, and finishes green. A workflow that failed every morning would train you to ignore it.
+
 ### On GitHub Actions
 
 `beacon-triage.yml` runs the `beacon-triage` skill on Linux at 08:00 UTC on weekdays. You can also start it from the Actions tab, optionally for one issue number.

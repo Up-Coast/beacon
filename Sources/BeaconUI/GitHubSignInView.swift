@@ -27,6 +27,9 @@ struct GitHubSignInView: View {
         case starting
         case waiting(GitHubDeviceFlow.Challenge)
         case failed(String)
+        /// This build cannot keep a sign-in, so there is no point asking
+        /// for one.
+        case cannotSignIn(String)
     }
 
     var body: some View {
@@ -48,8 +51,17 @@ struct GitHubSignInView: View {
                     Text(message).fixedSize(horizontal: false, vertical: true)
                     Button("Try again") { start() }
                         .buttonStyle(.borderedProminent)
+                case .cannotSignIn(let message):
+                    Text(message).fixedSize(horizontal: false, vertical: true)
                 }
             }
+        }
+        .task {
+            guard !account.canKeepASignIn else { return }
+            phase = .cannotSignIn(
+                "Reporting isn't broken and neither is GitHub \u{2014} this copy of the app "
+                + "is the problem: " + GitHubTokenStore.explain(account.keychainStatus)
+                + ". Until then, tell the team what happened the way you would have anyway.")
         }
     }
 

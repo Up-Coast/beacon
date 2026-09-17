@@ -24,6 +24,8 @@ The button opens one of two things, depending on the app.
 
 **Check and send** means your Mac, iPhone or iPad reads your report over first, using Apple's on-device AI. It may ask up to 3 questions. Answer what you can, then press **Send it**. You can also press **Send it** without answering. The check only adds your answers. It never changes what you wrote.
 
+If the app says it cannot keep a sign-in, stop there and tell the team. That build was made without a signing team, so it has nowhere to keep your GitHub sign-in. GitHub and the report button are both fine; the build is not. A TestFlight build works.
+
 ## The three things every bug report needs
 
 You can't send a bug report without them.

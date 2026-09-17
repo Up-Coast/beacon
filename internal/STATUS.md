@@ -39,6 +39,7 @@ What is proven by a test, what is proven by having run it, what is written but h
 | **A report filed from inside an app, the whole way.** In Actually Keto on an iPhone 17 Pro simulator: the report button, GitHub sign-in by device flow, the token kept in the keychain, consent, the bug form, the review screen naming the repository and the reporter, the on-device check, and issue #1 on `Up-Coast/keto-tracker` labelled `beacon`, `type:bug` and `impact:slowed`, carrying the app version, the device, the language and the settings. Reference `BN-B301B5`; the issue was closed afterwards | 2026-09-17 |
 | `beacon-index` against this package: 8 areas, 28 screens. CI runs it on every push | 2026-09-17 |
 | CI (build, test, self-index) green on `macos-26` | 2026-09-16 |
+| `beacon-triage.yml` parses with both jobs, and the triage job depends on the preflight's answer. The guard itself has not run on GitHub: no adopting repository has the workflow committed yet | 2026-09-17 |
 | The whole package builds for macOS 26 and the iOS 26 Simulator under strict concurrency with no warnings | 2026-09-07 |
 | The sheet on iOS, walked end to end in `Examples/BeaconExample` on a simulator: walkthrough, consent, the bug form, a screenshot taken from inside the sheet that shows the app and not the form, the recording strip, a photo picked from the library, review with the full issue preview, the on-device check, and a report saved to the app's container with the log tail and the simulated device in it | 2026-09-07 |
 | Filing to GitHub: `LiveTransportTests` against a private repository created the attachment branch, committed a file to it, and filed an issue with labels and the attachment linked | 2026-09-07 |
@@ -68,7 +69,6 @@ Nothing here is known to be broken. None of it has been proven right either.
 - **The secret sweep does not cover the issue title or the saved report.** It sweeps the rendered body and text attachments. A title derived from the reporter's first sentence is not swept, and `report.json` in the archive keeps the reporter's text and the log as written.
 - **The iOS build is not in CI.** `ci.yml` builds and tests on macOS only, so an iOS-only break is found by hand.
 - **`beacon-triage.yml` does not start `beacon-reproduce.yml`.** Its comment says the macOS leg is handed off; nothing in the workflow, the policy or the skill does that. A run that needs macOS has to be started by hand.
-- **`beacon-triage.yml` reads only `CLAUDE_CODE_OAUTH_TOKEN`.** Its comment offers `ANTHROPIC_API_KEY` as an alternative, but the workflow never passes one.
 - **The triage workflow in this repository is switched off.** It failed on every scheduled run because the Claude GitHub App is not installed here. It stays off until the owner asks for it.
 - **Attachments on a private repository do not preview.** Images are committed to the `beacon-attachments` branch and link rather than render inline, because raw URLs on a private repository need authentication.
 - **The doorbell waking a session has never been observed.** A send happened while a watch showed connected and no notice arrived. A scheduled pickup covers it either way.

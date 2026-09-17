@@ -4,6 +4,10 @@
 # beacon-triage skill on a schedule, so reports get worked whether or not
 # anybody's Mac is switched on.
 #
+# Until it is set up, every scheduled run stops at the first job and says
+# so. It never fails, because a workflow that fails every morning trains
+# everyone to ignore the one failure that matters.
+#
 # Before it will do anything you need, once:
 #   1. The Claude GitHub App installed on the repository.
 #   2. Either CLAUDE_CODE_OAUTH_TOKEN (a Claude subscription token, from
@@ -38,7 +42,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Is triage set up on this repository at all? A secret cannot be read in
+  # a job's `if:` (GitHub's contexts table allows github, needs, vars and
+  # inputs there and not secrets), so one job reads it and the rest depend
+  # on the answer.
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      ready: ${{ steps.credentials.outputs.ready }}
+    steps:
+      - id: credentials
+        env:
+          SUBSCRIPTION_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$SUBSCRIPTION_TOKEN" ] || [ -n "$API_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Beacon triage is not set up yet::Reports are still \
+            being filed and are waiting in the issue queue. Nothing triages them until \
+            this repository has the Claude GitHub App installed and either \
+            CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY in its secrets. See \
+            docs/setup-github.md, step 3. This run did nothing and did not fail."
+          fi
+
   triage:
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -56,7 +88,9 @@ jobs:
 
       - uses: anthropics/claude-code-action@v1
         with:
+          # Either one. The action takes whichever is set.
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: >
             /beacon-triage
             ${{ github.event.inputs.issue && format('Triage only issue #{0}.', github.event.inputs.issue) || 'Triage the whole open queue.' }}
