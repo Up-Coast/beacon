@@ -1,16 +1,14 @@
 # Quickstart
 
-*Last updated: 2026-09-07*
+*Last updated: 2026-09-17*
 
-Fifteen minutes from an app with no feedback button to reports arriving.
+Put a Beacon report button in your app and send a test report.
 
 ## Before you start
 
-Pick a path and do its setup once: [the Claude-only path](setup-claude-only.md) or
-[the GitHub path](setup-github.md). Both give you the one thing this page needs, the link
-to your Beacon page (`https://claude.ai/code/artifact/…`). Every app you own shares the
-same page — the app tells the page which one it is. On the GitHub path without the board,
-skip step 3 and put the in-app sheet in instead (its setup page, step 4).
+Set up a path first: [Claude-only](setup-claude-only.md) or [GitHub](setup-github.md). Keep the link to your Beacon page. One page serves all your apps, because the button tells the page which app is reporting.
+
+On the GitHub path without the page, do steps 1 and 2 here, then put the in-app sheet in instead of step 3 ([Setup: the GitHub path](setup-github.md), step 4).
 
 ## 1. Add the package
 
@@ -25,12 +23,11 @@ targets: [
 ]
 ```
 
-In Xcode: **File › Add Package Dependencies…**, paste the same URL, and add the `Beacon`
-product to your app target.
+In Xcode, choose **File > Add Package Dependency**, enter the same URL, and add the `Beacon` product to your app target.
 
-## 2. Tell Beacon about your app
+## 2. Configure Beacon at launch
 
-Once, at launch. Everything Beacon needs to know arrives here and nowhere else.
+Call `Beacon.configure` once, before any view can show a report button.
 
 ```swift
 import Beacon
@@ -43,7 +40,7 @@ import Beacon
                 bundleIdentifier: Bundle.main.bundleIdentifier ?? "",
                 version: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
                 build: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "",
-                commit: BuildInfo.commit),          // bake this in at build time
+                commit: BuildInfo.commit),
             organizationName: "the Harbour team",
             currentReporter: {
                 guard let account = Account.signedIn else { return nil }
@@ -56,47 +53,45 @@ import Beacon
 }
 ```
 
-Two of these deserve a sentence:
+`BuildInfo` and `Account` stand for your own code.
 
-- **`commit`** is what lets Claude check out the exact code the tester was running. Put
-  the git commit into the build (a build phase that writes it to a generated file is the
-  usual way). Without it, reproduction falls back to the version and build number.
-- **`currentReporter`** returns who is signed in, or `nil`. Reports are not anonymous:
-  a report nobody can follow up on cannot be acted on. Beacon says so to the tester rather
-  than filing one.
+| Field | What to pass |
+|---|---|
+| `app` | Your app's name, bundle identifier, version and build. `commit` is the git commit the build was made from, written into the build at build time. It lets triage check out the exact code the tester ran. |
+| `organizationName` | Who reads reports. The privacy notice names it. |
+| `currentReporter` | The signed-in person, or `nil`. The in-app sheet will not file a report without a reporter. |
+| `transport` | Where the in-app sheet sends reports. On the Claude-only path, keep `LocalBundleTransport` as shown. On the GitHub path, see [Setup: the GitHub path](setup-github.md). |
 
-The `transport` line is where the in-app sheet sends reports on the GitHub path; on the
-Claude-only path it can stay as shown.
+Every other field is optional. See [Options](options.md).
 
 ## 3. Put the button in
 
-Give Beacon the page link and where reports for this app should go, then place the button
-wherever your testers will find it.
+1. Describe your Beacon page once, in your app's configuration code:
 
-```swift
-let beacon = BeaconInbox(
-    page: URL(string: "https://claude.ai/code/artifact/…")!,   // your Beacon page
-    repository: "your-org/harbour")                              // where fixes are made
+   ```swift
+   let inbox = BeaconInbox(
+       page: URL(string: "<your Beacon page link>")!,
+       repository: "your-org/harbour")
+   ```
 
-// Anywhere in your views — a toolbar, a menu, a settings screen:
-BeaconInboxButton(beacon)
-```
+   `repository` is the `owner/name` of the repository where fixes for this app are made.
 
-On macOS a good place is the Help menu; on iOS, the settings screen. The button opens the
-Beacon page in the browser with the app, version, build, commit, OS, device and signed-in
-tester already in the link. The tester writes only what they know.
+2. Place the button in a view testers will find, such as the Help menu on macOS or a settings screen on iOS:
 
-Keep the page link and the repository name in your app's configuration, not in the view
-that shows the button, so there is one place to change them.
+   ```swift
+   BeaconInboxButton(inbox)
+   ```
 
-## 4. Run it
+The button opens your Beacon page in the browser. The link already carries the app, version, build, commit, operating system, device and signed-in tester, so the tester writes only what they saw.
 
-Build, press the button, send a test report. It appears on your board within a few
-seconds (see [The board](the-board.md)), and, on the GitHub path, as an issue at the
-next pickup.
+## 4. Send a test report
+
+1. Build and run the app.
+2. Press **Report a problem** and send a report.
+3. Open [the board](the-board.md) and find the report.
 
 ## Next
 
-- [How it works](how-it-works.md) — what happens after send
-- [For testers](for-testers.md) — the page to hand to the people testing your app
-- [Options](options.md) — what else you can pass in
+- [For testers](for-testers.md): the page to send the people testing your app.
+- [How it works](how-it-works.md): what happens after send.
+- [Options](options.md): every field you can set.

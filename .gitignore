@@ -4,3 +4,7 @@
 .DS_Store
 # Generated from Examples/*/project.yml by xcodegen
 Examples/**/*.xcodeproj
+
+# The documentation site, built by Scripts/build-docs.sh
+.docs-build/
+site/

@@ -1,109 +1,41 @@
 # What happens to a report
 
-*Last updated: 2026-09-07*
+*Last updated: 2026-09-17*
 
-Every report is worked by a Claude session against a written policy. This page is that
-policy in plain words, so you know what will and will not happen to a report without you.
+A Claude session works every report by a written triage policy, without waiting for you. It fixes and merges only what it cannot get badly wrong, and leaves everything else labelled and explained. This page is a summary. The full policy, which the session follows as written, is [TRIAGE.md](../Triage/TRIAGE.md).
 
-The point of all of it: a tester should get their problem fixed without waiting for a
-person. That only works if the things a session does without a person are things it cannot
-get badly wrong.
+## The gates
 
-## The gates, in order
+Each report goes through five gates in order. A report that fails a gate stops there and gets that gate's label.
 
-A report goes through these one after another. A gate that fails stops the report there; it
-never falls through to the next.
+| Gate | Passes when | Otherwise |
+|---|---|---|
+| 1. Is it complete? | What they expected, what happened, and the steps all say something. | `needs-info`, with at most two specific questions on the issue. |
+| 2. Is it actually a bug? | What the product is supposed to do, found in the source and cited by file and line, differs from what happened. | `working-as-intended`, explained and closed. Or `expectation-mismatch`, with a separate issue about the gap in what the app tells people. |
+| 3. Can it be reproduced? | A check fails because of the bug, on the build the report came from, within three attempts. | `cannot-reproduce`, with what was tried and one question. No code is changed. |
+| 4. Is it simple? | Three files or fewer, 40 changed lines or fewer outside tests, no dependency change, nothing on the blast-radius list, and a cause that fits in one sentence. | `needs-human`, with a written diagnosis. |
+| 5. Prove it, then merge | The whole test suite passes, and running the app through the tester's steps no longer shows the problem. | A pull request labelled `needs-human`, instead of a merge. |
 
-### 1. Is it complete?
+A fix that passes gate 5 is merged, the commit is named on the issue, the issue is closed, and it is labelled `auto-fixed`.
 
-The three answers a bug needs — what was expected, what happened, the steps — must say
-something. The page already refuses empty ones, so this mostly catches subtler gaps. A
-report that cannot be worked is marked as needing more, with the specific question noted
-on the board. The tester is not chased.
-
-### 2. Is it actually a bug?
-
-The session never starts from the tester's "expected". It starts from **what the product
-is supposed to do**, and finds that in your source before touching anything: acceptance
-criteria, the copy the app shows, the tests that already exist, the plan that introduced
-the behaviour. It writes down which of those it used, with a path and a line. "I checked"
-is not a finding.
-
-Then it compares three things: what the product intends, what the tester expected, and
-what happened.
-
-- Intended one thing, got another: **a real bug.** On to gate 3.
-- Intended, expected and got the same thing: the tester was describing something else.
-  Noted, not fixed.
-- The app did exactly what it was designed to do, but the tester expected something
-  else: **the app isn't explaining itself.** This is treated as a finding, not a rejection.
-  The report is kept, a separate one is opened about the gap in the product's
-  communication, and the two are linked. Behaviour is never changed to match a tester's
-  expectation; wording, labels and empty states are the fix, and those are your call.
-
-### 3. Can it be reproduced?
-
-**A session may not work on a bug it cannot reproduce.** No exceptions, and no "the fix
-looks obvious" override.
-
-Reproducing means running the tester's steps against the build they had — the commit the
-app baked into the report — and producing a check that fails because of the bug and passes
-once it is fixed. A test where a test can see it; a run of the app with a screenshot of the
-wrong state where only the screen can.
-
-Three attempts, varying only what the report leaves ambiguous. If it still won't happen,
-the report is marked as not reproduced, with exactly what was tried written on the board,
-and the session stops. It does not investigate further and does not change code.
-
-### 4. Is it safe to fix unattended?
-
-A fix is made without a person only when it stays clear of everything on this list:
-
-- data schemas, migrations, or anything that writes persistent user data
-- authentication, credentials, keychain, tokens, or permissions
-- payments, subscriptions, or pricing
-- networking or transport code
-- concurrency primitives
-- any public API of a shipped library
-- build configuration, CI, signing, or entitlements
-- generated or vendored files
-
-and only when the cause can be stated in one sentence. "This makes the symptom go away" is
-not understanding. Anything on that list, anything ambiguous, and anything where the right
-behaviour is a product decision, gets a written diagnosis on the board and the status
-"needs a person".
-
-### 5. Fix it, prove it, merge it
-
-A fix is not done because the tests pass. The session runs the app and walks the tester's
-own steps, and records the failing check before and the passing one after, a screenshot at
-the step that used to be wrong, and the exact steps as run. Then it merges, links the
-commit on the board and the issue, and marks the report fixed. If it cannot produce that
-proof, it opens a pull request instead of merging and marks the report as needing a person.
+The blast-radius list covers data schemas and stored user data, authentication and credentials, payments, networking, concurrency, public library APIs, build and signing configuration, and generated or vendored files. The exact list is in [TRIAGE.md](../Triage/TRIAGE.md).
 
 ## Feature requests and feedback
 
-A feature request is never built unattended unless the code already has most of it, and
-then the note says so. Otherwise it is labelled, routed to the part of the app it belongs
-to, and left for you with a note on what already exists.
-
-Feedback is read, labelled and kept. Patterns across reports — several about one area, a
-pile of "I can't work" on something rated low — are called out in the summary you receive,
-because nobody sees them except whoever read the whole queue.
+- **Feature requests** are never implemented unattended. Triage labels them, routes them to an area, notes whether the code already has most of what is needed, and leaves them for a person.
+- **Feedback** is labelled `triaged` and left open.
 
 ## Severity
 
-Testers say how much a problem costs *them*. Severity — how much it costs *everyone* — is
-set during triage: critical for data loss, security, or the app being unusable; high for a
-main path broken with no workaround; medium for broken with a workaround or a secondary
-path; low for cosmetic or rare. It is raised one step when the tester is blocked and it
-happens every time, or when more than one person has reported it.
+Triage sets severity. The app never does. The tester's `impact:` label says what the problem costs them. The `severity:` label says what it costs everyone. The scale is in [TRIAGE.md](../Triage/TRIAGE.md).
 
-## What a session never does
+## What triage never does
 
-- Works on a bug it could not reproduce.
-- Changes behaviour to match an expectation without checking what the product intends.
-- Implements a feature request that isn't already mostly there.
-- Touches anything on the list in gate 4.
-- Merges without having run the app through the tester's own steps.
-- Writes to a tester.
+- Work on a bug it could not reproduce.
+- Change behaviour to match a tester's expectation without checking what the product is supposed to do.
+- Implement a feature request.
+- Close a report as working as intended without filing the expectation-mismatch issue and replying in plain words.
+- Touch anything on the blast-radius list.
+- Merge without running the app through the tester's own steps.
+
+What each status means on the board is in [How it works](how-it-works.md#statuses).

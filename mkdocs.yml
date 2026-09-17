@@ -1,0 +1,86 @@
+# The documentation site (https://up-coast.github.io/beacon/).
+#
+# Build it with Scripts/build-docs.sh, which stages the pages into .docs-build at their
+# existing paths and then runs mkdocs. Pages stay where they are in the repository, so a
+# relative link like `docs/quickstart.md` works on GitHub and on the site alike.
+
+site_name: Beacon
+site_description: Bug, feature-request and feedback reporting for macOS and iOS apps, and the triage that works the reports.
+site_url: https://up-coast.github.io/beacon/
+repo_url: https://github.com/Up-Coast/beacon
+repo_name: Up-Coast/beacon
+edit_uri: edit/main/
+
+docs_dir: .docs-build
+site_dir: site
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep orange
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep orange
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+
+nav:
+  - Home: README.md
+  - Getting started:
+      - Overview: docs/README.md
+      - Quickstart: docs/quickstart.md
+      - "Setup: the Claude-only path": docs/setup-claude-only.md
+      - "Setup: the GitHub path": docs/setup-github.md
+      - For testers: docs/for-testers.md
+  - Using Beacon:
+      - How it works: docs/how-it-works.md
+      - The board: docs/the-board.md
+      - What happens to a report: docs/what-happens-to-a-report.md
+      - What is collected: docs/what-is-collected.md
+      - Options: docs/options.md
+      - FAQ: docs/faq.md
+  - Triage:
+      - The triage policy: Triage/TRIAGE.md
+      - The pickup prompt: Triage/PICKUP.md
+  - Working on Beacon:
+      - Developer guide: internal/DEVELOPER-GUIDE.md
+      - Status: internal/STATUS.md
+      - Reproducing in the cloud: internal/CLOUD-REPRODUCTION.md
+      - The Beacon page file: Inbox/README.md
+      - The example app: Examples/BeaconExample/README.md
+      - Contributing: CONTRIBUTING.md
+  - Licence: LICENSE.md

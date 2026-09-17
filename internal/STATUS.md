@@ -1,143 +1,74 @@
-# Where this actually stands
+# Status
 
-Separating what is proven by a test, what is proven by having run it, and
-what is written but has not yet met a real user. A green build says nothing
-about the third column.
+*Last updated: 2026-09-17*
 
-## Proven by tests — 93 on the Mac, 94 on the iOS Simulator (one live, skipped unless pointed at a repository)
+What is proven by a test, what is proven by having run it, what is written but has never run, and what is known to be wrong. Every other page in this repository describes how Beacon works; this is the only page that says how far it has been taken. The tests themselves are listed in the [developer guide](DEVELOPER-GUIDE.md#tests).
 
-`swift test` runs them on the Mac; `xcodebuild test -scheme Beacon-Package -destination
-'platform=iOS Simulator,name=<device>'` runs the same suites on iOS, plus one that only
-means anything there.
+## Proven by tests
 
-- The bug gate: the three required fields, the placeholder list
-  ("n/a", "it broke", "asdf"), too-short answers, blank step rows, the
-  reproducibility warning that must not block.
-- The feature gate: an area or "something new" is required; the *why* is
-  asked for but never required.
-- Issue rendering: fixed headings, verbatim quoting including multi-line,
-  numbered steps, the label set, that the app never sets severity, title
-  derivation without cutting mid-word, and that the metadata block parses
-  as JSON.
-- Redaction: six credential shapes, host-declared secrets, that short host
-  secrets are ignored, that ordinary prose is untouched, that text
-  attachments are swept and binaries aren't, home-directory redaction.
-- Consent: per-version and per-person acceptance; that rewording re-asks;
-  that the notice names the organisation and says it isn't anonymous.
-- The app map: JSON round trip, refusing a newer schema, hidden areas being
-  routable but not offered, the sentinels always rendering a name.
-- The log ring: capacity, eviction order, tail ordering, level filtering,
-  categories, clearing.
-- The folder scan: names and sizes recorded, **contents never** (a known
-  string is written into a scanned tree and asserted absent), build output
-  skipped rather than walked, depth bounded, truncation said out loud, root
-  path redacted.
-- The archive: report, issue and attachments written; bytes kept out of the
-  JSON; awkward filenames flattened.
-- Transports: that saving locally never claims to have filed, that the
-  fallback takes over and says so, that it reports why, that attachment
-  links don't disturb the prose, and that GitHub's status codes turn into
-  sentences a reporter can act on.
-- Seeding: both switches required, missing folder is safe, every outcome
-  explains itself.
-- The on-device pass: unavailability is honest rather than silently
-  approving, questions override the model's own completeness flag, blank
-  questions are dropped, an unknown field name falls back instead of
-  crashing.
-- Capture, the part that needs no screen: frames come out of a real video
-  (written with AVAssetWriter in the test) as PNGs in time order; a picked
-  video always travels with its frames; a picked photo loses its location
-  and camera metadata; a format nobody downstream can read is turned away;
-  the permission and unavailability sentences name the platform they run on.
-- The device is named once (`PlatformWording`) and the sentences that name
-  it go through that home; on iOS the probe reports the device, not the
-  simulator's architecture or the board name.
+`swift test` runs 93 tests in 22 suites on the Mac. The iOS Simulator runs the same suites plus one test that only means anything there.
+
+| Proven | Where |
+|---|---|
+| The bug gate: three required fields, placeholder answers, answers under 12 characters, blank step rows, and the reproducibility nudge that must not block | `BeaconCoreTests` |
+| The feature gate: an area or "something new" is required; the why is asked for and never required | `BeaconCoreTests` |
+| Issue rendering: fixed headings, verbatim quoting including multi-line answers, numbered steps, the label set, that the app never sets severity, title derivation without cutting mid-word, and a metadata block that parses as JSON | `BeaconCoreTests` |
+| The secret sweep: six credential shapes, settings passwords, URLs carrying passwords, host-declared secrets, short host secrets ignored, ordinary prose untouched, text attachments swept and binaries not, home directory redaction | `BeaconCoreTests` |
+| Consent: acceptance per version and per person, rewording asks again, the notice names the organization and says the report is not anonymous | `BeaconCoreTests` |
+| The app map: JSON round trip, a newer schema refused, hidden areas routable but not offered, sentinels always rendering a name | `BeaconCoreTests` |
+| The inbox link: keys carried, blanks left out, existing query kept, and the Swift key list matching a copy of the page's list | `BeaconCoreTests` |
+| The log ring, the folder scan (a known string written into a scanned tree is asserted absent), and the report archive | `BeaconDiagnosticsTests` |
+| Transports: saving locally never claims to have filed, the fallback takes over and says why, attachment links leave the prose alone, GitHub status codes become sentences, an oversize relay report is refused before upload | `BeaconGitHubTests` |
+| Seeding: both switches required, a missing folder is safe, every outcome explains itself | `BeaconCoreTests` |
+| The on-device pass: unavailability is honest, questions override the model's own flag, blank questions dropped, an unknown field name falls back | `BeaconIntelligenceTests` |
+| Capture without a screen: frames out of a real video as PNGs in time order, a picked video travels with frames, a picked photo loses its location and camera metadata, unreadable formats refused, sentences name the platform | `BeaconCaptureTests` |
 
 ## Proven by running it
 
-- `beacon-index` run against this package: 8 areas, 25 screens, correct
-  paths. It is wired into CI so it indexes itself on every push.
-- The whole package builds clean under Swift 6.3 strict concurrency for
-  macOS 26 and for the iOS 26 Simulator, with no warnings.
-- **The sheet on iOS, walked end to end (2026-09-07)** in
-  `Examples/BeaconExample` on the iPhone Air simulator: walkthrough,
-  consent, the bug form (menus for the exclusive choices, the growing steps
-  list), a screenshot taken from inside the sheet that shows the app and not
-  the form, the recording strip collapsing the sheet while the app stays
-  usable behind it, a photo picked from the library, review with the full
-  issue preview, the on-device check running, and a report saved to the
-  app's container with the log tail and `iPhone18,4 (Simulator)` in it.
+| Proven | Last checked |
+|---|---|
+| `swift test` passes: 93 tests, 22 suites, Swift 6.3.3 on macOS | 2026-09-17 |
+| `beacon-index` against this package: 8 areas, 28 screens. CI runs it on every push | 2026-09-17 |
+| CI (build, test, self-index) green on `macos-26` | 2026-09-16 |
+| The whole package builds for macOS 26 and the iOS 26 Simulator under strict concurrency with no warnings | 2026-09-07 |
+| The sheet on iOS, walked end to end in `Examples/BeaconExample` on a simulator: walkthrough, consent, the bug form, a screenshot taken from inside the sheet that shows the app and not the form, the recording strip, a photo picked from the library, review with the full issue preview, the on-device check, and a report saved to the app's container with the log tail and the simulated device in it | 2026-09-07 |
+| Filing to GitHub: `LiveTransportTests` against a private repository created the attachment branch, committed a file to it, and filed an issue with labels and the attachment linked | 2026-09-07 |
+| The page published as an artifact with `db` and `artifact`: a real send became a report document, was filed as a GitHub issue by the pickup, and the outcome came back onto the board | 2026-09-07 |
+| A cloud routine read the page's database with the Artifact tool. It could not file issues: no `gh`, no git credentials, and no Swift on a Linux runner | 2026-09-04 |
 
-## Written, but not yet run against reality
+## Written, but never run
 
-These are the ones to be careful about. Nothing here is known to be broken;
-none of it has been proven right either.
+Nothing here is known to be broken. None of it has been proven right either.
 
-- **The reporter's flow on screen, on the Mac.** Walked on iOS (above);
-  on macOS every view compiles and the same state machine runs, but nobody
-  has walked it end to end in a real Mac app. The example app builds for
-  macOS too, so that walk is one `xcodegen generate` away.
-- **Screen recording, on either platform.** The Mac path is written
-  against the ScreenCaptureKit headers in the macOS 26.5 SDK and has not
-  yet recorded a real window; the first run will need the Screen Recording
-  permission granted by hand. The iOS path (`RPScreenRecorder`) starts,
-  collapses the sheet to its strip and stops cleanly in the simulator, but
-  the simulator's recorder hands back an empty file — the sheet says so.
-  A video, and the frames pulled from it, need a physical iPhone or iPad;
-  frame extraction itself is proven by test against a real video.
-- **The on-device check against the real model.** The types match Apple's
-  shipped interface (`@Generable`, `@Guide(.anyOf:)`, `.maximumCount`,
-  `respond(to:generating:)`), and availability is read as state. What the
-  model actually *says* about a thin bug report is unknown until it runs.
-  The prompt will need tuning; that is normal and the reason questions are
-  advisory rather than blocking.
-- **Filing to GitHub — now proven (2026-09-07).** `LiveTransportTests`,
-  run on purpose against a private repository, created the attachment branch,
-  committed a file to it and filed issue #3 with labels and the attachment linked; `swift test`
-  without the two variables skips it. The device flow still follows
-  GitHub's published endpoints and error codes without having been run
-  (no OAuth App is registered). The attachment path — a commit to a
-  `beacon-attachments` branch — has a known cosmetic limit: on a private
-  repository, images link rather than preview inline, because raw URLs need
-  auth.
-- **Triage.** The policy and the skill are written. No issue has been
-  triaged by them.
-- **Cloud reproduction.** The workflow is deliberately shipped failing at
-  the run step, so a half-wired setup can't report a green run that proved
-  nothing. It needs pointing at a host app's UI test scheme.
+| Not yet run | What is missing |
+|---|---|
+| The reporter's flow on macOS | Every view compiles and the same state machine runs, but nobody has walked it end to end in a real Mac app |
+| Screen recording on either platform | The macOS path has never recorded a real window, and the first run needs Screen Recording permission granted by hand. On iOS the simulator's recorder starts and stops but writes an empty file, so a physical device is needed |
+| The on-device check against the real model | It ran once on the iOS Simulator and asked nothing about a short, complete bug. What it says about a thin report is unknown, and the prompt will need tuning |
+| The device flow | No OAuth app is registered. The endpoints and error codes follow GitHub's published documentation |
+| `RelayTransport` | No relay is deployed |
+| The triage policy and skill | Written and copied into app repositories. Reports have been filed as issues, and no run of the policy over an open issue is recorded |
+| `beacon-reproduce.yml` | Ships failing at the run step until it is pointed at a host app's UI test scheme |
 
-## Proven by running it — the inbox route (2026-09-04)
+## Known gaps
 
-- `Inbox/index.html` is published as a Claude artifact with the `db` and
-  `artifact` capabilities; the database is readable from a Claude session
-  with the Artifact tool, and a watch on the artifact connects.
-- `BeaconInbox.url(...)` builds the link the app opens; four tests hold the
-  query keys equal to the ones the page reads.
-- **Proven 2026-09-07:** a real send from the page (BN-8EA6C3, by the
-  owner, from the Claude desktop app) → filed as issue #1 on the app's repository →
-  outcome written back and shown on the board.
-- **Still unobserved:** the doorbell publish waking a watching session. The
-  send above happened while a watch showed connected and no notice was
-  seen. The scheduled pickup covers it either way.
+- **The committed page does not run.** In `Inbox/index.html`, `isBoard` reads `q` on the line above `q` is declared, so the script throws a `ReferenceError` at load and neither view works. The publish check (`new Function`) parses the script and does not run it, so it does not catch this.
+- **The page has no automated tests.** The only check before publishing is that the script parses.
+- **Nothing holds the page's copy of the rules equal to Swift.** `InboxLinkTests.everyKeyIsOneThePageReads` compares the Swift key list against a list copied into the test, not against `Inbox/index.html`. The completeness rules and their messages are copied by hand as well.
+- **The page's reference can collide.** It is 3 random bytes, and the page writes `reports/<reference>` with `set`, which overwrites an existing document.
+- **The secret sweep does not cover the issue title or the saved report.** It sweeps the rendered body and text attachments. A title derived from the reporter's first sentence is not swept, and `report.json` in the archive keeps the reporter's text and the log as written.
+- **The iOS build is not in CI.** `ci.yml` builds and tests on macOS only, so an iOS-only break is found by hand.
+- **`beacon-triage.yml` does not start `beacon-reproduce.yml`.** Its comment says the macOS leg is handed off; nothing in the workflow, the policy or the skill does that. A run that needs macOS has to be started by hand.
+- **`beacon-triage.yml` reads only `CLAUDE_CODE_OAUTH_TOKEN`.** Its comment offers `ANTHROPIC_API_KEY` as an alternative, but the workflow never passes one.
+- **The triage workflow in this repository is switched off.** It failed on every scheduled run because the Claude GitHub App is not installed here. It stays off until the owner asks for it.
+- **Attachments on a private repository do not preview.** Images are committed to the `beacon-attachments` branch and link rather than render inline, because raw URLs on a private repository need authentication.
+- **The doorbell waking a session has never been observed.** A send happened while a watch showed connected and no notice arrived. A scheduled pickup covers it either way.
+- **A cloud routine cannot build, fix or reach a private repository.** It reads the page and can file; everything past that needs a machine with `gh`, git credentials and Swift.
+- **The page carries no log tail, settings or folder shape.** Only the native sheet collects those. This is a deliberate limit, not an oversight.
 
-## Decisions still open
+## Open decisions
 
-- **Which transport — decided 2026-09-07 as two setup paths** (`docs/
-  setup-claude-only.md`, `docs/setup-github.md`), each adopter's own
-  choice. The reference deployment uses the page for every app, plus the
-  direct GitHub transport for the macOS sheet once its owner registers the
-  OAuth App (their sign-in; nothing registered yet). No relay is deployed and none is
-  planned until someone needs it.
-- **The name.** "Beacon" is an authored default and can be swapped; it
-  appears in the module names, so changing it later is a rename across the
-  package rather than a one-line edit.
-- **iOS — built 2026-09-07.** The ReplayKit recording path and the
-  view-hierarchy screenshot sit behind the same `ScreenPermission` /
-  `ScreenCapturer` / `ScreenRecording` names as the Mac path; the sheet
-  collapses to a strip while recording; the Photos picker is offered; the
-  device probe reads `hw.machine` (or the simulator's environment); every
-  sentence that named "this Mac" now asks `PlatformWording`; the consent
-  wording changed ("this device"), so its version moved and everyone is
-  asked again. Not yet done: a recording produced on a physical device,
-  and the iOS build in CI (a change to the workflow file, which is the
-  owner's call).
+- **The name.** "Beacon" is an authored default. It is in the module names, so changing it is a rename across the package.
+- **A relay.** None is deployed and none is planned until an adopter needs testers without GitHub accounts.
+- **The iOS build in CI.** Adding it is a change to `ci.yml` and the owner's call.
+- **Which way an app reports** is a per-app choice, not a decision Beacon makes. An app can start on the page and add the sheet later; both end in one queue and the board shows both. The two setup paths are in [the documentation](../docs/README.md).

@@ -1,173 +1,178 @@
-# Beacon — Internal Developer Guide
+# Developer guide
 
-*Last updated: 2026-09-07*
+*Last updated: 2026-09-17*
 
-**Audience: people working on Beacon itself** — the Swift package, the page, the pickup,
-the triage policy. It is the technical reference: every module, every public type that
-matters, the report's shape, the page's storage schema, every call the pickup makes, the
-GitHub calls the native transport makes, the CLI, the workflows, the tests, and how to
-operate the live page. It describes what the code does today (commit of 7 September 2026).
+The technical reference for changing Beacon itself: the Swift package, the page, the pickup and the workflows. To add Beacon to an app, read [the options reference](../docs/options.md) and [GitHub setup](../docs/setup-github.md) instead. What Beacon collects is in [What is collected](../docs/what-is-collected.md), and testers have [their own page](../docs/for-testers.md). What is proven and what is not is in [STATUS.md](STATUS.md).
 
-If you are a founder or a developer **adding Beacon to an app**, you want the public
-documentation instead: [docs/](../docs/README.md). Plain words, nothing a maintainer needs.
+Beacon has two ways into one queue of reports. The **page** is a web form published as a Claude artifact; the app opens it with the machine's details in the link. The **native sheet** is a SwiftUI flow inside the app that collects diagnostics, captures the screen and files a GitHub issue through a transport. A Claude session, the **pickup**, turns page reports into GitHub issues and works every report by `Triage/TRIAGE.md`.
 
-The other files in this folder: [ADOPTING.md](ADOPTING.md) is the long-form walkthrough of
-the native sheet's configuration; [STATUS.md](STATUS.md) separates what is proven by tests
-from what is only written; [PRIVACY.md](PRIVACY.md) points every privacy claim at the code
-that makes it true; [CLOUD-REPRODUCTION.md](CLOUD-REPRODUCTION.md) is the macOS-runner plan;
-[FOR-TESTERS.md](FOR-TESTERS.md) is the native sheet's tester page (the page route's is
-`docs/for-testers.md`).
+## Parts
 
----
+| Part | What it does | Where it lives |
+|---|---|---|
+| `BeaconCore` | Report values, completeness rules, issue rendering, secret sweep, consent, the transport protocol, the app map, the inbox link, seeding, `PlatformWording`. No UI, no platform APIs | `Sources/BeaconCore` |
+| `BeaconDiagnostics` | The log ring, environment probe, folder scan, context collector, report archive | `Sources/BeaconDiagnostics` |
+| `BeaconIntelligence` | The on-device completeness check on Foundation Models | `Sources/BeaconIntelligence` |
+| `BeaconCapture` | Screenshots, screen recording, frames from video, picked photos and videos | `Sources/BeaconCapture` |
+| `BeaconGitHub` | `GitHubClient`, device flow, keychain token store, the four transports | `Sources/BeaconGitHub` |
+| `BeaconUI` | `BeaconSheet`, `FormSteps`, `FeedbackSession`, `BeaconWalkthrough` | `Sources/BeaconUI` |
+| `Beacon` | What a host imports: `Beacon.configure`, the view modifiers, `BeaconReportButton`, `BeaconInboxButton` | `Sources/Beacon` |
+| `beacon-index` | CLI that writes the app map, `BeaconIndex.json` | `Sources/beacon-index` |
+| The page | Tester form and the board, in one file | `Inbox/index.html` |
+| The policy and pickup prompt | Rule documents an agent follows | `Triage/TRIAGE.md`, `Triage/PICKUP.md` |
+| Skills | `beacon-setup` and `beacon-triage` | `.claude/skills/` |
+| Plugin | `plugin.json`, whose `skills` points at `./.claude/skills`, and `marketplace.json`, pinned to the release tag | `.claude-plugin/` |
+| Workflows | `ci.yml` for this repository; `beacon-triage.yml` and `beacon-reproduce.yml` to copy into an app repository | `.github/workflows/` |
+| Issue forms | Bug and feature forms for people filing by hand | `.github/ISSUE_TEMPLATE/` |
+| Scripts | `beacon-labels.sh` creates the labels; `beacon-adopt-github.sh` copies the GitHub pieces into an app repository and runs it | `Scripts/` |
+| Example app | The smallest host, for iPhone, iPad and Mac, built from `project.yml` with xcodegen. Reports go to `LocalBundleTransport` | `Examples/BeaconExample` |
+| Tests | Five targets, one per library target except `BeaconUI` and `Beacon` | `Tests/` |
 
-## 1. What it is
+`Package.swift` uses Swift tools 6.2 and targets macOS 26 and iOS 26. Products: `Beacon` and `BeaconCore` (libraries) and `beacon-index` (executable).
 
-Two routes into one queue, one policy that works the queue, and two setup paths that
-give all of it to someone else without touching any of the owner's accounts (`docs/
-setup-claude-only.md`, `docs/setup-github.md`).
+Each target imports only the targets above it in the table. `BeaconDiagnostics`, `BeaconIntelligence`, `BeaconCapture` and `BeaconGitHub` depend only on `BeaconCore`. `BeaconUI` depends on all five, and `Beacon` depends on `BeaconUI`. `Beacon` re-exports `BeaconCore`, `BeaconDiagnostics` and `BeaconGitHub`, so `import Beacon` is the only import a configuration call needs.
 
-- **The page route.** `Inbox/index.html`, published as a Claude artifact with the `db`
-  and `artifact` runtime capabilities. The app opens it with the machine's half of a report
-  in the query string; the tester writes the rest; the page stores the report in the
-  artifact's database and publishes a doorbell file; a Claude session or scheduled task
-  reads the database and files the report as a GitHub issue (or works it in place).
-- **The native route.** The SwiftUI sheet in `BeaconUI`, which collects diagnostics,
-  captures the screen, runs the on-device completeness check, sweeps for secrets, and hands
-  a rendered issue to a `ReportTransport` — GitHub direct, a relay, or a local bundle.
-- **The policy.** `Triage/TRIAGE.md`, run by the `beacon-triage` skill against GitHub
-  issues, and by the scheduled task `beacon-inbox-triage` against both the page and GitHub.
+## Contents
 
-Names: the package was **Flare** until 2026-09-04, and report references changed prefix
-from `FL-` to `BN-` at the rename. The repository was published from a fresh history on
-2026-09-07; the private history it grew from is archived separately and is not on `main`.
+1. [The report](#the-report)
+2. [Completeness rules](#completeness-rules)
+3. [Issue rendering and labels](#issue-rendering-and-labels)
+4. [Secret sweep](#secret-sweep)
+5. [The page](#the-page)
+6. [The pickup](#the-pickup)
+7. [The native sheet](#the-native-sheet)
+8. [Transports](#transports)
+9. [GitHub calls](#github-calls)
+10. [Diagnostics](#diagnostics)
+11. [Capture](#capture)
+12. [On-device check](#on-device-check)
+13. [Consent](#consent)
+14. [The indexer](#the-indexer)
+15. [Seeding and reproduction](#seeding-and-reproduction)
+16. [Operating the page](#operating-the-page)
+17. [Tests](#tests)
+18. [Conventions](#conventions)
+19. [Decisions](#decisions)
 
----
+## The report
 
-## 2. Layout
-
-| Path | What it is |
-|---|---|
-| `Package.swift` | Swift 6.2 tools, platforms macOS 26 and iOS 26, strict concurrency. Products: `Beacon` (library), `BeaconCore` (library), `beacon-index` (executable) |
-| `Sources/BeaconCore` | Values, rules, rendering, the transport seam, the app map, the inbox link, and `PlatformWording` (the one home for "this Mac" / "this device"). **No UI, no platform APIs.** Everything else imports this |
-| `Sources/BeaconDiagnostics` | `BeaconLog` (the ring buffer), `EnvironmentProbe`, `FileTreeScanner`, `ContextCollector`, `ReportArchive` |
-| `Sources/BeaconIntelligence` | The on-device completeness check on Apple's Foundation Models; `NoReviewer` where it can't run |
-| `Sources/BeaconCapture` | Screenshots and recording of the app itself. `Capture.swift` is shared (errors, PNG encoding, frames out of a video, picked photos); `MacCapture.swift` is ScreenCaptureKit, `IOSCapture.swift` is ReplayKit plus the view hierarchy; both present `ScreenPermission`, `ScreenCapturer`, `ScreenRecording` |
-| `Sources/BeaconGitHub` | `GitHubClient`, `GitHubDeviceFlow`, `GitHubTokenStore`, and the four transports |
-| `Sources/BeaconUI` | `BeaconSheet`, `FormSteps`, `FeedbackSession` (the state machine), `BeaconWalkthrough` |
-| `Sources/Beacon` | The façade a host imports: `Beacon.configure`, the view modifiers, `BeaconReportButton`, `BeaconInboxButton`. It re-exports `BeaconCore`, `BeaconDiagnostics` and `BeaconGitHub`, so `import Beacon` is the only import the configuration call needs |
-| `Sources/beacon-index` | The indexer CLI |
-| `Examples/BeaconExample` | The smallest host app, for iPhone, iPad and Mac: `project.yml` for xcodegen (the `.xcodeproj` is generated and ignored) and one Swift file. Reports go to `LocalBundleTransport`; the saved folder is in the app's container |
-| `Inbox/index.html` | The page. The one home; the live artifact is published from it |
-| `Inbox/README.md` | The page's own notes: views, storage, the doorbell, the constraint |
-| `Triage/TRIAGE.md` | The policy |
-| `Triage/PICKUP.md` | The pickup prompt template — account-free; four values to fill in. An owner's own filled-in instance lives outside this repository, as a scheduled task |
-| `.claude/skills/beacon-triage/SKILL.md` | The skill that runs the policy against GitHub issues |
-| `.claude/skills/beacon-setup/SKILL.md` | The skill that walks an adopter through one of the two setup paths, from `docs/` |
-| `.claude-plugin/` | `plugin.json` (the plugin is the repository root; `skills` points at `.claude/skills`, so the skills have one home) and `marketplace.json` (the `up-coast` marketplace with this one plugin, pinned to the release tag). Bump both versions and the tag together on a release |
-| `.github/workflows/` | `ci.yml` (build, test, self-index), `beacon-triage.yml` and `beacon-reproduce.yml` (to copy into an app's repo) |
-| `.github/ISSUE_TEMPLATE/` | Bug and feature forms for people filing by hand, matching the rendered layout |
-| `Scripts/beacon-labels.sh` | Creates the label vocabulary on a repository |
-| `Scripts/beacon-adopt-github.sh` | Copies the policy, the pickup template, the skill, the workflows and the issue templates into an app's repository and runs the labels script. The GitHub path's one command |
-| `Tests/` | 93 tests in five targets (94 on iOS), one live and skipped by default; see §11 |
-
-Layering rule, enforced by the package graph: each target imports only the ones above it in
-the table. `BeaconUI` is the only target that imports the four in the middle.
-
----
-
-## 3. The report
-
-`FeedbackReport` (`BeaconCore/Report.swift`) is the one envelope every stage works on.
+`FeedbackReport` in `BeaconCore/Report.swift` is the one shape every stage works on.
 
 ```
 FeedbackReport
-  id: UUID                      reference = "BN-" + first 6 of id, uppercased
-  startedAt: Date               when the sheet opened, not when they hit send
-  reporter: Reporter            accountID (required), displayName?, contact?
-  title: String                 blank → derived from the first sentence, cut on a word at 72
-  body: ReportBody              .bug(BugBody) | .feature(FeatureBody) | .feedback(FeedbackBody)
-  impact: Impact                blocked | slowed | irritating | noticed   (rank 0..3)
-  areaID: String?               from BeaconIndex; sentinels "unsure" and "new"
+  id: UUID                 reference = "BN-" + first 6 characters of id, uppercased
+  startedAt: Date          when the session started, not when the reporter sent
+  reporter: Reporter       accountID (required), displayName?, contact?
+  title: String            blank means the renderer derives one
+  body: ReportBody         .bug(BugBody) | .feature(FeatureBody) | .feedback(FeedbackBody)
+  impact: Impact           blocked | slowed | irritating | noticed   (rank 0..3, 0 is worst)
+  areaID: String?          an area id from BeaconIndex, or "not-sure" / "something-new"
   attachments: [Attachment]
-  context: ReportContext        app, environment, settings, fileTrees, log, hostNotes
-  consentVersion: String        the ConsentNotice version they accepted
-  review: CompletenessReview?   what the on-device pass said, or that it couldn't run
+  context: ReportContext   app, environment, settings, fileTrees, log, hostNotes
+  consentVersion: String   the ConsentNotice version the reporter accepted
+  review: CompletenessReview?
 
 BugBody       whatHappened, expected, steps [String], reproducibility (every-time | sometimes | once | unknown)
 FeatureBody   whatIWant, why, areaID?, isNewArea
 FeedbackBody  message, areaID?
+FeedbackKind  bug | feature-request | feedback
+Severity      critical | high | medium | low   (set by triage only)
 ```
 
-`CompletenessRules` (`Completeness.swift`) is the deterministic gate: the three bug fields
-required, `minimumMeaningfulCharacters = 12`, the placeholder set ("n/a", "it broke", …)
-matched whole after trimming punctuation. Blocking issues stop a send; the reproducibility
-nudge is non-blocking. The page carries a verbatim copy of these rules in JavaScript —
-**change them here first, then in `Inbox/index.html`**, and keep the messages identical.
+`impact` defaults to `slowed`. `Reporter.accountID` is required because an anonymous report cannot be followed up.
 
-`IssueRenderer` (`IssueRendering.swift`) turns a report into `IssueDraft {title, body,
-labels}`. Fixed headings: `## What they expected`, `## What actually happened`, `## Steps
-to see it`, `## How much this affects them`, `## What they attached`, then the collapsed
-context sections, then a hidden `<!-- beacon-metadata {…} -->` JSON block that triage parses
-(commit, reproducibility, step count, version). Labels set by the app: `beacon`,
-`type:<kind>`, `impact:<impact>`, `area:<id>`. **Severity is never set by the app.**
-`IssueRenderer.Labels` is the single vocabulary for both halves; triage's labels
-(`needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`,
-`auto-fixed`, `needs-human`, `triaged`, `severity:*`) are listed there too.
+## Completeness rules
 
-`Redactor` (`Redaction.swift`) runs last over the issue text and every text attachment:
-six credential shapes plus `hostSecrets` (short ones ignored), home directory → `~`. It
-returns `RedactionFinding`s so the sheet can show what was masked.
+`CompletenessRules` in `Completeness.swift` is the deterministic gate. A blocking issue stops a send. A non-blocking issue is shown and the reporter can still send.
 
----
+| Kind | Field | Rule | Blocks |
+|---|---|---|---|
+| Bug | `whatHappened` | Not empty, not a placeholder, at least 12 characters | Yes |
+| Bug | `expected` | Not empty, not a placeholder, at least 12 characters | Yes |
+| Bug | `steps` | At least one non-blank step; a single step is at least 12 characters; not every step a placeholder | Yes |
+| Bug | `reproducibility` | `unknown` gets a nudge to try again | No |
+| Feature | `whatIWant` | Not empty, not a placeholder, at least 12 characters | Yes |
+| Feature | `why` | Empty or a placeholder gets a prompt | No |
+| Feature | area | An area is picked, or `isNewArea` is set | Yes |
+| Feedback | `message` | Not empty, not a placeholder, at least 12 characters | Yes |
 
-## 4. The page
+`minimumMeaningfulCharacters` is 12. A placeholder is an answer such as "n/a", "idk", "asdf" or "it broke", matched whole and case-insensitively after trimming punctuation. The full list is `CompletenessRules.placeholders`.
 
-### 4.1 Views
+The page carries a copy of these rules and their messages in JavaScript. Change `Completeness.swift` first, then `Inbox/index.html`, and keep the messages identical. The page also requires a reporter name of at least 3 characters and a chosen app. It has no area rule for feature requests.
 
-One file, two faces, chosen at load from the query string:
+## Issue rendering and labels
 
-- **Tester view** (default): the form. Kind picker, app picker, reporter, the
-  kind-specific fields, images, area, impact, send. After send: a receipt with the
-  reference. Never shows other reports.
-- **Board** (`?view=board`): hides the form, shows every report newest first with filters
-  (app, status, kind, free text) and a `<details>` per report rendering the full record.
-  Images load on first open from the attachments subcollection.
+`IssueRenderer.render` in `IssueRendering.swift` turns a report into `IssueDraft {title, body, labels}`.
 
-The document `<title>` is "Beacon"; the board sets it to "Beacon reports" at runtime.
+**Title.** The reporter's title, or the first sentence of `whatHappened`, `whatIWant` or `message`, cut on a word boundary at 72 characters. A real area adds a `[Area name] ` prefix.
 
-### 4.2 Query keys
+**Body**, in order:
 
-Read from `location.search` into `ctx`. `BeaconInbox.Key` in `InboxLink.swift` is the Swift
-side of the same contract, and `InboxLinkTests.everyKeyIsOneThePageReads` holds the two
-lists equal — add a key in both places or that test fails.
+1. A quoted line naming the reporter and saying they agreed to be contacted.
+2. The kind's sections. Bug: `## What they expected`, `## What actually happened`, `## Steps to see it`, `## Does it happen again?`. Feature: `## What they want to be able to do`, a `## Why` section when `why` is set, `## Where it belongs` (with the area's source paths). Feedback: `## What they said`.
+3. `## How much this affects them`.
+4. `## What they attached`, when there are attachments.
+5. Collapsed `<details>` blocks: app, machine and settings; one per folder listing; the log tail.
+6. `## Checked before sending`, when the on-device check ran and asked questions.
+7. A hidden `<!-- beacon-metadata {...} -->` JSON block that triage parses.
 
-`app` `bundle` `version` `build` `commit` `repo` `os` `osVersion` `device` `arch` `locale`
-`tz` `appearance` `textSize` `reporter` `area` — plus `view=board`, which only the page
-reads.
+The reporter's words are quoted verbatim, every line prefixed with `> `.
 
-`app` matches an entry in the `apps` collection by id or by name, case-insensitively. When
-the link also carries `version`, the picker is disabled (the link came from inside the app).
+Metadata keys: `beacon_schema` (`"1"`), `report_id`, `reference`, `kind`, `impact`, `area`, `account`, `app_version`, `app_build`, `consent_version`, `started_at`, plus `commit`, `reproducibility`, `step_count` and `review_source` when they apply. Every value is a string.
 
-### 4.3 Storage schema
+**Labels** set by the app: `beacon`, `type:<kind>`, `impact:<impact>`, and `area:<id>` unless the area is `not-sure`. The app never sets `severity:*`.
 
-The artifact's database (the `db` capability): JSON documents at slash paths, 256 KiB per
-document, last-writer-wins, org-internal.
+`IssueRenderer.Labels` holds the whole label vocabulary, including the labels triage sets: `needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`, `auto-fixed`, `needs-human`, `triaged` and `severity:*`. `Scripts/beacon-labels.sh <owner/repo>` creates all of them except `area:*` on a repository.
+
+## Secret sweep
+
+`Redactor` in `Redaction.swift` replaces each match with `[removed by Beacon]` and returns a `RedactionFinding` naming what it looked like and where.
+
+- **Patterns**: 13 credential shapes, including Anthropic, OpenAI-style, GitHub, AWS, Google, Slack and Stripe keys, private key blocks, bearer tokens, JSON web tokens, `password=`-style settings and URLs with a password.
+- **Host secrets**: strings from `BeaconConfiguration.hostSecrets`. Values shorter than 8 characters are ignored.
+- **Text attachments**: files whose extension is in `AcceptedFormats.textExtensions` are swept. Images, PDFs and video pass through unchanged.
+- **Paths**: `Redactor.redactHome` turns the home directory into `~`.
+
+The sheet sweeps attachments first, then the rendered issue body. The done screen lists the findings.
+
+## The page
+
+`Inbox/index.html` is one file published as a Claude artifact with the `db` and `artifact` capabilities. What a tester sees is in [the testers' page](../docs/for-testers.md), and the board is described in [The board](../docs/the-board.md).
+
+### Views
+
+- **Tester view** (default): the form, then a receipt with the reference. It never shows other reports.
+- **Board** (`?view=board`): every report, newest first, with filters for app, status and kind, and a text search. Each report expands to the full record. Images load the first time a report is opened. The board sets the document title to "Beacon reports".
+
+### Query keys
+
+The page reads these keys from the link, and `BeaconInbox.Key` in `InboxLink.swift` is the Swift side of the same list:
+
+`app` `bundle` `version` `build` `commit` `repo` `os` `osVersion` `device` `arch` `locale` `tz` `appearance` `textSize` `reporter` `area`
+
+They fill the page's `ctx` object, except `app`, which picks the app, and `reporter` and `area`, which fill form fields. A missing `locale` falls back to the browser language and a missing `tz` to the browser time zone. `view=board` is read only by the page. `BeaconInbox.url` leaves out empty values and keeps any query the page URL already had. `InboxLinkTests.everyKeyIsOneThePageReads` compares `BeaconInbox.Key` against a list copied from the page, so add a new key to the page, the enum and that list together.
+
+`app` matches an app by id or by name, case-insensitively. When the link also carries `version`, the app picker is locked.
+
+### Storage
+
+The artifact's database holds JSON documents at slash paths. A document is at most 256 KiB. Writes are last-writer-wins.
 
 ```
 apps/<id>                          seeded with write_db; the page never writes it
   name, platform, repository, folder, tracker ("github" | "board")
 
-reports/<BN-reference>             written by the page on send; updated by the pickup
-  reference, kind, filedAt (ISO), status, title, reporter (string), impact, area,
+reports/<BN-reference>             written by the page on send
+  reference, kind, filedAt (ISO 8601), status ("new"), title, reporter (string),
+  impact, area, attachmentCount, userAgent, source ("beacon-inbox"),
   app {id, name, repository, platform},
-  body  — bug: {kind, whatHappened, expected, steps[], reproducibility}
-        — feature-request: {kind, whatIWant, why}
-        — feedback: {kind, message}
+  body   bug: {kind, whatHappened, expected, steps[], reproducibility}
+         feature-request: {kind, whatIWant, why}
+         feedback: {kind, message}
   context {app, bundle, version, build, commit, repository, os, osVersion, device,
-           architecture, locale, timeZone, appearance, textSize}   (strings, "" when unknown)
-  attachmentCount, userAgent, source: "beacon-inbox"
-  — written back by the pickup:
-  issueNumber, issueURL, issueFiledAt, status, finding {intent, citations[], verdict},
+           architecture, locale, timeZone, appearance, textSize}   strings, "" when unknown
+  written by the pickup:
+  status, issueNumber, issueURL, issueFiledAt, finding {intent, citations[], verdict},
   triageNote, fixCommit, triagedAt, duplicateOf
 
 reports/<BN-reference>/attachments/<n>    one document per image, n from 1
@@ -175,322 +180,278 @@ reports/<BN-reference>/attachments/<n>    one document per image, n from 1
   originalByteCount, reference, order
 ```
 
-Status values the page knows (the `STATUS` map): `new`, `filed`, `triaging`, `auto-fixed`,
-`needs-human`, `needs-info`, `cannot-reproduce`, `working-as-intended`,
-`expectation-mismatch`, `triaged`. Anything else renders as a grey pill with the raw value.
+The page reads `name`, `repository` and `platform` from `apps`. Only the pickup reads `folder` and `tracker`. The page's reference is `BN-` plus 3 random bytes in uppercase hex, so it has the same form as the sheet's reference.
 
-Images: shrunk in the browser with `createImageBitmap` + canvas to ≤1600 px on the long
-edge, JPEG quality stepped 0.85 → 0.45 until ≤ 180 KiB (`IMAGE_TARGET_BYTES`), at most six
-(`IMAGE_MAX_COUNT`). Each is its own document so the report stays small enough to list
-without pulling pictures.
+The page knows these status values (its `STATUS` map): `new`, `filed`, `triaging`, `auto-fixed`, `needs-human`, `needs-info`, `cannot-reproduce`, `working-as-intended`, `expectation-mismatch`, `triaged`. Any other value renders as a grey pill showing the raw value. The board wording for each is in [How it works](../docs/how-it-works.md).
 
-### 4.4 The doorbell
+**Images.** The browser shrinks each image with `createImageBitmap` and a canvas to at most 1600 px on the long edge (`IMAGE_MAX_EDGE`). It encodes JPEG at quality 0.85, 0.75, 0.65, 0.55 then 0.45 until the result is at most 180 KiB (`IMAGE_TARGET_BYTES`), and refuses the image if it is still larger. A report holds at most six images (`IMAGE_MAX_COUNT`). Images come from the file picker (`accept="image/*"`) or a paste. Each image is its own document so the board can list reports without loading pictures.
 
-After the report and its images are written, the page calls
-`artifact.publish({"data/doorbell.json": "{reference, filedAt}"})` — the files form of the
-`artifact` capability, which mints a new version without reloading the sending view. **A
-new version is what notifies a Claude session watching the artifact.** Database writes
-alone notify nothing. If the publish is refused (`not_writer` for a viewer without edit
-access, `capability_disabled`, …) the report is still safe in the database and the
-scheduled pickup finds it; the page logs the code to the console and says nothing to the
-tester.
+### The doorbell
 
-### 4.5 Runtime facts the page relies on
+After the report and its images are written, the page calls:
 
-- `claude.use("db")` and `claude.use("artifact")` resolve after the page's first run, or
-  `null`; the page renders without them and shows the "can't reach the inbox" line when `db`
-  is `null`.
-- A `db` artifact is **organisation-internal**: every viewer is a signed-in member of the
-  owner's Claude organisation. Sharing publicly is refused by the platform.
-- `onSnapshot` on `reports` (board) and `apps` (both views) delivers live updates.
-- The board's query is `orderBy("filedAt","desc").limit(500)`.
-
----
-
-## 5. The pickup
-
-### 5.1 Who runs it
-
-| Runner | When | Can it… read the page | file issues | reproduce & fix Mac/iOS |
-|---|---|---|---|---|
-| An interactive Claude Code session that published or watched the artifact | Within ~1 minute of a doorbell publish | yes | yes (`gh`) | yes |
-| A scheduled task built from `Triage/PICKUP.md` | On demand from the Scheduled section, or on a cron if one is set; only while the Claude app is open | yes | yes | yes |
-| A cloud routine (verified 2026-09-04) | Cron, ≥1 hour, regardless of the Mac | yes — the Artifact tool is present and `read_db` worked | not yet: no `gh`, no git credentials; attaching a private repository as a source was refused (403) until the Claude GitHub App is installed on the organisation | no: Linux x86_64, no Swift |
-
-### 5.2 The calls it makes
-
-All through the Artifact tool (the session-side API to the page's database):
-
-```
-read_db   db_op=query  collection=reports  query.where=[["status","==","new"]]
-read_db   db_op=list   collection=reports/<ref>/attachments  out_dir=<scratch>   → JSON files; decode dataURL
-read_db   db_op=get    collection=apps  doc_id=<app.id>                         → repository, folder, tracker
-read_db   db_op=query  collection=reports  query.where=[["app.id","==",<id>]]   → prior findings (the cache)
-write_db  db_op=update collection=reports doc_id=<ref>  data={status, issueNumber, issueURL, …}
-write_db  db_op=batch  writes=[{op:set, collection:apps, doc_id:<id>, data:{…}}, …]   (seeding apps)
+```js
+artifact.publish({ "data/doorbell.json": JSON.stringify({ reference, filedAt }) })
 ```
 
-And through `gh` for `tracker: "github"` apps:
+This is the files form of `publish`. It mints a new artifact version and leaves the sending view running. A Claude Code session watching the artifact is told about new versions; database writes alone are not new versions.
+
+If the publish is refused (`not_writer`, `capability_disabled` or another code), the report is already in the database and a scheduled pickup finds it. The page logs the code to the console and shows the tester the normal receipt.
+
+### Runtime facts
+
+- `claude.use("db")` and `claude.use("artifact")` resolve after the script's first run, or to `null`. The page renders without them. When `db` is `null`, it shows the "can't reach the inbox" line.
+- An artifact that declares `db` is organization-internal. Every reader and writer is a signed-in member of the owner's Claude organization, and it cannot be shared publicly.
+- By default only viewers with "Can interact" or higher write shared documents. A view-only viewer cannot send a report.
+- Publishing a version needs "Can edit". A tester with "Can interact" can send, but the doorbell is refused with `not_writer`.
+- The board subscribes with `onSnapshot` to `reports`, ordered by `filedAt` descending, limit 500. Both views subscribe to `apps`, ordered by `name`.
+
+## The pickup
+
+The pickup is a Claude session that follows `Triage/PICKUP.md`. The prompt has four values to fill in: `BEACON_PAGE`, `BEACON_REPO`, `CODE_ROOT` and `NOTIFY`.
+
+| Runner | When it runs | Local files and tools |
+|---|---|---|
+| An interactive Claude Code session watching the artifact | When the doorbell publishes a new version | Yes |
+| A Desktop scheduled task | On its schedule, minimum interval 1 minute, while the machine is on | Yes |
+| A cloud routine | On its schedule, minimum interval 1 hour | No: a fresh clone of the repository |
+
+The database calls go through `read_db` and `write_db` (in Claude Code, the `ArtifactData` tool):
 
 ```
-gh issue list   --repo <owner/name> --label beacon --state all --limit 100 --json number,title,labels,body   (duplicate search)
-gh issue create --repo <owner/name> --title … --label beacon --label type:<kind> --label impact:<impact> [--label area:<id>] --body …
-gh issue comment <n> --repo … --body …          (a repeat report, "Also reported by …")
-gh issue reopen  <n>                            (if the matching issue was closed)
-gh issue edit    <n> --add-label triaged|auto-fixed|needs-human|…
-gh issue close   <n>
+read_db   query  collection=reports  where=[["status","==","new"]]
+read_db   list   collection=reports/<ref>/attachments  out_dir=<scratch>   (decode each dataURL)
+read_db   query  collection=reports  where=[["app.id","==",<id>]]          (earlier findings for duplicates)
+write_db  update collection=reports  doc_id=<ref>  data={status, issueNumber, issueURL, issueFiledAt, ...}
+write_db  set    collection=apps     doc_id=<id>   data={name, platform, repository, folder, tracker}
 ```
 
-Images for the issue are committed to the repository's `beacon-attachments` branch under
-`.beacon/attachments/<ref>/` and linked under "What they attached", the same place
-`GitHubIssueTransport` puts them (§6).
+The GitHub calls, for apps with `tracker: "github"`:
 
-### 5.3 The order of work, as the task prompt states it
+```bash
+gh issue list --repo <owner/name> --label beacon --state all --limit 100 --json number,title,labels,body
+gh issue create --repo <owner/name> --title ... --label beacon --label type:<kind> --label impact:<impact> --body ...
+gh issue comment <n> --repo <owner/name> --body ...
+gh issue list --repo <owner/name> --label beacon --state open --search "-label:triaged -label:needs-info"
+```
 
-1. Query `new` reports. None → stop, no message.
-2. Per report, oldest first: read images; look up the app; **read the board for prior
-   findings on that app** and mark a match `duplicateOf` (comment on the existing issue,
-   reuse status/finding/note); otherwise search issues for a duplicate, then create or
-   comment; write `filed` + issue number back.
-3. Work the open `beacon` issues on every app repository by the triage skill, `impact:
-   blocked` first. Every outcome is written back onto the page report too (status,
-   finding, triageNote for the founder, fixCommit, triagedAt).
-4. For `tracker: "board"` apps: skip filing; work the report from its record; write the
-   whole outcome onto it.
-5. One message to the founder, through whatever NOTIFY names, only if something was filed or worked.
+Order of work, as the prompt states it:
 
-The reference deployment's standing rule (owner's decision, 2026-09-04): gate 4's size limits are relaxed — fix
-everything that reproduces — but the blast-radius list still holds.
+1. Query reports with status `new`. For each, oldest first, read its images and its app.
+2. Compare it with earlier reports for the same app that carry a finding. On a match, set `duplicateOf`, copy the status, finding and note, and comment on the existing issue.
+3. Otherwise search the repository's `beacon` issues. On a match, comment and reopen if closed. With no match, create the issue. Commit images to the `beacon-attachments` branch under `.beacon/attachments/<reference>/` and link them.
+4. Write `status: "filed"`, `issueNumber`, `issueURL` and `issueFiledAt` back to the report.
+5. Work the open `beacon` issues by the triage skill, `impact:blocked` first. Write every outcome back to the page report: status, finding, triageNote, fixCommit, triagedAt.
+6. For apps with `tracker: "board"`, skip GitHub and work each new report from its record.
+7. Send one message to `NOTIFY` only if something was filed or worked.
 
-### 5.4 The watch
+## The native sheet
 
-`Artifact action=status` shows whether this session holds a connected watch on the
-artifact. A publish from the session arms one; `action=watch` re-arms it. Watches are
-session-local and survive `--resume` for the most recently used artifact. Whether the
-doorbell publish actually reached a session has **not** been observed yet: the first real
-send (BN-8EA6C3, 2026-09-07) happened while a watch showed connected, and no republish
-notice was seen. The scheduled task is the floor regardless.
+`FeedbackSession` in `BeaconUI/FeedbackSession.swift` owns one report from start to finish. Its steps: `consent`, `pickKind`, `form`, `review`, `questions`, `sending`, `done`, and `noReporter` when `currentReporter` returns `nil`.
 
----
+On send, the session:
 
-## 6. The native route
+1. Runs the on-device check once, if it is available. If it returns questions, it shows them. Answers are appended to the matching field, never replacing it.
+2. Sweeps every attachment for secrets.
+3. Renders the issue, then sweeps its body.
+4. Saves the report with `ReportArchive.save` to `reportArchiveDirectory`.
+5. Calls the transport. On an error, the receipt says the report is saved and where, with `isFiled: false`.
 
-### 6.1 Transports (`BeaconGitHub/Transports.swift`)
+`admit(_:)` applies the size limits to every attachment, whatever produced it: 25 MiB per file (`AcceptedFormats.maximumFileBytes`) and 60 MiB in total (`maximumTotalBytes`). The session stops a recording itself at `maximumRecordingSeconds` (default 180). A recording failure is kept on the session as `recordingProblem`, because on iOS the view that pressed stop is gone by the time the answer arrives.
 
-`ReportTransport` (in Core): `destinationDescription` for the review screen, and
-`submit(ReportSubmission) async throws -> SubmissionReceipt`. `ReportSubmission` carries
-the report, the rendered `IssueDraft`, and the swept attachments. `SubmissionReceipt`
-carries `summary`, `issueNumber?`, `url?`, `isFiled` — a transport that saved locally must
-return `isFiled: false`, and there is a test for it.
+On iOS, while recording, the sheet shrinks to `BeaconSheet.recordingDetent` (112 points high). It sets `presentationBackgroundInteraction(.enabled)` so the app is usable behind it, and `interactiveDismissDisabled` so a swipe cannot lose the recording.
+
+## Transports
+
+`ReportTransport` (in `BeaconCore`) has `destinationDescription`, shown on the review screen, and `submit(ReportSubmission) async throws -> SubmissionReceipt`. `ReportSubmission` carries the report, the rendered `IssueDraft` and the swept attachments. `SubmissionReceipt` carries `summary`, `issueNumber?`, `url?` and `isFiled`.
 
 | Transport | Needs | Does |
 |---|---|---|
-| `GitHubIssueTransport(client:attachmentBranch:)` | A token with `repo` scope | `ensureBranch`, `putFile` each attachment under `.beacon/attachments/<ref>/`, insert the links, `createIssue` |
-| `RelayTransport(endpoint:appToken:destinationName:)` | A service you run | `POST` JSON `{title, body, labels, reference, account, attachments:[{filename, base64}]}` with `Authorization: Bearer <appToken>`; expects `{issue_number, html_url}`; checks encoded size against `AcceptedFormats.maximumTotalBytes` (60 MiB) first |
-| `LocalBundleTransport(folderProvider:)` | Nothing | Reports the folder `ReportArchive` already wrote; `isFiled: false` |
-| `FallbackTransport(primary:fallback:onFallback:)` | — | Tries primary, on error calls the fallback and says so in the receipt |
+| `GitHubIssueTransport(client:attachmentBranch:)` | A GitHub token for the repository; the device flow asks for the `repo` scope | Ensures the branch (default `beacon-attachments`), puts each attachment at `.beacon/attachments/<reference>/<filename>`, turns the filenames into links, creates the issue |
+| `RelayTransport(endpoint:appToken:destinationName:)` | A service you run | Checks the base64 size of the attachments against 60 MiB, then `POST`s JSON `{title, body, labels, reference, account, attachments: [{filename, base64}]}` with `Authorization: Bearer <appToken>` when set. Reads `issue_number` and `html_url`, or `error` on failure |
+| `LocalBundleTransport(folderProvider:handoverInstruction:)` | Nothing | Returns the folder from `folderProvider` with `isFiled: false` |
+| `FallbackTransport(primary:fallback:onFallback:)` | Two transports | Tries `primary`. On an error, calls `onFallback`, submits to `fallback` and prefixes the receipt summary with why |
 
-Every report is written to `reportArchiveDirectory` by `ReportArchive.save` **before** any
-transport runs: `report.json`, `issue.md`, and the attachment bytes, in a folder named by
-the reference.
+The archive folder is `<yyyy-MM-dd-HHmmss>-<reference>` inside `reportArchiveDirectory`. It holds `report.json` (without attachment bytes), `issue.md` (title, labels and body) and `attachments/` with each file under a flattened name. The default directory is `Application Support/<app name>/Beacon/reports`.
 
-### 6.2 GitHub REST calls (`GitHubClient.swift`)
+## GitHub calls
 
-Base `https://api.github.com`, `Authorization: Bearer <token>`, JSON. Only published
-endpoints — the comment in the file says why.
+`GitHubClient` in `GitHubClient.swift` calls `https://api.github.com` with `Authorization: Bearer <token>`, `Accept: application/vnd.github+json` and `X-GitHub-Api-Version: 2022-11-28`. It uses only published endpoints.
 
-| Method | Path | Used for |
+| Method | Path | Used by |
 |---|---|---|
-| `POST` | `repos/{owner}/{repo}/issues` `{title, body, labels}` | `createIssue` → `{number, html_url}` |
+| `POST` | `repos/{owner}/{repo}/issues` with `{title, body, labels}` | `createIssue`, returns `number` and `html_url` |
 | `GET` | `user` | `currentLogin` |
-| `PUT` | `repos/{owner}/{repo}/contents/{path}` `{message, content(base64), branch}` | `putFile` → `content.html_url` |
-| `GET` | `repos/{owner}/{repo}/git/ref/heads/{branch}` | `ensureBranch` — exists? |
-| `GET` | `repos/{owner}/{repo}` | default branch name (never assumed) |
-| `POST` | `repos/{owner}/{repo}/git/refs` `{ref, sha}` | create the attachment branch from the default branch's head |
+| `PUT` | `repos/{owner}/{repo}/contents/{path}` with `{message, content (base64), branch}` | `putFile`, returns `content.html_url` |
+| `GET` | `repos/{owner}/{repo}/git/ref/heads/{branch}` | `ensureBranch`: does the branch exist, and the default branch's head |
+| `GET` | `repos/{owner}/{repo}` | `ensureBranch`: the default branch name |
+| `POST` | `repos/{owner}/{repo}/git/refs` with `{ref, sha}` | `ensureBranch`: create the branch from the default branch's head |
 
-`GitHubClient.explain(status, message)` turns 401/403/404/422/5xx into sentences the
-reporter can act on; `TransportTests` covers them.
+`GitHubClient.explain(status, message)` turns a failed status into a sentence a reporter can act on:
 
-### 6.3 Device flow (`DeviceFlow.swift`)
+| Status | Meaning given |
+|---|---|
+| 401 | The sign-in expired |
+| 403 with "rate limit" in the message | Rate-limited, the report is saved, try again in a few minutes |
+| 403 | The account cannot file into that repository |
+| 404 | The repository cannot be found or seen |
+| 410 | Issues are switched off on that repository |
+| 422 | GitHub refused the report as written, with its message |
+| Other | GitHub's own message |
 
-`GitHubDeviceFlow(clientID:scopes: ["repo"])`. `begin()` posts to
-`https://github.com/login/device/code` and returns `Challenge {deviceCode, userCode,
-verificationURL, interval, expiresAt}`; `awaitToken(challenge)` polls
-`https://github.com/login/oauth/access_token` at the interval, handling
-`authorization_pending`, `slow_down`, `expired_token`, `access_denied`. The client id is
-public by design; there is no client secret. `GitHubTokenStore.save/read/delete(account:,
-service: "beacon.github")` is the keychain wrapper. **No OAuth app is registered yet** —
-registering one is the adopter's own step (`docs/setup-github.md`, step 2), and it is done under the adopter's own sign-in.
+## Device flow
 
-### 6.4 Diagnostics (`BeaconDiagnostics`)
+`GitHubDeviceFlow(clientID:scopes:)` in `DeviceFlow.swift` signs a reporter in without a client secret. `scopes` defaults to `["repo"]`.
 
-- `BeaconLog.shared`: an in-memory ring (capacity, eviction, tail, level filter,
-  categories via `.category("sync")`). The host writes to it; the last
-  `logTailLineCount` lines ride on every report.
-- `EnvironmentProbe.snapshot()`: OS name/version, `hw.model` via `sysctl`, architecture,
-  locale, time zone, memory, free disk, appearance/text size/reduced motion per platform,
-  and whether `SystemLanguageModel.default` is available (read as state, never invoked).
-- `FileTreeScanner`: `contentsOfDirectory` + `resourceValues` only; never opens a file;
-  bounded by `maximumDepth`/`maximumEntries`, skips `FileTreeRoot.defaultSkips`, says
-  `truncated` out loud, redacts the root path.
-- `ContextCollector(configuration:log:).collect()` assembles `ReportContext`.
-- `ReportArchive(directory:)`: `save(_:) -> SavedReport {folder, reportJSON, issueMarkdown,
-  attachments}`, `saved() -> [URL]`.
+- `begin()` posts to `https://github.com/login/device/code` and returns `Challenge {userCode, verificationURL, deviceCode, expiresAt, pollInterval}`. Missing values default to 900 seconds to expire and a 5-second interval.
+- `awaitToken(_:)` polls `https://github.com/login/oauth/access_token`. `authorization_pending` keeps polling, `slow_down` adds 5 seconds to the interval, `access_denied` throws `declined`, and `expired_token` throws `expired`.
+- `GitHubTokenStore.save`, `read` and `delete` keep the token in the keychain as a generic password, service `beacon.github`, accessible after first unlock.
 
-### 6.5 Capture (`BeaconCapture`)
+The adopter registers the OAuth app under their own account. The steps are in [GitHub setup](../docs/setup-github.md).
 
-Three names, the same on both platforms, so `FeedbackSession` has one code path:
-`ScreenPermission.ensure()`, `ScreenCapturer().screenshot()`, `ScreenRecording.start(
-maximumSeconds:)` / `finish()` / `cancel()`.
+## Diagnostics
 
-- **macOS** (`MacCapture.swift`): ScreenCaptureKit. `SCShareableContent.currentProcess`
-  (own windows only), `capturesAudio = false`, `SCRecordingOutput` to an `.mp4`.
-  `ScreenPermission` wraps the one-time Screen Recording prompt. Not yet run against a
-  real window (STATUS.md).
-- **iOS** (`IOSCapture.swift`): the screenshot is `UIGraphicsImageRenderer` over the key
-  window's root view controller's view with `drawHierarchy` — the presented sheet lives
-  beside that view in the window, so the picture shows the app and not the form. The
-  recording is `RPScreenRecorder.shared()` with microphone and camera off, stopped with
-  `stopRecording(withOutput:)` to a `.mov`; declining the system prompt maps to
-  `CaptureError.permissionDenied`. iOS has no preflight, so `ScreenPermission.ensure()`
-  only reports `isAvailable`.
-- **Shared** (`Capture.swift`): `CaptureError` (sentences name the platform through
-  `PlatformWording`), `RecordingFrames.extract(from:count:)` (AVAssetImageGenerator, six
-  frames a beat in from each end, long edge capped at 1600), `PickedMedia.attachments(
-  data:type:)` for a photo or video from the library — images are re-encoded from their
-  pixels so location and camera metadata never reach the report, and a video gets frames
-  like a recording does.
+- **`BeaconLog.shared`**: an in-memory ring, default capacity 2000 lines (minimum 50), default minimum level `info`. Each line also goes to the system log under its category. `category("sync")` returns a writer for one category. The last `logTailLineCount` lines (default 400) ride on every report.
+- **`EnvironmentProbe.snapshot()`**: OS name and version, device model, architecture, locale, time zone, memory, free disk, and whether `SystemLanguageModel.default` is available, read as state without running the model. On macOS it adds appearance and reduced motion, and on iOS also text size. The model is `hw.model` on macOS, and `hw.machine` on iOS. In the iOS Simulator it is `SIMULATOR_MODEL_IDENTIFIER` plus ` (Simulator)`.
+- **`FileTreeScanner.scan`**: calls `contentsOfDirectory` and `resourceValues` only and never opens a file. It walks breadth-first, bounded by `maximumDepth` (default 4) and `maximumEntries` (default 800). Directories in `FileTreeRoot.defaultSkips` are listed as `(skipped)` and not walked. It sets `truncated` when it stops early and redacts the root path.
+- **`ContextCollector(configuration:log:).collect()`**: assembles `ReportContext`, with the folder scan off the main actor.
+- **`ReportArchive(directory:)`**: `save(_:)` returns `SavedReport {folder, reportJSON, issueMarkdown, attachments}`. `saved()` lists saved folders, newest first.
 
-The session applies the size limits in one place (`admit(_:)`) whatever produced the
-attachments, and stops a forgotten recording itself at `maximumRecordingSeconds`. A
-recording failure is kept on the session (`recordingProblem`) because on iOS the view
-that pressed stop is the strip the sheet collapsed to, and it is gone by the time the
-answer arrives.
+## Capture
 
-On iOS the sheet collapses to `BeaconSheet.recordingDetent` while recording, with
-`presentationBackgroundInteraction(.enabled)` so the app is usable behind it and
-`interactiveDismissDisabled` so a swipe cannot lose the recording and the form.
+`MacCapture.swift` and `IOSCapture.swift` present the same three names, so `FeedbackSession` has one code path: `ScreenPermission.ensure()`, `ScreenCapturer().screenshot()`, and `ScreenRecording.start(maximumSeconds:)` with `finish()` and `cancel()`.
 
-### 6.6 The on-device pass (`BeaconIntelligence`)
+| | macOS | iOS |
+|---|---|---|
+| Screenshot | ScreenCaptureKit, `SCShareableContent.currentProcess`, the largest on-screen window over 80 points in each direction | `UIGraphicsImageRenderer` over the key window's root view controller's view with `drawHierarchy`. A presented sheet sits beside that view, so the picture shows the app and not the form |
+| Recording | `SCRecordingOutput` to `.mp4`, 12 frames per second, cursor shown, `capturesAudio = false` | `RPScreenRecorder.shared()` with microphone and camera off, stopped with `stopRecording(withOutput:)` to `.mov` |
+| Permission | `ensure()` checks `CGPreflightScreenCaptureAccess`, then asks with `CGRequestScreenCaptureAccess` | No preflight. `ensure()` returns `isAvailable`. Declining the system prompt becomes `CaptureError.permissionDenied` |
 
-`CompletenessReviewing` protocol; `OnDeviceCompletenessReviewer` uses Foundation Models
-with `@Generable` output (`readsAsComplete`, up to three `CompletenessQuestion`s);
-`NoReviewer` where unavailable, producing `CompletenessReview.notReviewed` with
-`source: .unavailable` so a report says it wasn't reviewed rather than implying it was.
-Questions are advisory; the sheet always offers "send it anyway".
+`Capture.swift` holds the shared parts:
 
-### 6.7 Consent
+- `CaptureError`, whose sentences name the platform through `PlatformWording`.
+- `RecordingFrames.extract(from:count:)`: `AVAssetImageGenerator` pulls `count` PNG frames (default 6, at least 2), evenly spaced from 0.05 seconds in to 0.05 seconds before the end, long edge at most 1600 px. A recording always attaches the video, then its frames.
+- `PickedMedia.attachments(data:type:)`: a photo or video from the library. Photos are re-encoded from their pixels so location and camera metadata are dropped. Videos get frames like a recording. Formats outside `AcceptedFormats` are refused.
 
-`ConsentNotice.current` is versioned data; `naming(organizationName)` fills the org in;
-acceptance is stored per version and per reporter through `ConsentStoring`
-(`UserDefaultsConsentStore` by default). Rewording bumps the version and re-asks.
+`AcceptedFormats` accepts text and source files, images (`png`, `jpg`, `jpeg`, `heic`, `heif`, `gif`, `webp`, `tiff`, `bmp`), `pdf`, and video (`mov`, `mp4`, `m4v`). The full lists are in `Attachment.swift`.
 
----
+## On-device check
 
-## 7. The indexer
+`CompletenessReviewers.standard()` returns `OnDeviceCompletenessReviewer` where Foundation Models can be imported, and `NoReviewer` otherwise.
 
-```
+- `OnDeviceCompletenessReviewer` runs a `LanguageModelSession` with greedy sampling. The model answers in a `@Generable` `Verdict`: `readsAsComplete` and at most three questions, each with a `field`, `question` and `reason`.
+- Questions decide the result: any question means `readsAsComplete` is `false`. Blank questions are dropped. An unknown field name falls back to `what-happened`.
+- The check gives up after 20 seconds (`timeout`), or on any error, and the report goes as written with `source: .skipped`.
+- `NoReviewer` returns `CompletenessReview.notReviewed`, with `source: .unavailable`, so a report says it was not reviewed.
+- `availability()` reads `SystemLanguageModel.default.availability` without starting a session.
+
+## Consent
+
+`ConsentNotice.current` is versioned data (currently `2026-09-07.1`). `naming(_:)` replaces `$ORG` with `organizationName`. Acceptance is stored per version and per account through `ConsentStoring`. The default `UserDefaultsConsentStore` uses keys `beacon.consent.<accountID>`. Changing any wording means changing the version, and every reporter is asked again.
+
+## The indexer
+
+```bash
 swift run beacon-index --source <dir> --output <file> [--app-name <name>] [--overrides <file>] [--commit <sha>] [--quiet]
 ```
 
-Reads the host's source tree, finds build units (SwiftPM targets, Xcode targets, top-level
-folders) and the screens inside them (types ending in `View`, un-camel-cased, "View"
-dropped), and writes `BeaconIndex.json` (`schemaVersion` 1). The overrides file renames,
-hides (`hiddenFromReporters` — routable, not offered), absorbs, adds `extraAreas`, and
-ignores paths. `BeaconIndex.loadFromBundle(_:)` refuses a newer schema. CI runs the indexer
-on this package itself and fails if the output is empty.
+`--output` defaults to `<source>/BeaconIndex.json`. The flags are documented in [the options reference](../docs/options.md).
 
----
+How it builds the map:
 
-## 8. Seeding and reproduction
+1. **Build units.** The folders under `Sources/` when it exists, otherwise the top-level folders. Common build, dependency and test folders (including `Tests`) are ignored.
+2. **Screens.** In each `.swift`, `.m` or `.mm` file: a `// beacon:screen Name` comment, or a type that conforms to `View`, `NSViewController`, `UIViewController`, `NSWindowController` or `Scene`. `// beacon:ignore` on the line skips it. Names are split from camel case with the `View`, `ViewController`, `WindowController`, `Screen` or `Scene` suffix dropped, so `ProjectSettingsView` reads "Project Settings".
+3. **Overrides.** A JSON file with `areas` keyed by generated id (`name`, `blurb`, `hidden`, `absorbs`), `extraAreas`, and `ignore` (folder names). `absorbs` is applied first.
+4. **Output.** `BeaconIndex.json` with `schemaVersion` 1, sorted by name.
 
-`BeaconSeed.applyIfRequested(...)` copies a folder over the app's data directory at launch
-**only** when both `BEACON_SEED_ENABLE=1` and `BEACON_SEED_DIRECTORY=<path>` are set; a
-missing folder is safe; every outcome returns a `Result {applied, explanation}`.
-`isReproductionRun` tells the host it is being driven. Keep one seed per common shape
-under `Triage/seeds/`.
+`BeaconIndex.decode` refuses a map with a newer `schemaVersion`. `loadFromBundle(_:)` reads `BeaconIndex.json` from a bundle. `hiddenFromReporters` areas stay routable but are not offered on the picker. CI runs the indexer on this package and fails if the output file is empty.
 
-`beacon-reproduce.yml` (`workflow_dispatch` with `issue`, `commit`, `seed`) runs on the
-pinned `macos-26` runner and is shipped **deliberately failing at the run step** until it is
-pointed at a host app's UI test scheme. `beacon-triage.yml` runs the skill on Linux on a
-weekday cron and hands the macOS leg to it. Costs and runner facts are in
-CLOUD-REPRODUCTION.md.
+## Seeding and reproduction
 
----
+`BeaconSeed.applyIfRequested(into:)` replaces the host's data directory with a seed folder at launch. It acts only when `BEACON_SEED_ENABLE` is `1` and `BEACON_SEED_DIRECTORY` names an existing folder. Every outcome returns `Result {applied, explanation}`. `isReproductionRun()` is true when `BEACON_SEED_ENABLE` is `1`.
 
-## 9. Operating the live page
+| Workflow | Trigger | Runner | What it does |
+|---|---|---|---|
+| `beacon-reproduce.yml` | `workflow_dispatch` with `issue` (required), `commit`, `seed` (default `default`) | `macos-26`, 30-minute limit | Checks out the commit, runs `swift build`, sets both seed variables to `Triage/seeds/<seed>`, then fails on purpose at the run step until it is pointed at the app's UI test scheme. Uploads `.xcresult` bundles and screenshots |
+| `beacon-triage.yml` | Weekdays at 08:00 UTC, or `workflow_dispatch` with an optional `issue` | `ubuntu-latest`, 45-minute limit | Runs `anthropics/claude-code-action@v1` with `/beacon-triage`, using the `CLAUDE_CODE_OAUTH_TOKEN` secret |
+| `ci.yml` | Push to `main`, pull requests | `macos-26`, 20-minute limit | `swift build`, `swift test`, and the indexer on this package |
 
-- **Republish** after any edit to `Inbox/index.html`: the Artifact tool with `file_path`
-  set to the file and `url` set to the artifact. Omit `capabilities` to carry `db` and
-  `artifact` forward; omit `favicon` (it is 🎇 and must not change). The publishing
-  session's watch stays connected.
-- **Add an app**: one `write_db` set on `apps/<id>` with `name, platform, repository,
-  folder, tracker`. No republish; the picker and the board read the collection live.
-- **Move an app off GitHub**: `write_db update apps/<id> {tracker: "board"}`.
-- **Labels on a new repository**: `Scripts/beacon-labels.sh <owner/repo>` (needs `gh`
-  signed in).
-- **Give a tester access**: share the artifact from the page's share menu with edit
-  access (edit is what lets the doorbell publish; view-only can still send, and the
-  scheduled pickup finds the report).
-- **Inspect the store from a session**: `read_db list reports`, `read_db get reports/<ref>`,
-  `read_db list reports/<ref>/attachments --out_dir …`.
-- The artifact is owned by the Claude account this repository's sessions run under.
-  Another account — even the same email in another organisation — gets "Page not found".
+`beacon-triage.yml` does not start `beacon-reproduce.yml`; each is run on its own. Runner facts and costs are in [CLOUD-REPRODUCTION.md](CLOUD-REPRODUCTION.md). `Scripts/beacon-adopt-github.sh` creates `Triage/seeds/` in the app repository.
 
----
+## Operating the page
 
-## 10. Known gaps, in one place
+- **Republish** after any change to `Inbox/index.html`: call the Artifact tool with `file_path` set to the file and `url` set to the artifact. Omit `capabilities` so `db` and `artifact` carry forward, and omit `favicon` so it keeps its icon.
+- **Add an app**: one `write_db` set on `apps/<id>` with `name`, `platform`, `repository`, `folder` and `tracker`. No republish is needed; both views read `apps` live.
+- **Move an app off GitHub**: `write_db` update `apps/<id>` with `tracker: "board"`.
+- **Create labels** on a repository: `Scripts/beacon-labels.sh <owner/repo>`, with `gh` signed in.
+- **Give a tester access**: share the artifact with "Can edit" so the doorbell publishes. "Can interact" can send, and a scheduled pickup finds the report.
+- **Inspect the store** from a session: `read_db` list `reports`, get `reports/<ref>`, or list `reports/<ref>/attachments` with an `out_dir`.
 
-- The native route's direct transport is proven (`LiveTransportTests`, 2026-09-07, against a private repository), but the device flow has never been run: no OAuth App is registered. No relay is deployed.
-- The on-device model has never reviewed a real report; the prompt will need tuning (it
-  ran on the iOS Simulator on 2026-09-07 and asked nothing about a short, complete bug).
-- Recording has never captured a real window on the Mac, and never produced a video on
-  iOS: the simulator's ReplayKit starts and stops but writes an empty file, so a physical
-  device is needed for that proof.
-- The iOS build is not in CI; `ci.yml` builds and tests on macOS only.
-- The doorbell publish waking a session has not been observed (§5.4).
-- A cloud routine can read and file but cannot build, fix or reach private repos (§5.1).
-- The page carries no log tail, settings or folder shape — by design until Beacon is
-  offered to others (owner's decision, 2026-09-04).
-- `expectation-mismatch` opens a second issue by policy; the pickup prompt does not yet
-  spell out the second issue's fields.
+Before republishing, check the script parses, for example with `node -e "new Function(<script body>)"`. That check does not catch errors that happen at load, so open the page and send a report.
 
----
+## Tests
 
-## 11. Tests
+Run the tests on the Mac:
 
-`swift test` — 93 tests, 22 suites, Swift Testing (one skipped unless pointed at a repository).
-On the iOS Simulator: `xcodebuild test -scheme Beacon-Package -destination 'platform=iOS
-Simulator,name=iPhone Air'` — the same suites plus one iOS-only test, 94.
+```bash
+swift test
+```
+
+Run the same suites on the iOS Simulator:
+
+```bash
+xcodebuild test -scheme Beacon-Package -destination 'platform=iOS Simulator,name=iPhone Air'
+```
+
+The source declares 94 tests in 22 suites. On the Mac, `swift test` runs 93: one test in `DiagnosticsTests` builds only for iOS. `LiveTransportTests` is skipped unless `BEACON_LIVE_GITHUB_REPO` and `BEACON_LIVE_GITHUB_TOKEN` are both set. It files a real issue, so close it afterwards.
 
 | Target | Covers |
 |---|---|
-| `BeaconCoreTests` | Completeness (the gate, placeholders, the non-blocking nudge), rendering (headings, verbatim quoting, labels, no severity, title truncation, metadata JSON), redaction (six shapes, host secrets, prose untouched, home dir), seeding (both switches), the inbox link (keys, blanks left out, existing query kept, key list equals the page's), platform wording (the noun per platform, capitalised forms, the network-failure sentence goes through it) |
-| `BeaconDiagnosticsTests` | The log ring, the environment probe (on iOS: the device model, never the architecture; text size and appearance present; the simulator's model read from the environment), the folder scan (**contents never read** — a known string is written and asserted absent), the archive |
-| `BeaconGitHubTests` | Transports: local never claims filed, fallback takes over and says why, attachment links don't disturb prose, status codes become sentences. `LiveTransportTests` files a real issue with an attachment and runs only with `BEACON_LIVE_GITHUB_REPO` and `BEACON_LIVE_GITHUB_TOKEN` set |
-| `BeaconIntelligenceTests` | Unavailability is honest, questions override the model's flag, blank questions dropped, unknown field falls back |
-| `BeaconCaptureTests` | Frames out of a real video (PNG, time order, at least two, none from a non-video), a picked video travels with frames, a picked photo loses its GPS and camera metadata, unreadable formats turned away, the capture sentences name the platform |
+| `BeaconCoreTests` | Completeness rules, issue rendering, the secret sweep, accepted formats, consent, the app map, seeding, the inbox link, platform wording |
+| `BeaconDiagnosticsTests` | The log ring, the folder scan (a known string written into a scanned file is asserted absent), the archive, the environment probe |
+| `BeaconGitHubTests` | The four transports, GitHub's status codes as sentences, the relay size limit, and the live test |
+| `BeaconIntelligenceTests` | Honest unavailability, the prompt's fields, and how a verdict becomes a review |
+| `BeaconCaptureTests` | Frame offsets and extraction, picked photos and videos, metadata removal, refused formats, platform sentences |
 
-The page has no automated tests. Its script is syntax-checked before publish with
-`node -e "new Function(<script body>)"`; behaviour is verified by sending a report.
+`BeaconUI`, `Beacon` and the page have no automated tests. A change to the sheet is walked in `Examples/BeaconExample` on each platform it touches.
 
----
+## Conventions
 
-## 12. Conventions
+- Every documentation page has `*Last updated: YYYY-MM-DD*` under its title. Change the date when you change the page.
+- Kinds, impacts, statuses and labels are defined once, in `IssueRenderer.Labels` and the page's `STATUS` map. A copy elsewhere needs a test that holds it equal.
+- Deployment facts (the page URL, a repository, a folder, a branch) come from configuration or from the system, never from a literal at the point of use.
+- Anything a reporter reads that names the device goes through `PlatformWording`.
+- Platform differences live behind one shared name. Use `#if` in a view body only when a platform lacks the control, as in `exclusiveChoiceStyle()` and `FlowingButtons`.
+- Build a change to `BeaconUI`, `BeaconCapture` or `BeaconDiagnostics` for the iOS Simulator as well as the Mac, because CI builds only on macOS:
 
-- Every documentation page carries `*Last updated: YYYY-MM-DD*` under its title; move the
-  date when you change the page.
-- One vocabulary: kinds, impacts, statuses and labels are defined once
-  (`IssueRenderer.Labels`, the page's `STATUS`) and copied nowhere else without a test
-  holding the copies equal.
-- Facts about the deployment — the page URL, a repository, a folder, a branch — arrive
-  from configuration or are asked of the system; none is a literal at a use site.
-- Every commit is pushed the same session. Work happens on `main` for this package.
-- A change to `BeaconUI`, `BeaconCapture` or `BeaconDiagnostics` is built for the iOS
-  Simulator as well as the Mac before it is committed (`xcodebuild build -scheme Beacon
-  -destination 'generic/platform=iOS Simulator'`); CI builds only the Mac today. Platform
-  differences live behind one shared name, never behind `#if` in a view body unless the
-  platform genuinely lacks the control (`exclusiveChoiceStyle()`, `FlowingButtons`).
-- Anything a reporter sees that names the machine goes through `PlatformWording`.
-- A change to the sheet is walked in `Examples/BeaconExample` on the platform it touches;
-  "compiles" is not "shown".
+```bash
+xcodebuild build -scheme Beacon -destination 'generic/platform=iOS Simulator'
+```
+
+- On a release, bump the version in `plugin.json` and `marketplace.json` and the tag together.
+
+## Decisions
+
+**A bug cannot be filed without what was expected, what happened and the steps.** Only the reporter knows them, and they cannot be recovered later. The rule is deterministic, so it holds on every device with or without a model, and placeholder answers are refused too.
+
+**The on-device check asks and never blocks.** It is a model's opinion about prose, so it asks at most three questions, once, never rewrites the reporter's words, and the reporter can always send.
+
+**The check runs on the device or not at all.** A report is someone's unredacted description of their work, so it never goes to Private Cloud Compute or a server.
+
+**Beacon reads about files, never inside them.** The folder scan lists names and sizes because the layout answers most questions. Files the reporter attaches are the only files read.
+
+**Reports are not anonymous, and the reporter is told first.** A report that cannot be followed up is rarely fixed. The consent wording is versioned, and the version accepted is recorded on each report.
+
+**The secret sweep runs last and shows what it found.** Running last means nothing is added after it. Silent scrubbing would hide a leak in the host app's logging.
+
+**Only formats the triaging agent can read are accepted.** An attachment nobody can read adds nothing. A recording always carries still frames, because an agent cannot watch video.
+
+**Only the host app is captured.** On macOS the capture asks only for this process's windows, and on iOS the screenshot is drawn from the app's own views. The reporter does not have to trust that nothing else is recorded.
+
+**The app never sets severity.** The reporter says what it costs them. Severity is what it costs everyone, and that is triage's call.
+
+**A report is saved to disk before it is sent.** The network is the one part nobody controls, so a failed send never loses a report.
+
+**Attachments go to their own branch through the contents API.** The issue API cannot take a file, and the browser uploader is not a published endpoint. A separate branch means a report never touches a branch anyone builds from.
+
+**The reproduction workflow fails until it is wired.** A half-configured workflow that passes would report a green run that proved nothing.

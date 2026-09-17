@@ -1,60 +1,81 @@
 # Reporting something, if you're testing an app
 
-*Last updated: 2026-09-07*
+*Last updated: 2026-09-17*
 
-You don't need to know anything technical. You need to be specific.
+Use the report button inside the app. It fills in your app version, your device and more, so you only write the part only you know. You don't need to be technical, just specific.
 
-## Use the button in the app
+The button opens one of two things, depending on the app.
 
-There is a report button inside the app itself. Use it rather than sending an email: it
-opens a page with your version, your device and what the app was doing already filled in.
-You write the part only you know.
+## If it opens a web page
 
-You will be asked to sign in to Claude the first time. That is how the team knows the
-report is from a real tester, and it is why they never have to ask you for your app version.
+1. Sign in to Claude if the page asks. You need to be a member of the team's Claude organization.
+2. Check **Who you are**. It is your name or email, so the team can come back to you.
+3. Choose **Something's broken**, **Something's missing** or **Something else**, and fill in the form.
+4. Add images if you have them. You can add up to 6. On a Mac you can also paste an image straight into the page.
+5. Press **Send report**.
 
-## The three things you'll always be asked
+## If it opens a form inside the app
 
-You can't send a bug report without them, and they're not paperwork:
+1. Sign in to GitHub the first time, if the app asks. The app shows a short code. Type it at [github.com/login/device](https://github.com/login/device) in your browser.
+2. Read the notice about what happens to your report and accept it. You see it once, and again only if the wording changes.
+3. Choose **Something's broken**, **Something's missing** or **Something else**, fill in the form, and press **Next**.
+4. Read **Here's what we'll send**. Nothing has left your device yet.
+5. Press **Check and send**, or **Send** if your device can't run the check.
 
-**What you expected to happen.** This one decides everything. If the app did what it was
-designed to do and you expected something different, that's still worth fixing: it means
-the app isn't explaining itself. Say what you thought would happen even when it turns out
-you were wrong.
+**Check and send** means your Mac, iPhone or iPad reads your report over first, using Apple's on-device AI. It may ask up to 3 questions. Answer what you can, then press **Send it**. You can also press **Send it** without answering. The check only adds your answers. It never changes what you wrote.
 
-**What actually happened.** What was on the screen. "It broke" can't be acted on; "the
-window went white and stayed white for about a minute" can.
+## The three things every bug report needs
 
-**The steps you took.** Start from where you were. Include the boring ones; the step
-everybody leaves out is usually the one that matters.
+You can't send a bug report without them.
 
-## The question that changes the most
+- **What you expected.** This one decides the most. If the app did what it was built to do and you expected something else, that is still worth fixing: the app isn't explaining itself. Say what you thought would happen, even if you turn out to be wrong.
+- **What actually happened.** What was on the screen. "It broke" can't be acted on. "The window went white and stayed white for about a minute" can.
+- **The steps you took.** Start from where you were. Include the boring steps. The one everybody leaves out is usually the one that matters.
 
-*Does it happen again?*
+## Does it happen again?
 
-Nobody is allowed to work on a bug they can't make happen: a fix for something you never
-saw is a guess. So if you can, try it once more before you send. "Every time I follow
-those steps" is the single most useful thing you can write on the whole form.
+Nobody works on a bug they can't make happen, because a fix for something nobody saw is a guess. If you can, try it once more before you send. "Every time I follow those steps" is the most useful answer on the form.
 
-If you genuinely haven't tried, say that. It's a true answer and it's accepted.
+If you haven't tried, say so. That answer is accepted.
 
 ## Show us
 
-A picture of what you're looking at beats another paragraph nearly every time. Add a
-screenshot, a photo of the screen, or on a Mac just paste an image into the page. Up to
-six per report.
+A picture of what you're looking at is usually worth more than another paragraph.
+
+- **Take a screenshot** captures the app itself: its window on a Mac, its screen on an iPhone or iPad.
+- **Record what happens** records the app while you make the problem happen. Only the app is recorded, never your desktop, other apps or sound. On an iPhone or iPad the form shrinks to a strip at the bottom so you can use the app, and iOS asks you to confirm first. Recording stops by itself after a few minutes.
+- **Choose from Photos**, on an iPhone or iPad, adds a screenshot or screen recording you already took. Location and time details are removed from pictures.
+- **Add a file** adds text, an image, a PDF or a video.
+
+The web page takes images only.
 
 ## After you send
 
-You get a short reference like `BN-8EA6C3`. That's it. Nobody will write to ask you for
-more; if you notice something else, send that as its own report. Small things get fixed
-without anyone waiting for a person, and the bigger ones reach one.
+You get a short reference like `BN-8EA6C3`. You don't need to do anything else. The team may come back to you with a question. If you notice something else, send it as its own report.
 
-## What we can see, and what we can't
+If the form in the app can't send, your report is saved on your device and the form tells you where. Nothing you wrote is lost.
 
-- Your app version and build, your device and its operating system, your language and
-  time zone, and your appearance and text-size settings.
-- Your name or email, so the report can be followed up if it ever needs to be.
-- Anything you write and any image you attach. That one is entirely your choice.
+## What the team can see
 
-Nothing else. The page cannot see your files, your other apps or your screen.
+Your report isn't anonymous. Anyone on the team can read it. On the web page, that's anyone who can open the page. From the form in the app, your report becomes a GitHub issue.
+
+| | Web page | Form in the app |
+|---|---|---|
+| Your app version and build, your device and its system, your language and time zone, light or dark mode and text size | Yes | Yes |
+| Your name or email, or your account | Yes | Yes |
+| What you write and what you attach | Yes | Yes |
+| Your browser's name and version | Yes | No |
+| Your memory and free disk space | No | Yes |
+| Your settings inside the app. Secret settings show as "set (not shown)" | No | Yes |
+| The last few hundred lines of the app's own log | No | Yes |
+| The names and sizes of files in the folders the app uses. They are never opened | No | Yes |
+
+Before the form in the app sends, it removes anything that looks like a password or key, then tells you what it removed.
+
+## Hard to act on, and fixable
+
+> It broke when I tried to save.
+
+> I clicked Save on a project called Harbour. The spinner ran for about ten seconds, then the window went white and stayed white. I expected it to save and go back to the project list. It's done it three times today.
+
+The second one gets fixed.

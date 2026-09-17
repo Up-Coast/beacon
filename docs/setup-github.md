@@ -1,136 +1,159 @@
 # Setup: the GitHub path
 
-*Last updated: 2026-09-07*
+*Last updated: 2026-09-17*
 
-For a technical team that tracks work in GitHub. Reports become labelled issues in your
-repository, filed either straight from the app's own report sheet or from the Beacon page,
-and a Claude session works the issue queue. Nothing here belongs to anyone else's account:
-you register your own GitHub app, you hold your own tokens, and the board is optional.
+Reports become labelled issues in your app's GitHub repository. The app files them itself through Beacon's in-app report sheet, under each tester's own GitHub account. A Claude session or a GitHub Actions workflow works the issues. The Beacon page and board are optional.
 
-About an hour, including the one-time GitHub registrations.
+You need admin access to the repository and the GitHub CLI, `gh`, signed in.
 
-## What you end up with
+## What the in-app sheet adds
 
-- **Issues in your repository** for every report, in a fixed layout, labelled by kind,
-  impact and area, with images on a branch nothing builds from.
-- **Your apps**, each with the Beacon sheet or the Beacon button in it.
-- **A pickup** that works the queue — on your Mac, or on GitHub's own runners.
-- **Optionally, your Beacon page and board**, for testers without GitHub accounts and
-  for a single place to see every report.
+The Beacon page carries what fits in a link, plus the tester's words and images. The in-app sheet also sends:
 
-## 1. Get Beacon and put its pieces in your repository
+- the last lines of the app's log
+- your settings, with secrets counted but not shown
+- the names and structure of folders you choose, never their contents
+- a screenshot or a screen recording of the app's own windows, with still frames taken from the recording
+- photos and videos from the photo library, on iOS
+- files the tester attaches
 
-```bash
-git clone https://github.com/Up-Coast/beacon.git ~/beacon
-~/beacon/Scripts/beacon-adopt-github.sh /path/to/your-app your-org/your-app
-```
+Before sending, it masks anything that looks like a credential, and on a device with Apple Intelligence it asks the tester up to three follow-up questions. Details are in [What is collected](what-is-collected.md).
 
-Or install the plugin instead and let your Claude run this page: [Getting Beacon](README.md#getting-beacon).
+## 1. Copy Beacon's files into your repository
 
-The script copies the triage policy, the triage skill, the two workflows and the issue
-templates into your app's repository, and creates Beacon's labels on GitHub. It needs the
-`gh` command-line tool signed in with access to the repository. Commit what it copied.
+1. Clone Beacon:
+
+    ```bash
+    git clone https://github.com/Up-Coast/beacon.git ~/beacon
+    ```
+
+2. Run the adoption script against a checkout of your app's repository:
+
+    ```bash
+    ~/beacon/Scripts/beacon-adopt-github.sh /path/to/harbour your-org/harbour
+    ```
+
+3. Commit and push what it copied.
+
+To have Claude run this page for you instead, install the plugin. See [Getting Beacon](README.md#getting-beacon).
+
+| The script adds | Where |
+|---|---|
+| The triage policy and the pickup prompt | `Triage/TRIAGE.md`, `Triage/PICKUP.md` |
+| The triage skill | `.claude/skills/beacon-triage/` |
+| The two workflows | `.github/workflows/beacon-triage.yml`, `.github/workflows/beacon-reproduce.yml` |
+| Issue templates | `.github/ISSUE_TEMPLATE/bug.yml`, `feature.yml`, `config.yml` |
+| A folder for reproduction seed data | `Triage/seeds/` (empty) |
+| Beacon's labels, on GitHub | `beacon`, `type:*`, `impact:*`, `severity:*` and the triage outcome labels |
+
+The script replaces its own files and leaves every other file alone, so it is safe to re-run. `area:<id>` labels are created as reports arrive. It does not register an OAuth App, install the Claude GitHub App or add secrets. Those are steps 2 and 3.
 
 ## 2. Register a GitHub OAuth App
 
-This is what lets a tester sign in from inside your app, once, so reports post under their
-own account. Beacon uses GitHub's device flow: the app shows a short code, the tester
-enters it on a GitHub page, done. There is no client secret and nothing worth extracting
-from the app.
+The OAuth App lets a tester sign in to GitHub from inside your app, once. Beacon uses GitHub's device flow: the app shows a code, and the tester enters it on a GitHub page. The device flow needs no client secret, so the only value in your app is the public Client ID. One OAuth App serves all your apps.
 
-From GitHub's own documentation:
+1. On GitHub, click your profile picture, then **Settings**. To register the app under an organization, open that organization's settings instead.
+2. Click **Developer settings**, then **OAuth apps**, then **New OAuth App**. If this is your first app, the button is **Register a new application**.
+3. Fill in **Application name** and **Homepage URL**.
+4. Fill in **Authorization callback URL** with any URL you own. The device flow does not use it.
+5. Tick **Enable Device Flow**.
+6. Untick **Expire user access tokens**. Beacon stores the token it receives and does not refresh it, so an expiring token would stop working.
+7. Click **Register application**.
+8. Copy the **Client ID**. You use it in step 4.
 
-1. In the upper-right corner of any page on GitHub, click your profile picture, then
-   **Settings**. To register under an organisation instead, open the organisation's
-   settings.
-2. In the left sidebar, click **Developer settings**, then **OAuth apps**, then
-   **New OAuth App**.
-3. Fill in the application name, your homepage URL, and an authorization callback URL
-   (any URL you own; the device flow does not use it).
-4. Tick **Enable Device Flow**. The device flow does not work until this is on.
-5. Register the app. Copy the **Client ID** from the app's page.
+If the repository belongs to an organization with OAuth app access restrictions, an organization owner must approve the OAuth App. GitHub turns these restrictions on by default for new organizations.
 
-Put the Client ID in your app's configuration (see step 4). Ask only for the `repo` scope;
-Beacon does.
+## 3. Choose where the pickup runs
 
-## 3. Decide who runs the pickup
+You can use one option or both.
 
-Two options; you can have both.
+### On your Mac
 
-**On your Mac.** The prompt in [`Triage/PICKUP.md`](https://github.com/Up-Coast/beacon/blob/main/Triage/PICKUP.md)
-becomes a scheduled task in Claude Code, or a session you run on demand. This is the only
-option that can reproduce and prove a fix for a Mac or iOS app, because it has a Mac.
+1. Copy the prompt from [the pickup prompt](../Triage/PICKUP.md) and fill in the four values at its top.
+2. In Claude Code on the Mac that has your app's source, ask Claude to create a scheduled task with the prompt, or paste it into a session when you want a run.
 
-**On GitHub's runners.** The copied workflow `.github/workflows/beacon-triage.yml` runs the
-triage skill on a weekday schedule, on Linux, and hands the reproduce-and-prove leg to
-`beacon-reproduce.yml` on a macOS runner. Once, for that:
+Only a Mac can reproduce a report and prove a fix by building and running a macOS or iOS app.
 
-1. Install the Claude GitHub App on the repository: https://github.com/apps/claude, or run
-   `/install-github-app` inside Claude Code, which also walks you through the secret. You
-   must be a repository admin.
-2. Add one repository secret: `CLAUDE_CODE_OAUTH_TOKEN` (Claude Pro and Max subscribers
-   generate it with `claude setup-token`), or `ANTHROPIC_API_KEY` if you would rather bill
-   the API.
-3. Point `beacon-reproduce.yml` at your app's UI test scheme. It is shipped failing at that
-   step on purpose, so a half-wired setup cannot report a green run that proved nothing.
+### On GitHub Actions
 
-The workflows carry the permissions the action needs: `contents: write`,
-`issues: write`, `pull-requests: write`, `id-token: write`. macOS runner minutes cost about
-ten times Linux minutes; the workflow only uses one when a report needs reproducing.
+`beacon-triage.yml` runs the `beacon-triage` skill on Linux at 08:00 UTC on weekdays. You can also start it from the Actions tab, optionally for one issue number.
+
+1. Install the [Claude GitHub App](https://github.com/apps/claude) on the repository. Running `/install-github-app` in Claude Code also installs it.
+2. Add the repository secret `CLAUDE_CODE_OAUTH_TOKEN`. Generate the token by running `claude setup-token`. It uses your Claude Pro, Max, Team or Enterprise plan.
+3. To bill the Claude API instead, add the secret `ANTHROPIC_API_KEY`. Then, in `beacon-triage.yml`, replace the `claude_code_oauth_token` line with:
+
+    ```yaml
+    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    ```
+
+4. To reproduce reports on a GitHub-hosted macOS runner, edit `beacon-reproduce.yml`. Replace its **Build** step with your app's build, and its **Run the reporter's steps** step with your app's UI test. That step fails on purpose until you do, so a run that proved nothing never shows as passing. Start the workflow by hand from the Actions tab. [Reproducing on GitHub-hosted macOS runners](../internal/CLOUD-REPRODUCTION.md) covers the runner and its cost.
+
+GitHub runs scheduled workflows only from the default branch. In a public repository, GitHub switches the schedule off after 60 days with no repository activity.
 
 ## 4. Configure the app
 
-Follow the [Quickstart](quickstart.md) steps 1 and 2. For `transport`, replace the
-placeholder with the direct transport, wrapped so a network outage never loses a report:
+1. Follow [Quickstart](quickstart.md) steps 1 and 2.
+2. Replace the `Beacon.configure` call with this one. `GitHubAccount` holds the OAuth App's Client ID, remembers who signed in, and reads their token from the keychain when a report is sent.
 
-```swift
-// Once, when the tester first reports: sign them in.
-let flow = GitHubDeviceFlow(clientID: "<your OAuth App's Client ID>")
-let challenge = try await flow.begin()
-// Show challenge.userCode and open challenge.verificationURL
-let token = try await flow.awaitToken(challenge)
-GitHubTokenStore.save(token, account: reporter.accountID)
+    ```swift
+    import Beacon
 
-// At launch:
-transport: FallbackTransport(
-    primary: GitHubIssueTransport(
-        client: GitHubClient(owner: "your-org", repository: "your-app",
-                             token: GitHubTokenStore.read(account: account) ?? "")),
-    fallback: LocalBundleTransport(folderProvider: { lastSavedReportFolder }))
-```
+    @MainActor
+    func configureBeacon() {
+        let account = GitHubAccount(clientID: "<your OAuth App's Client ID>")
+        Beacon.configure(
+            BeaconConfiguration(
+                app: AppIdentity(/* as in the quickstart */),
+                organizationName: "the Harbour team",
+                currentReporter: { account.reporter },
+                transport: FallbackTransport(
+                    primary: SignedInGitHubIssueTransport(
+                        owner: "your-org", repository: "harbour", account: account),
+                    fallback: LocalBundleTransport(folderProvider: {
+                        ReportArchive(directory: BeaconConfiguration
+                            .defaultArchiveDirectory(appName: "Harbour")).saved().first
+                    }))),
+            gitHubAccount: account,
+            audience: .testBuilds)
+    }
+    ```
 
-Then put the sheet in: `BeaconReportButton()` anywhere, or `.beaconReportSheet(isPresented:)`
-on your own button, and `.beaconWalkthroughOnFirstRun()` on your main view so new testers
-are shown how, once. Run the indexer in your build so the "which part of the app" picker is
-real:
+    The sheet asks a tester who is not signed in to sign in to GitHub, and shows the code and the GitHub page itself. `audience: .testBuilds` hides the report button and the walkthrough in App Store builds. Pass `.everyone` to show them in every build. If GitHub cannot be reached, the report is kept on the device and the tester is told where.
 
-```bash
-swift run beacon-index --source . --output Resources/BeaconIndex.json \
-    --app-name "Harbour" --commit "$(git rev-parse HEAD)"
-```
+3. Put the sheet in. Use `BeaconReportButton()` anywhere, or `.beaconReportSheet(isPresented:)` on your own button.
+4. Add `.beaconWalkthroughOnFirstRun()` to your main view. New testers see how to report, once.
+5. Generate the app map that fills the sheet's "which part of the app" picker. Run this from your app's repository:
 
-The sheet works the same on macOS and iOS. For testers without GitHub accounts, put the
-Beacon button in as well (Quickstart step 3); those reports arrive on the page and the
-pickup files them as issues in the same repository, in the same format.
+    ```bash
+    swift run --package-path ~/beacon beacon-index \
+        --source . \
+        --output Harbour/Resources/BeaconIndex.json \
+        --app-name "Harbour" \
+        --commit "$(git rev-parse HEAD)"
+    ```
 
-## 5. Optional: the board
+6. Add `BeaconIndex.json` to your app target as a resource, and pass `index: BeaconIndex.loadFromBundle(.main)` to `BeaconConfiguration`.
+7. Build the app, sign in, and send a test report. It appears as an issue labelled `beacon`.
 
-If you want one page with every report and its outcome — or you have any tester who is
-not on GitHub — publish the Beacon page too. Follow [Setup: the Claude-only path](setup-claude-only.md)
-steps 2 and 3, with each app's `tracker` set to `github` instead of `board`. The pickup
-then files page reports as issues and mirrors every issue's outcome back to the board.
+The sheet works the same on macOS and iOS. To sign testers in yourself instead, leave `gitHubAccount` out and use `GitHubDeviceFlow` and `GitHubIssueTransport` directly. For platform permissions, the full list of fields and the indexer's options, see [Options](options.md).
 
-Skip this and the queue lives entirely in GitHub.
+## 5. Optional: publish the Beacon page
+
+Publish the page if some testers have no GitHub account, or if you want one board with every report.
+
+1. Follow [Setup: the Claude-only path](setup-claude-only.md) step 2. Set each app's `tracker` to `github`, and set `repository` to its `owner/name`.
+2. Put the Beacon button in the app as well ([Quickstart](quickstart.md) step 3).
+
+The pickup files page reports as issues in the same repository and format, and writes each outcome back to the board. Without the page, the whole queue lives in GitHub.
 
 ## 6. Tell your testers
 
-Send them [For testers](for-testers.md). Testers using the in-app sheet need a GitHub
-account with access to the repository; testers using the page need to be members of your
-Claude organisation.
+1. Give each tester who uses the in-app sheet push (write) access to the repository. Anyone who can read the repository can file a report, but GitHub silently drops the labels triage looks for, and refuses the attachments. The issue then says the files stayed on the tester's device.
+2. Send them [For testers](for-testers.md).
+
+Testers who use the Beacon page need to be signed-in members of your Claude organization instead.
 
 ## Later
 
-- **A new app**: run the adoption script for its repository, register nothing new — one
-  OAuth App serves every app under the same GitHub account or organisation.
-- **A newer Beacon**: `git pull` in `~/beacon`, re-run the adoption script (it replaces its
-  own files and leaves yours alone), and bump the package version in your app.
+- **Add an app.** Run the adoption script against its repository. The same OAuth App serves it.
+- **Update Beacon.** Run `git pull` in `~/beacon`, re-run the adoption script, and raise the package version in your app.

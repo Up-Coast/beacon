@@ -1,93 +1,44 @@
 # How it works
 
-*Last updated: 2026-09-07*
+*Last updated: 2026-09-17*
 
-A report's journey, from the button to a fix.
+A report goes from a button in your app, to a record on your Beacon page or an issue on GitHub, to a Claude session that works it and writes the outcome back.
 
-## 1. The app opens the page
+## A report's journey
 
-`BeaconInboxButton` opens your Beacon page in the browser. The link carries what the machine
-knows and the tester would otherwise have to type: app, version, build, commit, operating
-system and its version, device model, language, time zone, appearance and text size, and
-who is signed in. Because the link carries a version, the page locks the app choice; the
-tester cannot file a Harbour report against the wrong app.
+1. **The tester opens the report form.** `BeaconInboxButton` opens your Beacon page in the browser. The link carries what the app already knows: app, version, build, commit, operating system, device, language, time zone, appearance and text size. [Options](options.md) lists every key. With the GitHub setup, the app can show Beacon's in-app sheet instead, which files a GitHub issue itself.
+2. **The tester writes what only they know.** They pick one of three kinds: **Something's broken**, **Something's missing** or **Something else**. A bug needs what happened, what they expected, and the steps. The form refuses answers that say nothing, such as "n/a" or "it broke". Every report also asks how much the problem affects the tester. Images are shrunk on the tester's device before they are sent.
+3. **The page stores the report.** It gets a reference such as `BN-8EA6C3` and the status `new`. The tester sees the reference on a receipt, and their part is done.
+4. **The page rings the doorbell.** It publishes a new version of itself, which tells a Claude session watching the page that a report arrived. If the publish fails, the report is still stored and waits for the next scheduled pickup.
+5. **The pickup files the report.** A Claude session, or a scheduled task, runs the prompt in [PICKUP.md](../Triage/PICKUP.md). For an app whose `tracker` is `github`, the report becomes an issue in the app's repository, and its status becomes `filed`. If the same problem is already filed, the report is added to that issue as a comment, and a closed issue is reopened. For an app whose `tracker` is `board`, the report stays on the page and is worked there.
+6. **The pickup works the report.** It follows the triage policy in [TRIAGE.md](../Triage/TRIAGE.md): is it complete, is it a bug, does it reproduce, is the fix simple, then fix it and prove the fix by running the app. [What happens to a report](what-happens-to-a-report.md) summarizes the policy.
+7. **The outcome goes back onto the report.** The pickup writes the status, the finding, a short note for you, and the fixing commit when there is one. The [board](the-board.md) shows all of it.
 
-Open the page without a link and it still works: the tester picks the app from a list.
-
-## 2. The tester writes the part only they know
-
-Three kinds of report share one form:
-
-- **Something's broken.** What actually happened, what they expected instead, and the
-  steps that get there. All three are required, and the page refuses answers that are
-  filled in but empty — "n/a", "it broke", "asdf" and the like. It also asks whether the
-  problem happens again, because a bug that cannot be made to happen again cannot be
-  worked on.
-- **Something's missing.** What they want to be able to do, and why.
-- **Something else.** Anything.
-
-Every report asks how much this costs *them*, in their own words, from "I can't do what I
-came to do" down to "I noticed it". Severity is decided later, by the people looking at
-the whole product; the tester is only asked the thing only they can answer.
-
-Images come along: screenshots, photos of the screen, or an image pasted straight in. Each
-one is shrunk on the tester's own device before it leaves.
-
-## 3. Send, and carry on
-
-The report is stored, the tester gets a reference like `BN-8EA6C3`, and that is the end of
-their part. Nobody writes back to them asking for more. If they notice something else, they
-send that too.
-
-## 4. A Claude session picks it up
-
-The page rings a doorbell when a report lands: a Claude session watching the page is told
-within about a minute. When no session is watching, a scheduled task checks the page on a
-schedule and works whatever arrived. Either way, no person is in the loop.
-
-The pickup does two things with each report:
-
-- **Files it.** For an app tracked in GitHub, the report becomes an issue in that
-  repository, in a fixed layout with the tester's words quoted exactly, never summarised,
-  and labelled with its kind and impact. If the same problem is already filed, the report
-  is added to that issue as a comment instead, and the issue is reopened if it had been
-  closed. For an app tracked on the board alone, the report stays where it is and is
-  worked in place.
-- **Works it.** By a written policy, in order: is it complete, is it actually a bug,
-  can it be reproduced, is it safe to fix unattended, and finally fix it and prove the
-  fix by running the app. [What happens to a report](what-happens-to-a-report.md) has the
-  whole policy in plain words.
-
-## 5. The outcome comes back to the board
-
-Whatever the session decides is written onto the report: a status, what it found, and a
-short note for you. The [board](the-board.md) shows all of it, and links to the issue and
-the fixing commit when there is one.
-
-The board is also the session's memory. Before investigating a report, the session reads
-what has already been found for that app. A repeat of something already worked is marked as
-the same problem and linked, and the finding is reused rather than re-derived. That keeps
-repeat reports cheap.
+Before it investigates, the pickup reads what earlier reports for the same app already found. A report that repeats one already worked gets that report's status, finding and note, and is not worked again.
 
 ## Statuses
 
-| Status | Meaning |
-|---|---|
-| Received | Sent, not yet picked up |
-| Filed | An issue exists for it in the repository |
-| Being looked at | A session is working on it now |
-| Fixed | Fixed, proven by running the app, and merged |
-| Needs a person | Diagnosed, but the fix is not one to make unattended |
-| Couldn't reproduce | Tried three times; what was tried is on the report |
-| Working as designed | The app did what it was designed to do, and the report says why |
-| App isn't explaining itself | The app did what it was designed to do but the tester expected otherwise, which is its own finding |
-| Triaged | Read, labelled and routed; waiting on a person or on a product decision |
+The board shows a status on every report. The page stores it as a value. Every value from `needs-info` down is also a GitHub label with the same name, set by triage. `new`, `filed` and `triaging` exist only on the page.
+
+| The board shows | Value | Meaning |
+|---|---|---|
+| Received | `new` | Sent, not yet picked up. |
+| Filed | `filed` | An issue exists for it in the app's repository. |
+| Being looked at | `triaging` | A session is working on it. The pickup prompt does not set this value. |
+| Needs more from the tester | `needs-info` | Something the report needs is missing. The question is on the issue. |
+| Couldn't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
+| Working as designed | `working-as-intended` | The app behaves as designed. The explanation is on the issue, which is closed. |
+| App isn't explaining itself | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |
+| Needs a person | `needs-human` | The fix is past what may be done unattended. A written diagnosis is attached. |
+| Fixed | `auto-fixed` | Fixed, proven by running the app, and merged. |
+| Triaged | `triaged` | Read, labelled and routed. Waiting on a person. |
+
+A status value the page does not know shows as the value itself.
 
 ## What Beacon needs to run
 
-- The Beacon page, owned by a Claude organisation. Testers must be signed-in members of it.
-- A Claude session that watches the page, a scheduled task on a Mac, or both. Reproducing
-  and proving a fix for a Mac or iOS app needs a Mac; a cloud routine can pick reports up
-  and file them, but the fixing half runs where the app can be built.
-- For apps tracked in GitHub: the `gh` command-line tool signed in with access to the
-  repository, on the machine that runs the pickup.
+- **Your Beacon page**, published from `Inbox/index.html` into your Claude organization. Testers open it signed in to Claude as members of that organization.
+- **Something that runs the pickup**: a Claude session watching the page, a scheduled task, or both. Reproducing and proving a fix for a macOS or iOS app needs macOS: your Mac, or a GitHub-hosted macOS runner.
+- **For apps tracked on GitHub**: the `gh` command-line tool, signed in with access to the repository, on the machine that runs the pickup.
+
+The setup steps are in [Setup: the Claude-only path](setup-claude-only.md) and [Setup: the GitHub path](setup-github.md).

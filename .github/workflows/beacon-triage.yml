@@ -15,8 +15,9 @@
 #   4. ./Scripts/beacon-labels.sh <owner/repo> run once.
 #
 # This job runs on Linux and does everything up to the point where a fix
-# has to be proven by running the app. That step needs macOS — see
-# beacon-reproduce.yml, which this workflow's prompt hands off to.
+# has to be proven by running the app. That step needs macOS, and nothing
+# here starts it: beacon-reproduce.yml is workflow_dispatch only, so a
+# person runs it from the Actions tab.
 
 name: Beacon triage
 

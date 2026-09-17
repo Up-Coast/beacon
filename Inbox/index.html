@@ -322,10 +322,10 @@
     triaged:               ["hold", "Triaged"],
   };
   const KIND = { bug: "Bug", "feature-request": "Request", feedback: "Feedback" };
-  const isBoard = q.get("view") === "board";
 
   // ---- What the app put in the link. ----
   const q = new URLSearchParams(location.search);
+  const isBoard = q.get("view") === "board";
   const ctx = {
     app: q.get("app") || "", bundle: q.get("bundle") || "", version: q.get("version") || "",
     build: q.get("build") || "", commit: q.get("commit") || "", repository: q.get("repo") || "",

@@ -1,58 +1,45 @@
-# Reproducing and verifying without your own machine
+# Reproducing on GitHub-hosted runners
 
-The question this answers: *can a bug be reproduced, fixed, and the fix
-proven, on a machine that isn't mine?*
+*Last updated: 2026-09-17*
 
-**Yes for the whole loop, with one real constraint** — the verification leg
-has to run on macOS, and macOS runners cost about ten times what Linux
-ones do.
+A bug can be reproduced, fixed and the fix proven on GitHub's runners instead of your own Mac. One leg has to run on macOS, and macOS runners cost about ten times what Linux runners do.
 
 ## What runs where
 
-| Step | Where | Why |
+| Step | Runner | Why |
 |---|---|---|
-| Read the queue, check completeness, check product intent | Linux | Reading code and issues. Cheap. |
-| Reproduce, and prove the fix by running the app | **macOS** | A Mac app runs only on a Mac; an iOS app runs in the iOS Simulator, which also lives only on a Mac. |
-| Comment, label, merge | Linux | GitHub API calls. |
+| Read the queue, check completeness, check the report against what the product should do | Linux | Reading code and issues |
+| Reproduce, and prove the fix by running the app | macOS | A Mac app runs only on a Mac, and the iOS Simulator only runs on a Mac |
+| Comment, label, merge | Linux | GitHub API calls |
 
-`beacon-triage.yml` runs the first and last on Linux and hands the middle
-to `beacon-reproduce.yml` on macOS, so the expensive runner is used only for
-the part that genuinely needs it.
+`beacon-triage.yml` runs on `ubuntu-latest` on a weekday cron. `beacon-reproduce.yml` runs on `macos-26` and is started by hand with `workflow_dispatch`, never on a schedule, so the expensive runner is used only when a report needs it.
 
-## The macOS runners, as GitHub documents them
+## The runners
 
-- `macos-26` and `macos-26-xlarge` — macOS 26 on Apple silicon (arm64).
-  `macos-latest` also points at macOS 26 today, but it moves; the shipped
-  workflow pins `macos-26` so a reproduction run is repeatable later.
-- `macos-26-intel` / `macos-26-large` — x86_64, if you need it.
-- Xcode is preinstalled: one major version per macOS image, with its minor
-  versions, and three major.minor platform tools and simulator runtimes.
+From [GitHub's runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners) and [larger runners](https://docs.github.com/en/actions/reference/runners/larger-runners):
+
+| Label | Architecture | CPU | RAM |
+|---|---|---|---|
+| `macos-26` | arm64 (M1) | 3 | 7 GB |
+| `macos-26-intel` | Intel | 4 | 14 GB |
+| `macos-26-large` (larger runner) | Intel | 12 | 30 GB |
+| `macos-26-xlarge` (larger runner) | arm64 (M2) | 5 | 14 GB |
+
+`macos-latest` points at macOS 26 on arm64 today and moves when GitHub moves it. The shipped workflow pins `macos-26` so a reproduction run is repeatable later.
 
 ## What it costs
 
-GitHub's published rates: **macOS $0.062 a minute, Linux $0.006** — about
-ten to one. Private repositories include 2,000 minutes a month on Free,
-3,000 on Pro and Team.
+GitHub's [published per-minute prices](https://docs.github.com/en/billing/reference/actions-runner-pricing): Linux 2-core is $0.006, macOS 3-core or 4-core is $0.062, the macOS 12-core larger runner is $0.077, and the macOS 5-core (M2 Pro) larger runner is $0.102. A ten-minute reproduction on `macos-26` is about 62 cents.
 
-So a ten-minute reproduction is roughly **62 cents**. That is nothing per
-report and real money if it fires on every issue, which is why
-`beacon-reproduce.yml` is triggered by hand or by the triage job and never
-on a schedule.
+[Private repositories include](https://docs.github.com/en/billing/concepts/product-billing/github-actions) 2,000 minutes a month on Free, 3,000 on Pro and Team, and 50,000 on GitHub Enterprise Cloud. Standard runners are free on public repositories. Larger runners are always charged, even when quota is available.
 
-Keep it down by: pinning the runner (no surprise image changes),
-`fetch-depth: 0` only where history is genuinely needed, caching
-`.build`, and a `timeout-minutes` on every job so a wedged run can't burn
-an afternoon.
+Two [limits](https://docs.github.com/en/actions/reference/limits) to plan around: a job runs for at most 6 hours, and Free, Pro and Team accounts run at most 5 concurrent macOS jobs.
 
-## Starting the app with data already in it
+Keep the bill down by pinning the runner, setting `timeout-minutes` on every job, caching `.build`, and using `fetch-depth: 0` only where the history is needed. `beacon-reproduce.yml` has a 30-minute timeout and `beacon-triage.yml` has 45.
 
-This is the part that makes an unattended reproduction possible at all.
-Almost every real report starts "I opened the project called Harbour", and
-a reproduction against an empty app proves nothing.
+## Starting the app with data in it
 
-`BeaconSeed` copies a known folder over the app's data directory at launch,
-gated behind **two** environment variables, because one is a typo away from
-replacing somebody's real data:
+A reproduction against an empty app proves nothing, because most reports start with something the reporter had open. `BeaconSeed` copies a known folder over the app's data directory at launch, behind two environment variables, because one variable is a typo away from replacing someone's real data:
 
 ```bash
 BEACON_SEED_ENABLE=1
@@ -66,24 +53,16 @@ let result = BeaconSeed.applyIfRequested(into: Paths.applicationSupport)
 Beacon.log.notice(result.explanation)
 
 if BeaconSeed.isReproductionRun() {
-    // Skip onboarding, sign-in walls, anything that would stop an
+    // Skip onboarding, sign-in walls, and anything else that would stop an
     // unattended run before it reached the reporter's steps.
 }
 ```
 
-Keep a seed folder per common shape under `Triage/seeds/`: empty, one
-project, several projects, a project mid-run. Commit them — they are
-fixtures, and they need to be the same next month.
+Keep one seed folder per common shape under `Triage/seeds/`: empty, one project, several projects, a project mid-run. Commit them. They are fixtures and they have to be the same next month. Every outcome is explained into the log, so a run that did not start from the data it meant to says so.
 
-Every outcome explains itself into the log, including the failures, so a
-run that *didn't* start from the data it meant to says so instead of
-quietly proving the wrong thing.
+## Wiring the run step
 
-## Wiring the actual run
-
-`beacon-reproduce.yml` ships with the run step deliberately failing, so a
-half-wired workflow can't report a green run that proved nothing. Point it
-at the app's own UI test scheme:
+`beacon-reproduce.yml` takes three inputs: `issue` (required), `commit` and `seed` (default `default`). It checks out the commit, runs `swift build`, sets both seed variables to `Triage/seeds/<seed>`, then fails at the run step on purpose until you point it at the app's UI test scheme:
 
 ```yaml
 - run: |
@@ -94,26 +73,12 @@ at the app's own UI test scheme:
       -resultBundlePath reproduction.xcresult
 ```
 
-Write the reproduction test from the issue's numbered steps, one step per
-line, and screenshot at the step that's supposed to be wrong. That
-screenshot is the evidence the triage policy requires before a fix may be
-merged.
+Write the reproduction test from the issue's numbered steps, one step per line, and take a screenshot at the step that is supposed to be wrong. That screenshot is the evidence the triage policy requires before a fix may be merged. The workflow uploads `.xcresult` bundles and screenshots from the run.
 
-## What about iOS
+For an iOS app the only change is the run step: simulators run on the same macOS runners, a simulator's data container is seeded by copying a folder into it, and `xcodebuild test -destination 'platform=iOS Simulator,name=<device>'` needs no display session.
 
-Easier, when it comes. iOS Simulators run on the same macOS runners, a
-simulator's data container can be seeded by copying a folder into it, and
-`xcodebuild test -destination 'platform=iOS Simulator,name=iPhone 17'`
-needs no display session. The same seeding mechanism and the same policy
-apply unchanged; only the run step differs.
+## What is not possible
 
-## What is *not* possible
-
-- Running a **Mac app** on a Linux runner. There is no path; it's a
-  different operating system.
-- Reproducing anything that depends on the reporter's own machine —
-  their files, their network, their peripherals, their Apple Intelligence
-  being switched on. Those reports need a person, and the triage policy
-  sends them to `needs-human` rather than pretending.
-- Reproducing a bug the reporter couldn't reproduce either. That's the
-  `cannot-reproduce` path, and no amount of compute changes it.
+- Running a Mac app or an iOS Simulator on a Linux runner. There is no path.
+- Reproducing anything that depends on the reporter's own machine: their files, their network, their peripherals, their on-device model. Those reports go to `needs-human`.
+- Reproducing a bug the reporter could not reproduce either. That is the `cannot-reproduce` path, and more compute does not change it.

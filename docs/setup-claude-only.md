@@ -1,21 +1,17 @@
 # Setup: the Claude-only path
 
-*Last updated: 2026-09-07*
+*Last updated: 2026-09-17*
 
-For a founder or team with a Claude organisation and no GitHub. Reports go to a page you
-own, a Claude session works them, and your board is the whole tracker. Nothing here belongs
-to anyone else's account; when you are done, every piece is yours.
+Reports go to a Beacon page that your Claude organization owns. A Claude session works them, and the board on the page is your whole tracker. No GitHub is needed.
 
-About thirty minutes, most of it waiting for builds.
+You end up with:
 
-## What you end up with
-
-- **Your Beacon page**, published from the Beacon repository into your own Claude
-  organisation, with the form for testers and the board for you.
-- **Your app list** on that page, one entry per app.
-- **A pickup** — a scheduled task in Claude Code on a Mac, or a session you run when you
-  want — that reads new reports and works them by the policy.
-- **Your apps**, each with the Beacon button in it.
+| Piece | What it is |
+|---|---|
+| Your Beacon page | A Claude artifact published from `Inbox/index.html`. Testers use its form. You use its board. |
+| Your app list | One entry per app, stored in the page's database. |
+| The Beacon button | In each app. It opens the page with the app's details filled in. |
+| The pickup | A Claude session or scheduled task that reads new reports and works them. |
 
 ## 1. Get Beacon
 
@@ -23,59 +19,49 @@ About thirty minutes, most of it waiting for builds.
 git clone https://github.com/Up-Coast/beacon.git ~/beacon
 ```
 
-Or install the plugin instead and let your Claude run this page: [Getting Beacon](README.md#getting-beacon).
+To have Claude run this page for you instead, install the plugin. See [Getting Beacon](README.md#getting-beacon).
 
-## 2. Publish your page
+## 2. Publish your page and add your apps
 
-Open Claude Code in `~/beacon` and ask it, in these words:
+1. Open Claude Code in `~/beacon`.
+2. Ask Claude to publish the page:
 
-> Publish `Inbox/index.html` as an artifact with the `db` and `artifact` capabilities and
-> the favicon 🎇. Then seed the `apps` collection with my apps.
+    > Publish `Inbox/index.html` as an artifact with the `db` and `artifact` capabilities and the favicon 🎇.
 
-Give it your apps as a list: a short id, the name, the platform (macOS or iOS), and where
-the source lives on the machine that will run the pickup. For this path every app's
-`tracker` is `board`. For example:
+3. Keep the artifact link Claude gives you. It is your Beacon page link.
+4. Ask Claude to add one document per app to the page's `apps` collection, with `tracker` set to `board`. The example below shows one app.
+5. Share the page with each tester from the page's share menu, with edit access.
 
-| id | name | platform | folder | tracker |
+| Document id | `name` | `platform` | `folder` | `tracker` |
 |---|---|---|---|---|
-| `harbour` | Harbour | macOS | `~/Code/harbour` | board |
+| `harbour` | Harbour | `macOS` | `harbour` | `board` |
 
-Claude publishes the page and writes the list. The artifact link it gives you is your
-Beacon page; keep it. The page is private to your organisation by design — a page with a
-database cannot be shared publicly — so every tester must be a signed-in member of it. Share
-it from the page's share menu with edit access.
+`folder` is where the app's source lives, relative to the code folder you give the pickup in step 4. Every field is described in [Options](options.md#the-app-list-on-the-page).
+
+A page with a database is internal to your Claude organization and cannot be shared publicly. Every tester must be a signed-in member of the organization. Testers need edit access because sending a report publishes a new version of the page, and that new version is what tells a watching Claude session a report arrived.
 
 ## 3. Put the button in your app
 
-Follow the [Quickstart](quickstart.md) steps 1 to 3, using your page link. Build, press the
-button, send a test report, and open your board at your page link plus `?view=board`. The
-report is there.
+1. Follow [Quickstart](quickstart.md) steps 1 to 3, using your page link.
+2. Build the app, press the button and send a test report.
+3. Open your page link with `?view=board` added. The report is on the board.
 
 ## 4. Set up the pickup
 
-The pickup is a task you give to Claude. The prompt is written for you in
-[`Triage/PICKUP.md`](https://github.com/Up-Coast/beacon/blob/main/Triage/PICKUP.md); fill in
-the four values at its top (your page link, your Beacon checkout, where your code lives,
-and how you want to be told when something happened) and then either:
+1. Copy the prompt from [the pickup prompt](../Triage/PICKUP.md).
+2. Fill in the four values at its top: your page link, your Beacon checkout (`~/beacon`), the folder your apps' source lives under, and how you want to be told when something happened.
+3. Choose how it runs:
+    - **Scheduled.** In Claude Code on the Mac that has your apps' source, ask Claude to create a scheduled task with the prompt.
+    - **On demand.** Paste the prompt into a Claude Code session when you want a run.
 
-- **Scheduled.** In Claude Code on the Mac that has your apps' source, ask Claude to create
-  a scheduled task with that prompt, on the cadence you want. It runs while the Claude app
-  is open, and a missed run fires at next launch.
-- **On demand.** Paste the prompt into a Claude Code session whenever you want a run.
-
-What the pickup will and won't do is [What happens to a report](what-happens-to-a-report.md).
-It needs a Mac to reproduce and prove fixes for Mac and iOS apps; a cloud routine can pick
-reports up but cannot build them.
+Run the pickup on a Mac. Reproducing a report and proving a fix means building and running a macOS or iOS app, and that needs a Mac. What the pickup does with each report is in [What happens to a report](what-happens-to-a-report.md).
 
 ## 5. Tell your testers
 
-Send them [For testers](for-testers.md). They need to be members of your Claude
-organisation, and to know where the button is.
+Send them [For testers](for-testers.md), and tell them where the button is in your app.
 
 ## Later
 
-- **Add an app**: ask Claude to add it to the `apps` collection. No republish.
-- **Take a newer Beacon**: `git pull` in `~/beacon`, then ask Claude to republish
-  `Inbox/index.html` to the same artifact. Your reports and app list stay.
-- **Move to GitHub** for an app: [Setup: the GitHub path](setup-github.md), then change
-  that app's `tracker` to `github`. The board keeps working.
+- **Add an app.** Ask Claude to add a document to the `apps` collection. The page needs no republish.
+- **Update Beacon.** Run `git pull` in `~/beacon`, then ask Claude to republish `Inbox/index.html` to the same artifact. Reports and the app list stay.
+- **Move an app to GitHub.** Follow [Setup: the GitHub path](setup-github.md), then change that app's `tracker` to `github`. The board keeps working.
