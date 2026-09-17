@@ -94,7 +94,8 @@ per common shape under `Triage/seeds/`.
 
 Three attempts, varying only what the report leaves ambiguous. Still
 nothing → `cannot-reproduce`, comment with exactly what was tried (build,
-steps as run, what happened instead), ask the one best question, stop.
+steps as run, what happened instead), write the one best question for the
+owner, stop.
 
 ### 4. Simple?
 
@@ -103,8 +104,10 @@ explicitly and write the check into the issue comment — size, blast
 radius, evidence, certainty. One false → `needs-human` with a written
 diagnosis, and stop.
 
-Feature requests are never implemented here. Label, route, note what
-already exists, leave for a person.
+A feature request is never implemented without the owner authorizing it,
+however much of it the codebase already has. Label, route, note what
+already exists, leave open for the owner. Feedback is the same: label
+`triaged`, route, leave open.
 
 ### 5. Fix, prove, merge
 
@@ -116,8 +119,7 @@ proof that the thing they reported stopped happening. Attach to the issue:
 the check failing before and passing after, a screenshot at the step that
 used to be wrong, and the steps as you ran them.
 
-Merge, comment naming the commit, thank the reporter by name, close, label
-`auto-fixed`.
+Merge, comment naming the commit, close, label `auto-fixed`.
 
 If you cannot produce that proof, open a pull request instead of merging,
 label `needs-human`, and say what's missing.
@@ -125,9 +127,10 @@ label `needs-human`, and say what's missing.
 ### 6. Always
 
 Set severity per the table in `TRIAGE.md` — it is your judgement about the
-product, not the reporter's about themselves. Add `triaged`. Reply to the
-reporter in plain words, whatever the outcome; somebody who took ten
-minutes to write a report is owed a sentence back.
+product, not the reporter's about themselves. Add `triaged`. Write the
+outcome on the issue and on the board in plain words, whatever it is. Never
+write to the tester: the board and the issue are the record, and the owner
+decides whether anybody replies.
 
 ## When the queue is done
 
@@ -142,7 +145,9 @@ sees it except whoever just read the whole queue.
 
 - Work on a bug that would not reproduce.
 - Change behaviour to match an expectation without checking the intent.
-- Implement a feature request.
+- Implement a feature request, or act on feedback, without the owner
+  authorizing it.
+- Write to a tester.
 - Merge without having run the app through the reporter's own steps.
 - Touch schemas, credentials, payments, networking, concurrency, public
   APIs, CI, or signing (the blast-radius list) unattended.

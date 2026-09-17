@@ -9,7 +9,7 @@ The button opens one of two things, depending on the app.
 ## If it opens a web page
 
 1. Sign in to Claude if the page asks. You need to be a member of the team's Claude organization.
-2. Check **Who you are**. It is your name or email, so the team can come back to you.
+2. Check **Who you are**. It is your name or email, so your report is not anonymous and the team can reach you if they choose to.
 3. Choose **Something's broken**, **Something's missing** or **Something else**, and fill in the form.
 4. Add images if you have them. You can add up to 6. On a Mac you can also paste an image straight into the page.
 5. Press **Send report**.
@@ -51,7 +51,7 @@ The web page takes images only.
 
 ## After you send
 
-You get a short reference like `BN-8EA6C3`. You don't need to do anything else. The team may come back to you with a question. If you notice something else, send it as its own report.
+You get a short reference like `BN-8EA6C3`. You don't need to do anything else. Nothing writes back to you automatically, and the team may come back to you if they want to. If you notice something else, send it as its own report.
 
 If the form in the app can't send, your report is saved on your device and the form tells you where. Nothing you wrote is lost.
 

@@ -22,8 +22,8 @@ The blast-radius list covers data schemas and stored user data, authentication a
 
 ## Feature requests and feedback
 
-- **Feature requests** are never implemented unattended. Triage labels them, routes them to an area, notes whether the code already has most of what is needed, and leaves them for a person.
-- **Feedback** is labelled `triaged` and left open.
+- **Feature requests** are never implemented unless you authorize it, however much of the feature the code already has. Triage labels one, routes it to an area, notes what already exists, and leaves it open for you.
+- **Feedback** is labelled `triaged`, routed to an area, and left open.
 
 ## Severity
 
@@ -33,8 +33,9 @@ Triage sets severity. The app never does. The tester's `impact:` label says what
 
 - Work on a bug it could not reproduce.
 - Change behaviour to match a tester's expectation without checking what the product is supposed to do.
-- Implement a feature request.
-- Close a report as working as intended without filing the expectation-mismatch issue and replying in plain words.
+- Implement a feature request, or act on feedback, without you authorizing it.
+- Close a report as working as intended, when the tester expected something different, without first filing the expectation-mismatch issue.
+- Write to a tester. Triage writes on the issue and on the board, and you decide whether anyone replies.
 - Touch anything on the blast-radius list.
 - Merge without running the app through the tester's own steps.
 

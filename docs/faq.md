@@ -12,7 +12,7 @@ Yes. Every app is a row in the page's app list, the link from each app selects i
 
 **Does the tester hear back?**
 
-Not through the page. The tester gets a reference and is done, and the outcome is written onto the report on your [board](the-board.md). For reports filed as GitHub issues, triage replies on the issue.
+No. Triage never writes to a tester. The tester gets a reference and is done, and every outcome is written onto the report on your [board](the-board.md) and onto the issue. If a report leaves a question open, triage records the question there for you to ask, or not.
 
 **What if the same thing is reported twice?**
 

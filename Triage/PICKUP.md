@@ -25,7 +25,7 @@ You are working Beacon: bug, feature and feedback reports from testers of the ap
 
 Reports arrive two ways: through the Beacon page, and, for apps that use it, through the native Beacon sheet, which files GitHub issues directly. Your job is to turn the page's reports into GitHub issues wherever an app is tracked in GitHub, so there is ONE queue, and then work that queue.
 
-Testers are never written back to. They submit and carry on. Every outcome is written onto the report, so the owner's board shows it and later runs reuse it.
+Testers are never written back to. They submit and carry on. Write every outcome onto the report and onto the issue, so the owner's board shows it and later runs reuse it. A question for a tester is recorded for the owner, never sent.
 
 The policy: BEACON_REPO/Triage/TRIAGE.md. Read it first. Every gate applies as written.
 (If the owner has relaxed gate 4, they will have said so here: ______.)
@@ -60,10 +60,10 @@ Part 2: work the queue
    - Prove the fix by running the app through the steps where feasible.
    - Merge to the default branch (ask the repo which branch that is, never assume) and push.
    - Label and close with a comment naming the commit.
-   Feature requests: build only when the codebase already has most of it, and say so. Otherwise label, route, note what exists, and leave open.
+   Feature requests: never build one. Label, route, note what already exists, and leave open for the owner.
    Feedback: label triaged, leave open.
 4. Every outcome also goes onto the page report (find it by issueNumber). write_db update with:
-   - status: auto-fixed, needs-human, cannot-reproduce, working-as-intended, expectation-mismatch, or triaged
+   - status: triaging while the report is being worked, then one of auto-fixed, needs-human, needs-info, cannot-reproduce, working-as-intended, expectation-mismatch or triaged
    - finding: {intent, citations, verdict}
    - triageNote: two to four plain sentences for the owner saying what was found and what happens next
    - fixCommit, when there is one

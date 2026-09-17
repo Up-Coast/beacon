@@ -24,8 +24,8 @@ The board shows a status on every report. The page stores it as a value. Every v
 |---|---|---|
 | Received | `new` | Sent, not yet picked up. |
 | Filed | `filed` | An issue exists for it in the app's repository. |
-| Being looked at | `triaging` | A session is working on it. The pickup prompt does not set this value. |
-| Needs more from the tester | `needs-info` | Something the report needs is missing. The question is on the issue. |
+| Being looked at | `triaging` | A session is working on it now. |
+| Needs more from the tester | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
 | Couldn't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
 | Working as designed | `working-as-intended` | The app behaves as designed. The explanation is on the issue, which is closed. |
 | App isn't explaining itself | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |

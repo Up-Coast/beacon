@@ -12,6 +12,8 @@ The goal is that a tester gets their problem fixed without waiting for a person.
 
 Every issue labelled `beacon` goes through these gates **in order**. When a gate fails, the issue stops at that gate. It never falls through to the next one.
 
+Set the report's status to `triaging` when work on it starts, so the owner's board shows what is being looked at now.
+
 1. **Is it complete?** If not: `needs-info`.
 2. **Is it actually a bug?** If not: `working-as-intended` or `expectation-mismatch`.
 3. **Can it be reproduced?** If not: `cannot-reproduce`.
@@ -25,10 +27,10 @@ Every issue labelled `beacon` goes through these gates **in order**. When a gate
 Read the three fixed headings: "What they expected", "What actually happened" and "Steps to see it". If any of them is missing or says nothing:
 
 1. Add `needs-info`.
-2. Comment with the specific question.
+2. Comment with the specific question the report leaves open, for the owner to decide whether to ask.
 3. Stop.
 
-Ask at most two questions, and phrase them as questions.
+Write at most two questions, and phrase them as questions. Never write to the tester: the comment is the record, not a message to them.
 
 Never ask for something the report already contains. The app details, the settings and the folder layout are all in the collapsed sections. Asking for them tells the reporter nobody read their report.
 
@@ -48,7 +50,7 @@ Then compare three things:
 | The product's intended behaviour | The reporter's expectation | What happened | Verdict |
 |---|---|---|---|
 | X | X | not X | **A real bug.** Go to gate 3. |
-| X | X | X | **Working as intended.** Label `working-as-intended`, explain in the reporter's own terms, close. |
+| X | X | X | **Working as intended.** The report describes something else. Label `working-as-intended`, write what the product does and why, close. |
 | X | Y (≠ X), and what happened was X | **The product is not explaining itself.** See below. |
 
 ### The expectation mismatch — this is a finding, not a rejection
@@ -58,7 +60,7 @@ When the app did exactly what it was designed to do and the reporter expected so
 1. Label the issue `expectation-mismatch` and leave it open.
 2. Open a **separate** issue labelled `beacon`, `type:bug`, `expectation-mismatch`, and the same `area:`. Describe the gap: what the product does, what this person expected, and what they were looking at when they formed that expectation.
 3. Link the two issues.
-4. Reply to the reporter with what the app is actually doing and why. Never reply "working as intended" on its own, because it reads as "you're wrong".
+4. Write on the issue what the app is actually doing and why. "Working as intended" on its own is never the whole comment: the finding is the gap, not the tester's mistake.
 
 Do not fix an `expectation-mismatch` issue by changing the behaviour. The fix is wording, labels and empty states, and those are a person's call unless gate 4's simple-change list covers them.
 
@@ -72,7 +74,7 @@ Try up to **three** times, varying only what the report leaves ambiguous. If it 
 
 - Label `cannot-reproduce`.
 - Comment with exactly what was tried: the build, the steps as run, and what happened instead. A reporter who reads "couldn't reproduce" with no detail concludes nobody tried.
-- Ask the one question most likely to close the gap.
+- Write the one question most likely to close the gap, for the owner to ask if they choose.
 - Stop. Do not investigate further, and do not change code.
 
 ## Gate 4 — Is it simple?
@@ -108,7 +110,9 @@ A fix may be made and merged without a person **only when every line below is tr
 
 Everything else gets `needs-human`, a written diagnosis in the issue, and stops. That includes anything ambiguous, anything where the right behaviour is a product decision, and anything touching design or copy that is not a plain typo.
 
-**Feature requests are never auto-implemented.** Triage them: label them, route them to an area, note whether the codebase already has most of what is needed, and leave them for a person. This is a requirement of the system, not a limitation.
+**A feature request is never implemented without the owner authorizing it.** That holds however small the request looks, and however much of it the codebase already has. Triage it: label it, route it to an area, note what already exists, and leave it open for the owner.
+
+**Feedback is never implemented either.** Label it `triaged`, route it to an area, and leave it open.
 
 ## Gate 5 — Prove it, then merge
 
@@ -122,9 +126,8 @@ Then:
 
 1. Merge.
 2. Comment on the issue naming the commit.
-3. Thank the reporter by name.
-4. Close the issue.
-5. Label it `auto-fixed`.
+3. Close the issue.
+4. Label it `auto-fixed`.
 
 If any of that cannot be produced, open a pull request instead of merging. Label it `needs-human` and write down what is missing.
 
@@ -161,7 +164,8 @@ Create them once per repository with `Scripts/beacon-labels.sh`.
 
 - Work on a bug it could not reproduce.
 - Change behaviour to match a reporter's expectation without checking what the product is supposed to do.
-- Implement a feature request.
-- Close an issue as "working as intended" without filing the expectation-mismatch issue and replying in plain words.
+- Implement a feature request, or act on feedback, without the owner authorizing it.
+- Close an issue as "working as intended" when the reporter expected something different, without first filing the expectation-mismatch issue.
+- Write to a tester. Triage writes on the issue and on the board, and never contacts the person who reported.
 - Touch anything on the blast-radius list.
 - Merge without having run the app through the reporter's own steps.
