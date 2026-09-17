@@ -23,14 +23,37 @@ public enum Beacon {
 
     private static var stored: BeaconConfiguration?
 
+    /// The account reporters sign in to from inside the sheet, on the
+    /// GitHub route.
+    public private(set) static var gitHubAccount: GitHubAccount?
+
     /// Call once, at launch, before anything can open the sheet.
-    public static func configure(_ configuration: BeaconConfiguration) {
+    ///
+    /// - Parameters:
+    ///   - gitHubAccount: pass one when reports go to GitHub as whoever is
+    ///     signed in, and the sheet offers GitHub sign-in to anyone who
+    ///     isn't yet. Leave it out when the host signs people in itself.
+    ///   - audience: who is offered the report button and the walkthrough.
+    ///     `.testBuilds` keeps both out of App Store builds.
+    public static func configure(_ configuration: BeaconConfiguration,
+                                 gitHubAccount: GitHubAccount? = nil,
+                                 audience: BeaconAudience = .everyone) {
         stored = configuration
+        self.gitHubAccount = gitHubAccount
         BeaconLog.shared.info(
             "Beacon ready for \(configuration.app.name) \(configuration.app.version) "
             + "(\(configuration.app.build)) \u{2014} reports go to "
             + configuration.transport.destinationDescription,
             category: "beacon")
+        Task { await BeaconAvailability.shared.resolve(for: audience) }
+    }
+
+    /// Whether this build offers reporting at all. Views that read it are
+    /// redrawn when it's settled, which on `.testBuilds` takes a moment at
+    /// launch. False until then, so nothing flashes up in an App Store
+    /// build.
+    public static var isOffered: Bool {
+        isConfigured && BeaconAvailability.shared.isOffered
     }
 
     /// The live configuration. Reaching this before `configure` is a
@@ -72,7 +95,8 @@ public extension View {
     ///     .beaconReportSheet(isPresented: $reporting)
     func beaconReportSheet(isPresented: Binding<Bool>) -> some View {
         sheet(isPresented: isPresented) {
-            BeaconSheet(configuration: Beacon.configuration)
+            BeaconSheet(configuration: Beacon.configuration,
+                        gitHubAccount: Beacon.gitHubAccount)
         }
     }
 
@@ -100,8 +124,10 @@ struct FirstRunWalkthrough: ViewModifier {
     func body(content: Content) -> some View {
         content
             .beaconWalkthroughSheet(isPresented: $showing)
-            .task {
-                guard Beacon.isConfigured, !Beacon.hasSeenWalkthrough() else { return }
+            // Keyed on availability, so a test build that settles after
+            // this view appears still shows the walkthrough once.
+            .task(id: Beacon.isOffered) {
+                guard Beacon.isOffered, !Beacon.hasSeenWalkthrough() else { return }
                 showing = true
             }
     }
@@ -117,11 +143,13 @@ public struct BeaconReportButton: View {
     }
 
     public var body: some View {
-        Button {
-            reporting = true
-        } label: {
-            Label(title, systemImage: "exclamationmark.bubble")
+        if Beacon.isOffered {
+            Button {
+                reporting = true
+            } label: {
+                Label(title, systemImage: "exclamationmark.bubble")
+            }
+            .beaconReportSheet(isPresented: $reporting)
         }
-        .beaconReportSheet(isPresented: $reporting)
     }
 }

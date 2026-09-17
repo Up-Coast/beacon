@@ -48,13 +48,23 @@ public struct GitHubIssueTransport: ReportTransport {
 
     public func submit(_ submission: ReportSubmission) async throws -> SubmissionReceipt {
         var body = submission.issue.body
+        var attachmentsRefused = false
 
         // Attachments first: an issue that links to files which failed to
         // upload is worse than one that says the upload failed.
         if !submission.attachments.isEmpty {
-            let links = try await uploadAttachments(submission)
-            if !links.isEmpty {
-                body = insertAttachmentLinks(links, into: body)
+            do {
+                let links = try await uploadAttachments(submission)
+                if !links.isEmpty {
+                    body = insertAttachmentLinks(links, into: body)
+                }
+            } catch let error as TransportError where Self.isWriteRefusal(error) {
+                // GitHub lets anyone who can read a repository open an
+                // issue on it, but only people who can write to it can
+                // commit files. The words still go; the issue says the
+                // files didn't.
+                attachmentsRefused = true
+                body += Self.attachmentsRefusedNote
             }
         }
 
@@ -63,13 +73,34 @@ public struct GitHubIssueTransport: ReportTransport {
             body: body,
             labels: submission.issue.labels)
 
+        var summary = "Filed as issue #\(issue.number) on \(repositoryDescription). "
+            + "Anyone on the team can read it, and we may come back to you about it."
+        if attachmentsRefused {
+            summary += " Your attachments couldn't go with it, because this GitHub account "
+                + "can't add files to the repository. They're saved on \(PlatformWording.thisDevice)."
+        }
         return SubmissionReceipt(
-            summary: "Filed as issue #\(issue.number) on \(repositoryDescription). "
-                + "Anyone on the team can read it, and we may come back to you about it.",
+            summary: summary,
             issueNumber: issue.number,
             url: issue.url,
             isFiled: true)
     }
+
+    /// A refusal that means "this account may not write here", as opposed
+    /// to a network failure or a missing repository the issue call would
+    /// hit too.
+    static func isWriteRefusal(_ error: TransportError) -> Bool {
+        if case .rejected(let status, _) = error { return status == 403 || status == 404 }
+        return false
+    }
+
+    static let attachmentsRefusedNote = """
+
+        > [!NOTE]
+        > The reporter attached files, but their GitHub account can't add files to this \
+        repository, so none are linked here. The files are kept on the reporter's device.
+
+        """
 
     func uploadAttachments(_ submission: ReportSubmission) async throws -> [(String, URL)] {
         try await client.ensureBranch(attachmentBranch)
@@ -96,6 +127,47 @@ public struct GitHubIssueTransport: ReportTransport {
                 of: "- `\(filename)`", with: "- [`\(filename)`](\(url.absoluteString))")
         }
         return output
+    }
+}
+
+// MARK: - Direct to GitHub, as whoever is signed in
+
+/// The direct transport for an app whose reporters sign in from inside it.
+/// The token is read when a report is sent rather than when the app
+/// launches, so someone who signs in halfway through a session can send
+/// straight away, and a token GitHub has revoked is forgotten so the next
+/// report asks them to sign in again.
+public struct SignedInGitHubIssueTransport: ReportTransport {
+    public var owner: String
+    public var repository: String
+    public var account: GitHubAccount
+    public var attachmentBranch: String
+
+    public init(owner: String, repository: String, account: GitHubAccount,
+                attachmentBranch: String = "beacon-attachments") {
+        self.owner = owner
+        self.repository = repository
+        self.account = account
+        self.attachmentBranch = attachmentBranch
+    }
+
+    public var destinationDescription: String {
+        "an issue on \(owner)/\(repository)"
+    }
+
+    public func submit(_ submission: ReportSubmission) async throws -> SubmissionReceipt {
+        guard let token = account.token else {
+            throw TransportError.notConfigured("nobody is signed in to GitHub")
+        }
+        let transport = GitHubIssueTransport(
+            client: GitHubClient(owner: owner, repository: repository, token: token),
+            attachmentBranch: attachmentBranch)
+        do {
+            return try await transport.submit(submission)
+        } catch TransportError.rejected(status: 401, let detail) {
+            account.signOut()
+            throw TransportError.rejected(status: 401, detail: detail)
+        }
     }
 }
 

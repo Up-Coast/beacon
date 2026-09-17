@@ -9,9 +9,13 @@
 import SwiftUI
 import BeaconCore
 import BeaconDiagnostics
+import BeaconGitHub
 
 public struct BeaconSheet: View {
     @State private var session: FeedbackSession
+    /// On the GitHub route, the account a reporter signs in to from inside
+    /// the sheet. Nil when the host signs people in itself.
+    let gitHubAccount: GitHubAccount?
     @Environment(\.dismiss) private var dismiss
     #if os(iOS)
     /// On iOS the sheet collapses to a strip while recording, so the
@@ -20,8 +24,9 @@ public struct BeaconSheet: View {
     static let recordingDetent = PresentationDetent.height(112)
     #endif
 
-    public init(configuration: BeaconConfiguration) {
+    public init(configuration: BeaconConfiguration, gitHubAccount: GitHubAccount? = nil) {
         _session = State(initialValue: FeedbackSession(configuration: configuration))
+        self.gitHubAccount = gitHubAccount
     }
 
     public var body: some View {
@@ -64,7 +69,16 @@ public struct BeaconSheet: View {
     @ViewBuilder
     private var content: some View {
         switch session.step {
-        case .noReporter: NoReporterView()
+        case .noReporter:
+            if let gitHubAccount {
+                // Signed in: start the session again, so it picks up the
+                // new reporter and goes on to consent as anyone else would.
+                GitHubSignInView(account: gitHubAccount) {
+                    session = FeedbackSession(configuration: session.configuration)
+                }
+            } else {
+                NoReporterView()
+            }
         case .consent: ConsentView(session: session)
         case .pickKind: KindPickerView(session: session)
         case .form: FormStepView(session: session)
