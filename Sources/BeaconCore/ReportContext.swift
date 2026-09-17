@@ -58,6 +58,29 @@ public struct AppIdentity: Codable, Sendable, Equatable {
         self.build = build
         self.commit = commit
     }
+
+    /// The app as its own bundle describes it. Every host would otherwise
+    /// write the same four lookups, and get the version key wrong once.
+    ///
+    /// - Parameters:
+    ///   - bundle: the bundle to read. The app's own, unless you are
+    ///     reporting on behalf of something else.
+    ///   - commit: the commit this build came from, which the bundle
+    ///     cannot know. Bake it in at build time if you can: it is what
+    ///     lets triage check out the code the reporter was running.
+    public static func mainBundle(_ bundle: Bundle = .main,
+                                  commit: String? = nil) -> AppIdentity {
+        func string(_ key: String) -> String {
+            bundle.object(forInfoDictionaryKey: key) as? String ?? ""
+        }
+        let displayName = string("CFBundleDisplayName")
+        return AppIdentity(
+            name: displayName.isEmpty ? string("CFBundleName") : displayName,
+            bundleIdentifier: bundle.bundleIdentifier ?? "",
+            version: string("CFBundleShortVersionString"),
+            build: string("CFBundleVersion"),
+            commit: commit)
+    }
 }
 
 /// The machine the report came from.
