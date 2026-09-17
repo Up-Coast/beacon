@@ -159,11 +159,14 @@ Only to the transport the app configures. The transports and their settings are 
 | Transport | Where the report goes |
 |---|---|
 | `GitHubIssueTransport` | An issue on the repository, filed under the tester's own GitHub account. Attachments are committed to the `beacon-attachments` branch under `.beacon/attachments/<reference>/` and linked from the issue |
+| `SignedInGitHubIssueTransport` | The same, as whoever signed in from inside the app. The token is read from the keychain when the report is sent |
 | `RelayTransport` | Your endpoint receives the title, body, labels, reference, account and attachments, and files the issue |
 | `LocalBundleTransport` | Nowhere. The saved copy stays on the device for the tester to hand over |
 | `FallbackTransport` | The first transport, or the second when the first fails |
 
-Beacon makes network calls only to send through the transport and, for `GitHubIssueTransport`, to sign the tester in to GitHub.
+A tester who can read the repository but not write to it still gets their report filed. GitHub refuses their attachments, so the issue says the files stayed on the tester's device, and the saved copy on the device keeps them. GitHub also drops the labels from an issue filed by someone without write access, which is why [Setup: the GitHub path](setup-github.md) asks for write access for every tester.
+
+Beacon makes network calls only to send through the transport and, for the GitHub transports, to sign the tester in to GitHub.
 
 ## Never collected
 

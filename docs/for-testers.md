@@ -16,7 +16,7 @@ The button opens one of two things, depending on the app.
 
 ## If it opens a form inside the app
 
-1. Sign in to GitHub the first time, if the app asks. The app shows a short code. Type it at [github.com/login/device](https://github.com/login/device) in your browser.
+1. Sign in to GitHub the first time, if the app asks. The app shows a short code and copies it for you, so you can paste it at [github.com/login/device](https://github.com/login/device). **Open GitHub** takes you there. You do this once on each device, and your reports are filed under your own GitHub account.
 2. Read the notice about what happens to your report and accept it. You see it once, and again only if the wording changes.
 3. Choose **Something's broken**, **Something's missing** or **Something else**, fill in the form, and press **Next**.
 4. Read **Here's what we'll send**. Nothing has left your device yet.

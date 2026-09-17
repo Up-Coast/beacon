@@ -6,7 +6,7 @@ What is proven by a test, what is proven by having run it, what is written but h
 
 ## Proven by tests
 
-`swift test` runs 93 tests in 22 suites on the Mac. The iOS Simulator runs the same suites plus one test that only means anything there.
+`swift test` runs 110 tests in 28 suites on the Mac. The iOS Simulator runs the same suites, minus the keychain ones, which skip themselves there because a test host on the simulator has no keychain to write to.
 
 | Proven | Where |
 |---|---|
@@ -19,6 +19,11 @@ What is proven by a test, what is proven by having run it, what is written but h
 | The inbox link: keys carried, blanks left out, existing query kept, and the Swift key list matching a copy of the page's list | `BeaconCoreTests` |
 | The log ring, the folder scan (a known string written into a scanned tree is asserted absent), and the report archive | `BeaconDiagnosticsTests` |
 | Transports: saving locally never claims to have filed, the fallback takes over and says why, attachment links leave the prose alone, GitHub status codes become sentences, an oversize relay report is refused before upload | `BeaconGitHubTests` |
+| The signed-in account: a kept token comes back with its reporter, a second person replaces the first with no token left behind, signing out leaves nothing, and a report with nobody signed in is refused in words rather than sent without a token. These skip themselves where there is no usable keychain, which is every iOS Simulator run | `BeaconGitHubTests` |
+| Refusals name the real cause: an unregistered Client ID says so rather than blaming the network, GitHub's own description wins when it sends one, and an unsigned build is told it has no keychain | `BeaconGitHubTests` |
+| Attachments refused for want of write access (403, 404) let the issue go without them; a dead network does not | `BeaconGitHubTests` |
+| Who a build offers reporting to: the App Store's environment maps to development, TestFlight and App Store, and `.testBuilds` keeps the button out of App Store builds | `BeaconTests` |
+| `AppIdentity.mainBundle`: a bundle without the keys gives empty values rather than guesses, and the commit is kept because no bundle can know it | `BeaconCoreTests` |
 | Seeding: both switches required, a missing folder is safe, every outcome explains itself | `BeaconCoreTests` |
 | The on-device pass: unavailability is honest, questions override the model's own flag, blank questions dropped, an unknown field name falls back | `BeaconIntelligenceTests` |
 | Capture without a screen: frames out of a real video as PNGs in time order, a picked video travels with frames, a picked photo loses its location and camera metadata, unreadable formats refused, sentences name the platform | `BeaconCaptureTests` |
@@ -27,7 +32,10 @@ What is proven by a test, what is proven by having run it, what is written but h
 
 | Proven | Last checked |
 |---|---|
-| `swift test` passes: 93 tests, 22 suites, Swift 6.3.3 on macOS | 2026-09-17 |
+| `swift test` passes: 110 tests, 28 suites, Swift 6.3.3 on macOS | 2026-09-17 |
+| The GitHub device flow, end to end against GitHub: an OAuth App registered with device flow on, `begin()` returning a code, the code accepted at github.com/login/device, the app authorized, and the token handed back to the app | 2026-09-17 |
+| The sign-in screen inside a shipping app: Actually Keto on an iPhone 17 Pro simulator showed the report button in Settings, the sign-in step, the code copied for the tester, and the failure path with a Client ID that is not registered | 2026-09-17 |
+| Beacon adopted by three iOS apps (Actually Keto, Neori, Dayletter): each builds against the tag, files to its own repository, and hides the button outside test builds | 2026-09-17 |
 | `beacon-index` against this package: 8 areas, 28 screens. CI runs it on every push | 2026-09-17 |
 | CI (build, test, self-index) green on `macos-26` | 2026-09-16 |
 | The whole package builds for macOS 26 and the iOS 26 Simulator under strict concurrency with no warnings | 2026-09-07 |
@@ -45,13 +53,14 @@ Nothing here is known to be broken. None of it has been proven right either.
 | The reporter's flow on macOS | Every view compiles and the same state machine runs, but nobody has walked it end to end in a real Mac app |
 | Screen recording on either platform | The macOS path has never recorded a real window, and the first run needs Screen Recording permission granted by hand. On iOS the simulator's recorder starts and stops but writes an empty file, so a physical device is needed |
 | The on-device check against the real model | It ran once on the iOS Simulator and asked nothing about a short, complete bug. What it says about a thin report is unknown, and the prompt will need tuning |
-| The device flow | No OAuth app is registered. The endpoints and error codes follow GitHub's published documentation |
+| A report filed from inside an app | The device flow, the transport and the filing calls are each proven, but no report has yet travelled the whole way from an app's sheet to an issue. What stopped it was the keychain, not the flow: see the unsigned-build gap below |
 | `RelayTransport` | No relay is deployed |
 | The triage policy and skill | Written and copied into app repositories. Reports have been filed as issues, and no run of the policy over an open issue is recorded |
 | `beacon-reproduce.yml` | Ships failing at the run step until it is pointed at a host app's UI test scheme |
 
 ## Known gaps
 
+- **An unsigned build cannot sign in.** Beacon keeps the token in the keychain, and a build with no signing team has no keychain: `SecItemAdd` returns `errSecMissingEntitlement` and the sheet says so. This is iOS, not Beacon, but it makes a command-line `xcodebuild` build useless for testing the sheet. Xcode builds signed with a team, and TestFlight builds, are fine. The same limit is why the keychain tests skip themselves on the iOS Simulator.
 - **The committed page does not run.** In `Inbox/index.html`, `isBoard` reads `q` on the line above `q` is declared, so the script throws a `ReferenceError` at load and neither view works. The publish check (`new Function`) parses the script and does not run it, so it does not catch this.
 - **The page has no automated tests.** The only check before publishing is that the script parses.
 - **Nothing holds the page's copy of the rules equal to Swift.** `InboxLinkTests.everyKeyIsOneThePageReads` compares the Swift key list against a list copied into the test, not against `Inbox/index.html`. The completeness rules and their messages are copied by hand as well.

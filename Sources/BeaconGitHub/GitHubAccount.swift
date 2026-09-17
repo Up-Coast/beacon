@@ -11,6 +11,7 @@
 // the first cleanly instead of leaving a token nobody can reach.
 
 import Foundation
+import Security
 import BeaconCore
 
 public struct GitHubAccount: Sendable {
@@ -62,11 +63,15 @@ public struct GitHubAccount: Sendable {
 
     func remember(token: String, login: String) throws {
         signOut()
-        guard GitHubTokenStore.save(token, account: login, service: service),
-              GitHubTokenStore.save(login, account: Self.loginItem, service: service)
-        else {
+        var status = GitHubTokenStore.write(token, account: login, service: service)
+        if status == errSecSuccess {
+            status = GitHubTokenStore.write(login, account: Self.loginItem, service: service)
+        }
+        guard status == errSecSuccess else {
             signOut()
-            throw TransportError.notConfigured("the GitHub sign-in couldn't be saved on \(PlatformWording.thisDevice)")
+            throw TransportError.notConfigured(
+                "the GitHub sign-in couldn't be kept on \(PlatformWording.thisDevice) \u{2014} "
+                + GitHubTokenStore.explain(status))
         }
     }
 

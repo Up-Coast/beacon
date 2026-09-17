@@ -107,3 +107,37 @@ struct AttachmentRefusalTests {
         #expect(note.contains("can't add files to this repository"))
     }
 }
+
+@Suite("A refusal names the thing that is actually wrong")
+struct RefusalWordingTests {
+
+    /// GitHub answers an unregistered client id with `{"error": "Not
+    /// Found"}` and nothing else. "GitHub didn't return a code" sends the
+    /// reader hunting for a network problem; the Client ID is the problem.
+    @Test func anUnregisteredClientIDSaysSo() {
+        let message = GitHubDeviceFlow.explainRefusal(["error": "Not Found"])
+        #expect(message.contains("Client ID"))
+        #expect(message.contains("OAuth App"))
+    }
+
+    @Test func githubsOwnDescriptionIsPreferredWhenItSendsOne() {
+        let message = GitHubDeviceFlow.explainRefusal([
+            "error": "unsupported_grant_type",
+            "error_description": "The grant type is not supported.",
+        ])
+        #expect(message == "The grant type is not supported.")
+    }
+
+    /// An unsigned build has no keychain. Saying "couldn't be saved" makes
+    /// that look like a Beacon fault; naming the signing team is what the
+    /// person can act on.
+    @Test func anUnsignedBuildIsToldItHasNoKeychain() {
+        let message = GitHubTokenStore.explain(errSecMissingEntitlement)
+        #expect(message.contains("signing team"))
+        #expect(message.contains("TestFlight"))
+    }
+
+    @Test func anUnknownKeychainErrorStillCarriesItsNumber() {
+        #expect(GitHubTokenStore.explain(-12345).contains("-12345"))
+    }
+}

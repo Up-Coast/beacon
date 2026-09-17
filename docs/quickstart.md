@@ -16,7 +16,7 @@ In `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Up-Coast/beacon.git", from: "0.2.0"),
+    .package(url: "https://github.com/Up-Coast/beacon.git", from: "0.2.1"),
 ],
 targets: [
     .target(name: "YourApp", dependencies: [.product(name: "Beacon", package: "beacon")]),

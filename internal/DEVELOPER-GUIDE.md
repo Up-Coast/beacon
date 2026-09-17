@@ -267,7 +267,8 @@ On iOS, while recording, the sheet shrinks to `BeaconSheet.recordingDetent` (112
 
 | Transport | Needs | Does |
 |---|---|---|
-| `GitHubIssueTransport(client:attachmentBranch:)` | A GitHub token for the repository; the device flow asks for the `repo` scope | Ensures the branch (default `beacon-attachments`), puts each attachment at `.beacon/attachments/<reference>/<filename>`, turns the filenames into links, creates the issue |
+| `GitHubIssueTransport(client:attachmentBranch:)` | A GitHub token for the repository; the device flow asks for the `repo` scope | Ensures the branch (default `beacon-attachments`), puts each attachment at `.beacon/attachments/<reference>/<filename>`, turns the filenames into links, creates the issue. A `403` or `404` on the attachments alone means the account may read but not write: the issue is filed anyway, with a note that the files stayed on the device |
+| `SignedInGitHubIssueTransport(owner:repository:account:attachmentBranch:)` | A `GitHubAccount` somebody has signed in to | Reads the token from the keychain at submit time, then does what `GitHubIssueTransport` does. A `401` signs the account out, so the next report offers sign-in rather than failing again |
 | `RelayTransport(endpoint:appToken:destinationName:)` | A service you run | Checks the base64 size of the attachments against 60 MiB, then `POST`s JSON `{title, body, labels, reference, account, attachments: [{filename, base64}]}` with `Authorization: Bearer <appToken>` when set. Reads `issue_number` and `html_url`, or `error` on failure |
 | `LocalBundleTransport(folderProvider:handoverInstruction:)` | Nothing | Returns the folder from `folderProvider` with `isFiled: false` |
 | `FallbackTransport(primary:fallback:onFallback:)` | Two transports | Tries `primary`. On an error, calls `onFallback`, submits to `fallback` and prefixes the receipt summary with why |
@@ -305,7 +306,10 @@ The archive folder is `<yyyy-MM-dd-HHmmss>-<reference>` inside `reportArchiveDir
 
 - `begin()` posts to `https://github.com/login/device/code` and returns `Challenge {userCode, verificationURL, deviceCode, expiresAt, pollInterval}`. Missing values default to 900 seconds to expire and a 5-second interval.
 - `awaitToken(_:)` polls `https://github.com/login/oauth/access_token`. `authorization_pending` keeps polling, `slow_down` adds 5 seconds to the interval, `access_denied` throws `declined`, and `expired_token` throws `expired`.
-- `GitHubTokenStore.save`, `read` and `delete` keep the token in the keychain as a generic password, service `beacon.github`, accessible after first unlock.
+- `begin()` explains a refusal through `explainRefusal(_:)`. GitHub answers an unregistered client id with `{"error": "Not Found"}` and no description, so that case names the Client ID rather than blaming the network.
+- `GitHubTokenStore.save`, `read` and `delete` keep the token in the keychain as a generic password, service `beacon.github`, accessible after first unlock. `write(_:account:service:)` returns the `OSStatus` instead of a Bool, and `explain(_:)` turns it into a sentence: `errSecMissingEntitlement` means the build is unsigned and has no keychain.
+- `GitHubAccount(clientID:service:)` is what a host uses. `login` and `token` read the keychain, `reporter` is what `currentReporter` returns, `connect(token:)` asks GitHub whose token it is and keeps both items, and `signOut()` removes them. Two items live under the service: the token under the login, and the login under `.signed-in-login`, a name no GitHub login can take.
+- `BeaconSheet` shows `GitHubSignInView` in place of "you'll need to be signed in" when the host passed a `gitHubAccount`. Signing in rebuilds the session, so the reporter lands on consent or the kind picker with nothing retyped.
 
 The adopter registers the OAuth app under their own account. The steps are in [GitHub setup](../docs/setup-github.md).
 

@@ -135,6 +135,8 @@ GitHub runs scheduled workflows only from the default branch. In a public reposi
 6. Add `BeaconIndex.json` to your app target as a resource, and pass `index: BeaconIndex.loadFromBundle(.main)` to `BeaconConfiguration`.
 7. Build the app, sign in, and send a test report. It appears as an issue labelled `beacon`.
 
+    Build it signed, with a development team. Beacon keeps the tester's GitHub token in the keychain, and an unsigned build has no keychain: the sign-in comes back and cannot be kept, and the sheet says so. A build from Xcode with your own team, or a TestFlight build, is fine. A command-line `xcodebuild` run with no team is not.
+
 The sheet works the same on macOS and iOS. To sign testers in yourself instead, leave `gitHubAccount` out and use `GitHubDeviceFlow` and `GitHubIssueTransport` directly. For platform permissions, the full list of fields and the indexer's options, see [Options](options.md).
 
 ## 5. Optional: publish the Beacon page
