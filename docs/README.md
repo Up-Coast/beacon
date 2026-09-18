@@ -15,7 +15,7 @@ Pick one of three ways.
   /plugin install beacon@up-coast
   ```
 
-- **The Swift package.** Add `https://github.com/Up-Coast/beacon.git` from version `0.2.2`. The [Quickstart](quickstart.md) shows the code. You still need a setup path so reports go somewhere.
+- **The Swift package.** Add `https://github.com/Up-Coast/beacon.git` from version `0.2.3`. The [Quickstart](quickstart.md) shows the code. You still need a setup path so reports go somewhere.
 - **A clone.** The setup pages assume the repository is at `~/beacon`.
 
   ```bash

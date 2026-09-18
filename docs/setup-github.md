@@ -65,7 +65,7 @@ If the repository belongs to an organization with OAuth app access restrictions,
 
 ## 3. Choose where the pickup runs
 
-You can use one option or both.
+The Mac is the default, and the adoption script copies no workflows unless you ask for them. You can use one option or both.
 
 ### On your Mac
 
@@ -74,9 +74,17 @@ You can use one option or both.
 
 Only a Mac can reproduce a report and prove a fix by building and running a macOS or iOS app.
 
-The copied `beacon-triage.yml` is safe to commit before you have done any of this. Until the secret exists, each scheduled run stops at its first job, writes a notice saying triage is not set up yet, and finishes green. A workflow that failed every morning would train you to ignore it.
-
 ### On GitHub Actions
+
+Ask for the workflows when you adopt Beacon:
+
+```bash
+~/beacon/Scripts/beacon-adopt-github.sh /path/to/your-app your-org/your-app --with-actions
+```
+
+**Check what that costs before you switch it on.** A private repository on a Free plan includes 2,000 Actions minutes a month for the whole account. A Linux minute costs one; **a macOS minute costs ten**. One iOS build job on a macOS runner, or a CI workflow that runs on every push and every pull request, can spend the month's allowance on its own — and when the allowance runs out, every workflow in every private repository stops starting, with a billing message rather than a useful one. Public repositories are free. Beacon's own triage is not what spends this; your app's build is.
+
+Until you add the secret, each scheduled run stops at its first job, writes a notice saying triage is not set up yet, and finishes green. A workflow that failed every morning would train you to ignore it.
 
 `beacon-triage.yml` runs the `beacon-triage` skill on Linux at 08:00 UTC on weekdays. You can also start it from the Actions tab, optionally for one issue number.
 

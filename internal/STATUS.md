@@ -61,6 +61,7 @@ Nothing here is known to be broken. None of it has been proven right either.
 
 ## Known gaps
 
+- **The Actions path can cost more than the queue is worth, and nothing warned about it.** A private repository on a Free plan includes 2,000 Actions minutes a month across the account, and macOS minutes count ten times. On the owner's account the month's allowance went on one web project's CI and a stale iOS repository's macOS gate; when it ran out, every workflow in every private repository stopped starting, with a billing message. The adoption script no longer copies the workflows unless asked (`--with-actions`), and the setup page says what they cost. The Mac pickup needs no minutes.
 - **An unsigned build cannot sign in.** Beacon keeps the token in the keychain, and a build with no signing team has no keychain: `SecItemAdd` returns `errSecMissingEntitlement` and the sheet says so. This is iOS, not Beacon. A build made with `DEVELOPMENT_TEAM` set, as Xcode does, signs in and keeps the token; a plain `xcodebuild` run with no team cannot, and neither can a test host on the simulator, which is why the keychain tests skip themselves there.
 - **The committed page does not run.** In `Inbox/index.html`, `isBoard` reads `q` on the line above `q` is declared, so the script throws a `ReferenceError` at load and neither view works. The publish check (`new Function`) parses the script and does not run it, so it does not catch this.
 - **The page has no automated tests.** The only check before publishing is that the script parses.
