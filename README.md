@@ -82,6 +82,16 @@ The [Quickstart](docs/quickstart.md) has the full steps. The two setup paths, Cl
 | [Cloud reproduction](internal/CLOUD-REPRODUCTION.md) | You want to reproduce reports on GitHub-hosted macOS runners. |
 | [Contributing](CONTRIBUTING.md) | You want to send a change. |
 
+## Who makes Beacon, and why it is free
+
+I'm Abbey Jackson. I spent over a decade in tech as an iOS engineer and then a product manager, at Intel, Mastercard and Rivian, where I hold a patent ([US12115931B2](https://patents.google.com/patent/US12115931B2/en)) for the architecture behind how the Rivian app talks to the vehicle.
+
+Beacon is free because most of what I do is free. My main work is teaching app strategy: how to decide what to build and how to lead an app's development, which is the part nobody teaches engineers. Mentoring tends to stop when you make senior, and then you are expected to already know the product side.
+
+From Passion to Product is my free six-week live course. It covers user research, validation, competitive work, scoping and launch planning, and it ends with a written strategy you could hand to anyone. It is run by [Up Coast](https://www.upcoastbuilders.ca), my social venture, and it is free because I think the ability to build things people want should not depend on already being inside the tech industry.
+
+There are no dates for the next cohort yet. The waitlist and the course details are at [upcoastbuilders.ca](https://www.upcoastbuilders.ca).
+
 ## Licence
 
 Beacon is released under the MIT licence. See [LICENSE](https://github.com/Up-Coast/beacon/blob/main/LICENSE).
