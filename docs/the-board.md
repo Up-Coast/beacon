@@ -1,8 +1,8 @@
 # The board
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-06*
 
-The board lists every report from every app on your Beacon page, and what happened to each. It is read-only: the pickup writes the outcomes.
+The board lists every report from every app on your Beacon page, and what happened to each. The pickup writes the outcomes. The one thing you write is your decision on work that waits on a person.
 
 ## Open it
 
@@ -30,6 +30,15 @@ Open a row to see the whole report:
 | **Images** | Loaded when you open the row. |
 
 A part with nothing in it is left out. What each status means is in [How it works](how-it-works.md#statuses).
+
+## Approve or decline
+
+A report the pickup could not finish on its own, such as a fix too big to merge without a person or a feature request, shows **Your decision** when you open it. Add a note if the work should do or avoid something, then click **Approve the fix** (or **Approve building it**) or **Decline**.
+
+- **Approve:** the report shows "Approved, waiting for the next run". The next pickup builds it, merges it and writes the commit onto the report.
+- **Decline:** the pickup closes the issue with your note.
+
+Anyone who can edit the page can click these, so share edit access only with people you trust to decide.
 
 ## Filter
 
