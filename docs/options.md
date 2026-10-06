@@ -1,6 +1,6 @@
 # Options
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-06*
 
 Every setting Beacon reads, and where it is set.
 
@@ -45,6 +45,7 @@ Pass it to `Beacon.configure(_:gitHubAccount:audience:)` once at launch, before 
 | `maximumRecordingSeconds` | `Int` | `180` | A recording stops by itself after this many seconds. |
 | `consentStore` | `any ConsentStoring` | `UserDefaultsConsentStore()` | Where the tester's acceptance of the privacy notice is kept. |
 | `reportArchiveDirectory` | `URL?` | see below | Where each report is saved on the device before it is sent. |
+| `showsFloatingButton` | `Bool` | `true` | Whether Beacon shows a round report button that floats above the app's windows. Set it to `false` when testers should report only from your own button or settings. |
 
 The default archive directory is `BeaconConfiguration.defaultArchiveDirectory(appName:)`: `Application Support/<app name>/Beacon/reports`, or `Application Support/Beacon/Beacon/reports` when the app name is empty. Each report is a folder named `<yyyy-MM-dd-HHmmss>-<reference>` holding `report.json`, `issue.md` and an `attachments` folder. `ReportArchive(directory:).saved()` lists the folders, newest first.
 
@@ -234,6 +235,7 @@ A `GitHubClient` holds the token it was created with. If you build one yourself,
 
 | API | What it does |
 |---|---|
+| The floating button | Shown by Beacon itself once reporting is offered, unless `showsFloatingButton` is `false`. You add nothing to your views. On macOS it floats above the app's windows and hides when another app is in front; on iOS it floats above every screen, sheets included. Testers can drag it out of the way. It hides while the report sheet is open. |
 | `BeaconReportButton(title:)` | A button that opens the sheet. `title` is a `String` and defaults to `Report a problem`. It draws nothing when the audience does not include this build. |
 | `.beaconReportSheet(isPresented:)` | Presents the sheet from your own button. |
 | `.beaconWalkthroughOnFirstRun()` | Shows the walkthrough the first time the view appears for this person. Put it on your main view. |

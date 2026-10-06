@@ -93,6 +93,12 @@ public struct BeaconConfiguration: Sendable {
     /// Where consent is remembered.
     public var consentStore: any ConsentStoring
 
+    /// Whether Beacon shows its floating report button above the app's
+    /// windows. On by default, because a report button buried in Settings
+    /// is a button nobody presses. Turn it off when the app offers
+    /// reporting only from its own menu or settings.
+    public var showsFloatingButton: Bool
+
     /// Where reports are kept on disk — always written before sending, so
     /// a failed send never loses someone's work.
     public var reportArchiveDirectory: URL
@@ -110,7 +116,8 @@ public struct BeaconConfiguration: Sendable {
                 allowsScreenRecording: Bool = true,
                 maximumRecordingSeconds: Int = 180,
                 consentStore: any ConsentStoring = UserDefaultsConsentStore(),
-                reportArchiveDirectory: URL? = nil) {
+                reportArchiveDirectory: URL? = nil,
+                showsFloatingButton: Bool = true) {
         self.app = app
         self.organizationName = organizationName
         self.currentReporter = currentReporter
@@ -124,6 +131,7 @@ public struct BeaconConfiguration: Sendable {
         self.allowsScreenRecording = allowsScreenRecording
         self.maximumRecordingSeconds = maximumRecordingSeconds
         self.consentStore = consentStore
+        self.showsFloatingButton = showsFloatingButton
         self.reportArchiveDirectory = reportArchiveDirectory
             ?? BeaconConfiguration.defaultArchiveDirectory(appName: app.name)
     }

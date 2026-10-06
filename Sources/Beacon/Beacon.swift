@@ -51,7 +51,14 @@ public enum Beacon {
                 + GitHubTokenStore.explain(gitHubAccount.keychainStatus),
                 category: "beacon")
         }
-        Task { await BeaconAvailability.shared.resolve(for: audience) }
+        Task {
+            await BeaconAvailability.shared.resolve(for: audience)
+            if isOffered && configuration.showsFloatingButton {
+                FloatingReportButton.shared.show()
+            } else {
+                FloatingReportButton.shared.hide()
+            }
+        }
     }
 
     /// Whether this build offers reporting at all. Views that read it are

@@ -17,6 +17,9 @@ public struct BeaconSheet: View {
     /// the sheet. Nil when the host signs people in itself.
     let gitHubAccount: GitHubAccount?
     @Environment(\.dismiss) private var dismiss
+    /// Set when the sheet sits in a window Beacon opened itself, where
+    /// SwiftUI's dismiss has nothing to close.
+    let onClose: (() -> Void)?
     #if os(iOS)
     /// On iOS the sheet collapses to a strip while recording, so the
     /// reporter can work the app behind it and come back to press stop.
@@ -24,9 +27,15 @@ public struct BeaconSheet: View {
     static let recordingDetent = PresentationDetent.height(112)
     #endif
 
-    public init(configuration: BeaconConfiguration, gitHubAccount: GitHubAccount? = nil) {
+    public init(configuration: BeaconConfiguration, gitHubAccount: GitHubAccount? = nil,
+                onClose: (() -> Void)? = nil) {
         _session = State(initialValue: FeedbackSession(configuration: configuration))
         self.gitHubAccount = gitHubAccount
+        self.onClose = onClose
+    }
+
+    private func close() {
+        if let onClose { onClose() } else { dismiss() }
     }
 
     public var body: some View {
@@ -85,7 +94,7 @@ public struct BeaconSheet: View {
         case .review: ReviewStepView(session: session)
         case .questions: QuestionsStepView(session: session)
         case .sending: WorkingOverlay(message: "Sending\u{2026}")
-        case .done: DoneView(session: session, dismiss: { dismiss() })
+        case .done: DoneView(session: session, dismiss: close)
         }
     }
 
@@ -110,7 +119,7 @@ public struct BeaconSheet: View {
                     .keyboardShortcut(.defaultAction)
             case .consent, .pickKind, .noReporter:
                 Spacer()
-                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button("Cancel") { close() }.keyboardShortcut(.cancelAction)
             case .sending, .done:
                 EmptyView()
             }
