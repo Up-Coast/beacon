@@ -1,10 +1,10 @@
 # FAQ
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-06*
 
 **Do my testers need an account?**
 
-For the Beacon page, yes: a Claude account in the organization that owns the page, signed in. For the in-app sheet with the GitHub transport, a GitHub account. See [Setup: the GitHub path](setup-github.md).
+For the Beacon page, yes: a Claude account in the organization that owns the page, signed in. For the in-app sheet with the GitHub transport, a GitHub account. See [Setup: the GitHub path](setup-github.md). For the in-app sheet through a relay, no: anyone can report, and they never see GitHub. See [Setup: the relay](setup-relay.md).
 
 **Can one page serve several apps?**
 

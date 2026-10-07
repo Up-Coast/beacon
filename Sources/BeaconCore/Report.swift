@@ -69,16 +69,17 @@ public enum Severity: String, Codable, Sendable, CaseIterable {
     case critical, high, medium, low
 }
 
-/// Who filed it. Beacon reports are not anonymous by design (see
-/// `ConsentNotice`) — this is the part that says so in data.
+/// Who filed it: a signed-in account, or `Reporter.anonymous(deviceID:)`
+/// for an app whose reporters have none. The privacy notice says which
+/// (see `ConsentNotice`).
 public struct Reporter: Codable, Sendable, Equatable {
     /// The account identifier the host app already knows — an email, a
-    /// username, whatever the host uses. Required: an anonymous report
-    /// can't be followed up on, and following up is the point.
+    /// username, whatever the host uses — or an anonymous install's id.
     public var accountID: String
     /// Shown on the issue so a human reading it knows who to thank.
     public var displayName: String?
-    /// Where to reach them, when that isn't the account id itself.
+    /// Where to reach them, when that isn't the account id itself. The
+    /// sheet's optional "how can we reach you?" answer lands here.
     public var contact: String?
 
     public init(accountID: String, displayName: String? = nil, contact: String? = nil) {

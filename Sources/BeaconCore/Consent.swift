@@ -1,12 +1,14 @@
 // What the reporter is told before anything leaves their machine.
 //
-// A feedback report is not anonymous and cannot be — the whole point is
-// that somebody can come back and ask a follow-up question. That is a fair
-// deal, but only if it is said plainly and said first. So the wording lives
-// here as data, it is versioned, and the version the reporter accepted is
-// written onto every report they file. Change the wording and the version
-// changes with it, which means everyone is asked again rather than being
-// held to a promise they never read.
+// A report from a signed-in reporter is not anonymous — the point is that
+// somebody can come back and ask a follow-up question. A report from an app
+// with no accounts is anonymous unless the reporter leaves a way to reach
+// them. Either deal is fair, but only if it is said plainly and said
+// first. So the wording lives here as data, it is versioned, and the
+// version the reporter accepted is written onto every report they file.
+// Change the wording and the version changes with it, which means
+// everyone is asked again rather than being held to a promise they never
+// read.
 
 import Foundation
 
@@ -26,31 +28,64 @@ public struct ConsentNotice: Sendable, Equatable {
         self.acceptButton = acceptButton
     }
 
-    /// The shipped wording. `organizationName` is substituted by the host
-    /// app's configuration so the notice names a real group of people
-    /// rather than "the team".
+    /// The shipped wording for reporters who sign in to GitHub to send.
+    /// `organizationName` is substituted by the host app's configuration so
+    /// the notice names a real group of people rather than "the team".
     public static let current = ConsentNotice(
         version: "2026-09-07.1",
-        headline: "Before you send this, here's what happens to it",
+        headline: sharedHeadline,
         points: [
             "Your report is not anonymous. It goes out with the account "
                 + "you're signed in with, so we know it came from you.",
-            "We may come back to you with a question about it. That's "
-                + "usually how a report gets fixed quickly.",
+            followUp,
             "Your report is copied to GitHub, where it becomes an issue. "
-                + "Right now only $ORG can read it — but treat it as "
+                + "Right now only $ORG can read it \u{2014} but treat it as "
                 + "something other people will see, because they will.",
-            "We collect your app version, your settings, and details about "
-                + "this device. You can read all of it on the next screen "
-                + "before you send.",
-            "We list the names and folder structure of your project files "
-                + "so we can see how things are laid out. We never open "
-                + "them and never read what's inside.",
-            "Anything you attach yourself — a screenshot, a recording, a "
-                + "file — we do read. That's the point of attaching it, and "
-                + "it's entirely your choice what to add.",
-        ],
-        acceptButton: "I understand — let's go")
+        ] + whatIsCollected,
+        acceptButton: sharedAcceptButton)
+
+    /// For a signed-in reporter whose reports go to the team, with nothing
+    /// said about how they are filed.
+    public static let team = ConsentNotice(
+        version: "2026-10-06.team.1",
+        headline: sharedHeadline,
+        points: [
+            "Your report goes out with the account you're signed in with, "
+                + "so we know it came from you.",
+            followUp,
+            "Your report goes to $ORG, and only they can read it.",
+        ] + whatIsCollected,
+        acceptButton: sharedAcceptButton)
+
+    /// For a reporter with no account, whose reports go to the team.
+    public static let teamAnonymous = ConsentNotice(
+        version: "2026-10-06.anonymous.1",
+        headline: sharedHeadline,
+        points: [
+            "You don't need an account, and your name isn't sent. Your report "
+                + "carries a random number made for this app on this device, so "
+                + "we can tell your reports apart.",
+            "If you'd like us to be able to ask you about it, you can leave a "
+                + "way to reach you. That's up to you.",
+            "Your report goes to $ORG, and only they can read it.",
+        ] + whatIsCollected,
+        acceptButton: sharedAcceptButton)
+
+    static let sharedHeadline = "Before you send this, here's what happens to it"
+    static let sharedAcceptButton = "I understand \u{2014} let's go"
+    static let followUp = "We may come back to you with a question about it. That's "
+        + "usually how a report gets fixed quickly."
+    static let whatIsCollected = [
+        "We collect your app version, your settings, and details about "
+            + "this device. You can read all of it on the next screen "
+            + "before you send.",
+        "We list the names and folder structure of your project files "
+            + "so we can see how things are laid out. We never open "
+            + "them and never read what's inside.",
+        "Anything you attach yourself \u{2014} a screenshot, a recording, a "
+            + "file \u{2014} we do read. That's the point of attaching it, and "
+            + "it's entirely your choice what to add.",
+    ]
 
     /// The notice with the host's organisation name filled in.
     public func naming(_ organizationName: String) -> ConsentNotice {

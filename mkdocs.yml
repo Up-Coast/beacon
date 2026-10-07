@@ -65,6 +65,7 @@ nav:
       - Quickstart: docs/quickstart.md
       - "Setup: the Claude-only path": docs/setup-claude-only.md
       - "Setup: the GitHub path": docs/setup-github.md
+      - "Setup: the relay": docs/setup-relay.md
       - For testers: docs/for-testers.md
   - Using Beacon:
       - How it works: docs/how-it-works.md

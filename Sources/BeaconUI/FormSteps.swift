@@ -29,6 +29,13 @@ struct FormStepView: View {
                 ImpactPicker(impact: $session.impact)
                 AttachmentsView(session: session)
 
+                if session.words.asksForContact {
+                    FieldBlock(label: session.words.contactLabel, hint: session.words.contactHint) {
+                        TextField("", text: $session.contact)
+                            .textFieldStyle(.plain)
+                    }
+                }
+
                 if !session.blockingIssues.isEmpty {
                     GroupBox {
                         VStack(alignment: .leading, spacing: 6) {
@@ -440,7 +447,7 @@ struct ReviewStepView: View {
                     Text(session.configuration.transport.destinationDescription)
                 }
                 LabeledContent("From") {
-                    Text(session.reporter?.accountID ?? "\u{2014}")
+                    Text(session.words.from(session.reporter))
                 }
 
                 if !session.advisoryIssues.isEmpty {

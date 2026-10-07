@@ -47,6 +47,9 @@ public final class FeedbackSession {
     public var impact: Impact = .slowed
     public var areaID: String?
     public var attachments: [Attachment] = []
+    /// The optional "how can we reach you?" answer. Rides on the report
+    /// as the reporter's contact when it isn't empty.
+    public var contact = ""
 
     /// Answers typed into the on-device pass's questions. Appended to the
     /// relevant field rather than replacing it — the reporter's first words
@@ -89,11 +92,12 @@ public final class FeedbackSession {
         self.log = log
         self.archive = ReportArchive(directory: configuration.reportArchiveDirectory)
         self.reporter = configuration.currentReporter()
+        self.contact = reporter?.contact ?? ""
 
         if reporter == nil {
             step = .noReporter
         } else if configuration.consentStore.needsAcceptance(
-            accountID: reporter!.accountID, notice: configuration.consentNotice) {
+            accountID: reporter!.accountID, notice: configuration.consentNotice(for: reporter)) {
             step = .consent
         } else {
             step = .pickKind
@@ -108,7 +112,9 @@ public final class FeedbackSession {
     }
 
     public var index: BeaconIndex? { configuration.index }
-    public var notice: ConsentNotice { configuration.consentNotice }
+    public var notice: ConsentNotice { configuration.consentNotice(for: reporter) }
+    /// The sentences that depend on where reports go.
+    public var words: ReporterWords { configuration.reporterWords }
 
     /// Whether the on-device pass can run here, for the line the review
     /// screen shows. Read as state; no model call.
@@ -245,7 +251,9 @@ public final class FeedbackSession {
         }
 
         do {
-            receipt = try await configuration.transport.submit(submission)
+            let filed = try await configuration.transport.submit(submission)
+            receipt = filed
+            if let savedFolder { _ = try? archive.recordReceipt(filed, in: savedFolder) }
             log.info("report \(report.reference) filed", category: "beacon")
         } catch {
             let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -279,7 +287,7 @@ public final class FeedbackSession {
         return FeedbackReport(
             id: reportID,
             startedAt: startedAt,
-            reporter: reporter ?? Reporter(accountID: "unknown"),
+            reporter: reporterWithContact,
             title: title,
             body: body,
             impact: impact,
@@ -288,6 +296,14 @@ public final class FeedbackSession {
             context: context ?? ReportContext(app: configuration.app),
             consentVersion: notice.version,
             review: review)
+    }
+
+    /// The session's reporter, carrying the contact they typed, if any.
+    var reporterWithContact: Reporter {
+        var sender = reporter ?? Reporter(accountID: "unknown")
+        let typed = contact.trimmingCharacters(in: .whitespacesAndNewlines)
+        sender.contact = typed.isEmpty ? nil : typed
+        return sender
     }
 
     /// Stable for the whole session, so the reference the reporter is shown

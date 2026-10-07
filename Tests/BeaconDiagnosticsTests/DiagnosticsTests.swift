@@ -151,6 +151,23 @@ struct ReportArchiveTests {
         #expect(!json.contains("AQIDBA"))
     }
 
+    /// On the team route the reporter never sees the issue number or link,
+    /// so the saved copy is where they are kept.
+    @Test func theReceiptIsKeptBesideTheSavedCopy() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("beacon-receipt-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let receipt = SubmissionReceipt(summary: "Sent to the team. Thank you.", issueNumber: 42,
+                                        url: URL(string: "https://example.com/42"), isFiled: true)
+        let written = try ReportArchive(directory: folder).recordReceipt(receipt, in: folder)
+        let fields = try JSONSerialization.jsonObject(with: Data(contentsOf: written)) as? [String: Any]
+        #expect(fields?["issue_number"] as? Int == 42)
+        #expect(fields?["url"] as? String == "https://example.com/42")
+        #expect(fields?["filed"] as? Bool == true)
+    }
+
     @Test func awkwardFilenamesAreFlattenedBeforeTheyReachDisk() {
         #expect(ReportArchive.safeFilename("../../etc/passwd") == ".._.._etc_passwd")
         #expect(ReportArchive.safeFilename("") == "attachment")

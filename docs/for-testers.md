@@ -1,6 +1,6 @@
 # Reporting something, if you're testing an app
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-06*
 
 Use the report button inside the app. It fills in your app version, your device and more, so you only write the part only you know. You don't need to be technical, just specific.
 
@@ -16,15 +16,14 @@ The button opens one of two things, depending on the app.
 
 ## If it opens a form inside the app
 
-1. Sign in to GitHub the first time, if the app asks. The app shows a short code and copies it for you, so you can paste it at [github.com/login/device](https://github.com/login/device). **Open GitHub** takes you there. You do this once on each device, and your reports are filed under your own GitHub account.
-2. Read the notice about what happens to your report and accept it. You see it once, and again only if the wording changes.
-3. Choose **Something's broken**, **Something's missing** or **Something else**, fill in the form, and press **Next**.
-4. Read **Here's what we'll send**. Nothing has left your device yet.
-5. Press **Check and send**, or **Send** if your device can't run the check.
+1. Read the notice about what happens to your report and accept it. You see it once, and again only if the wording changes.
+2. Choose **Something's broken**, **Something's missing** or **Something else**, fill in the form, and press **Next**. If the form asks **How can we reach you?**, leaving an email or phone number is up to you. Without one, the team can't ask you about your report.
+3. Read **Here's what we'll send**. Nothing has left your device yet.
+4. Press **Check and send**, or **Send** if your device can't run the check.
+
+Many apps need no account to report. If the app asks you to sign in to GitHub first, see [the last section](#if-the-app-asks-you-to-sign-in-to-github).
 
 **Check and send** means your Mac, iPhone or iPad reads your report over first, using Apple's on-device AI. It may ask up to 3 questions. Answer what you can, then press **Send it**. You can also press **Send it** without answering. The check only adds your answers. It never changes what you wrote.
-
-If the app says it cannot keep a sign-in, stop there and tell the team. That build was made without a signing team, so it has nowhere to keep your GitHub sign-in. GitHub and the report button are both fine; the build is not. A TestFlight build works.
 
 ## The three things every bug report needs
 
@@ -59,12 +58,12 @@ If the form in the app can't send, your report is saved on your device and the f
 
 ## What the team can see
 
-Your report isn't anonymous. Anyone on the team can read it. On the web page, that's anyone who can open the page. From the form in the app, your report becomes a GitHub issue.
+Anyone on the team can read your report. On the web page, that's anyone who can open the page. From the form in the app, the notice you accept says whether your report goes with your account or with no name at all.
 
 | | Web page | Form in the app |
 |---|---|---|
 | Your app version and build, your device and its system, your language and time zone, light or dark mode and text size | Yes | Yes |
-| Your name or email, or your account | Yes | Yes |
+| Your name or email, or your account | Yes | Yes, unless the app lets you report with no account. Then only a random number for this app on your device, and a way to reach you if you leave one |
 | What you write and what you attach | Yes | Yes |
 | Your browser's name and version | Yes | No |
 | Your memory and free disk space | No | Yes |
@@ -81,3 +80,9 @@ Before the form in the app sends, it removes anything that looks like a password
 > I clicked Save on a project called Harbour. The spinner ran for about ten seconds, then the window went white and stayed white. I expected it to save and go back to the project list. It's done it three times today.
 
 The second one gets fixed.
+
+## If the app asks you to sign in to GitHub
+
+Some apps file reports under your own GitHub account. The first time, the app shows a short code and copies it for you, so you can paste it at [github.com/login/device](https://github.com/login/device). **Open GitHub** takes you there. You do this once on each device.
+
+If the app says it cannot keep a sign-in, stop there and tell the team. That build was made without a signing team, so it has nowhere to keep your GitHub sign-in. GitHub and the report button are both fine; the build is not. A TestFlight build works.

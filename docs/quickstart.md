@@ -1,14 +1,14 @@
 # Quickstart
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-06*
 
 Put a Beacon report button in your app and send a test report.
 
 ## Before you start
 
-Set up a path first: [Claude-only](setup-claude-only.md) or [GitHub](setup-github.md). Keep the link to your Beacon page. One page serves all your apps, because the button tells the page which app is reporting.
+Set up a path first: [Claude-only](setup-claude-only.md), [GitHub](setup-github.md) or [the relay](setup-relay.md). Keep the link to your Beacon page. One page serves all your apps, because the button tells the page which app is reporting.
 
-On the GitHub path without the page, do steps 1 and 2 here, then put the in-app sheet in instead of step 3 ([Setup: the GitHub path](setup-github.md), step 4).
+On the GitHub path or the relay without the page, do steps 1 and 2 here, then put the in-app sheet in instead of step 3 ([Setup: the GitHub path](setup-github.md), step 4, or [Setup: the relay](setup-relay.md), step 4).
 
 ## 1. Add the package
 
@@ -16,7 +16,7 @@ In `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Up-Coast/beacon.git", from: "0.3.0"),
+    .package(url: "https://github.com/Up-Coast/beacon.git", from: "0.4.0"),
 ],
 targets: [
     .target(name: "YourApp", dependencies: [.product(name: "Beacon", package: "beacon")]),
@@ -54,8 +54,8 @@ import Beacon
 |---|---|
 | `app` | Your app's name, bundle identifier, version and build. `commit` is the git commit the build was made from, written into the build at build time. It lets triage check out the exact code the tester ran. |
 | `organizationName` | Who reads reports. The privacy notice names it. |
-| `currentReporter` | The signed-in person, or `nil`. The in-app sheet will not file a report without a reporter. |
-| `transport` | Where the in-app sheet sends reports. On the Claude-only path, keep `LocalBundleTransport` as shown. On the GitHub path, see [Setup: the GitHub path](setup-github.md). |
+| `currentReporter` | The signed-in person, or `nil`. The in-app sheet will not file a report without a reporter. For an app with no accounts, return `.anonymous()` instead. |
+| `transport` | Where the in-app sheet sends reports. On the Claude-only path, keep `LocalBundleTransport` as shown. Otherwise see [Setup: the GitHub path](setup-github.md) or [Setup: the relay](setup-relay.md). |
 
 Every other field is optional. See [Options](options.md).
 
