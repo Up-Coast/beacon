@@ -173,6 +173,12 @@ public struct OnDeviceCompletenessReviewer: CompletenessReviewing {
             lines.append("KIND: feature request")
             lines.append("WHAT THEY WANT: \(feature.whatIWant)")
             lines.append("WHY: \(feature.why.isEmpty ? "(not said)" : feature.why)")
+            if !feature.idea.isEmpty { lines.append("THEIR IDEA: \(feature.idea)") }
+        case .change(let change):
+            lines.append("KIND: change request")
+            lines.append("WHAT THEY WOULD LIKE CHANGED: \(change.whatToChange)")
+            lines.append("WHAT THEY WOULD LIKE INSTEAD: \(change.instead)")
+            lines.append("WHY: \(change.why.isEmpty ? "(not said)" : change.why)")
         case .feedback(let feedback):
             lines.append("KIND: general feedback")
             lines.append("MESSAGE: \(feedback.message)")

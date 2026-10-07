@@ -1,6 +1,6 @@
 # BeaconExample
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-07*
 
 A small app for trying Beacon's in-app sheet on iPhone, iPad and Mac. It has a counter, a button that writes a warning to the log, the report button, and the walkthrough on first run.
 
@@ -48,7 +48,7 @@ xcodebuild build -project BeaconExample.xcodeproj -scheme BeaconExample -destina
 ## What to try
 
 - The consent screen.
-- Each of the three kinds: bug, feature request and feedback.
+- Each of the four kinds: bug, feature request (with its optional idea), change request and feedback. The intro line at the top of the first screen.
 - The steps list on a bug.
 - A screenshot and a screen recording.
 - **Choose from Photos**, on iOS.

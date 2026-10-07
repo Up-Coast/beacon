@@ -35,7 +35,7 @@ const MAX_BODY = 50_000;
 /** The labels the relay passes on, so a request cannot make the GitHub App create new ones. */
 const FIXED_LABELS = new Set([
   "beacon",
-  "type:bug", "type:feature-request", "type:feedback",
+  "type:bug", "type:feature-request", "type:change-request", "type:feedback",
   "impact:blocked", "impact:slowed", "impact:irritating", "impact:noticed",
 ]);
 /** An area label is `area:` and the indexer's id: lowercase words joined by hyphens. */

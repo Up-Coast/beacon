@@ -1,6 +1,6 @@
 # Options
 
-*Last updated: 2026-10-06*
+*Last updated: 2026-10-07*
 
 Every setting Beacon reads, and where it is set.
 
@@ -52,7 +52,7 @@ Pass it to `Beacon.configure(_:gitHubAccount:audience:)` once at launch, before 
 | Field | Type | Default | What it does |
 |---|---|---|---|
 | `app` | `AppIdentity` | required | Which app and build this is. See [`AppIdentity`](#appidentity). |
-| `organizationName` | `String` | required | Named in the privacy notice the tester accepts, as who can read the report. |
+| `organizationName` | `String` | required | Named in the privacy notice the tester accepts, as who can read the report, and in the line at the top of the first screen ("We use *organizationName*'s free tool Beacon …"). Empty, the line reads "the free tool". |
 | `currentReporter` | `() -> Reporter?` | required | Who is reporting. Return `.anonymous()` to let anyone report with no account. Return `nil` when a sign-in is required and nobody has one; the sheet then says so and files nothing. See [`Reporter`](#reporter). |
 | `transport` | `any ReportTransport` | required | Where the in-app sheet sends reports. See [Transports](#transports). |
 | `index` | `BeaconIndex?` | `nil` | The app map, usually `BeaconIndex.loadFromBundle(.main)`. With `nil`, the picker offers only "not sure" and "something new". |

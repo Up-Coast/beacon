@@ -1,6 +1,6 @@
 # Developer guide
 
-*Last updated: 2026-10-06*
+*Last updated: 2026-10-07*
 
 The technical reference for changing Beacon itself: the Swift package, the page, the pickup and the workflows. To add Beacon to an app, read [the options reference](../docs/options.md) and [GitHub setup](../docs/setup-github.md) instead. What Beacon collects is in [What is collected](../docs/what-is-collected.md), and testers have [their own page](../docs/for-testers.md). What is proven and what is not is in [STATUS.md](STATUS.md).
 
@@ -65,7 +65,7 @@ FeedbackReport
   startedAt: Date          when the session started, not when the reporter sent
   reporter: Reporter       accountID (required; "anonymous-<install id>" when anonymous), displayName?, contact?
   title: String            blank means the renderer derives one
-  body: ReportBody         .bug(BugBody) | .feature(FeatureBody) | .feedback(FeedbackBody)
+  body: ReportBody         .bug(BugBody) | .feature(FeatureBody) | .change(ChangeBody) | .feedback(FeedbackBody)
   impact: Impact           blocked | slowed | irritating | noticed   (rank 0..3, 0 is worst)
   areaID: String?          an area id from BeaconIndex, or "not-sure" / "something-new"
   attachments: [Attachment]
@@ -74,9 +74,10 @@ FeedbackReport
   review: CompletenessReview?
 
 BugBody       whatHappened, expected, steps [String], reproducibility (every-time | sometimes | once | unknown)
-FeatureBody   whatIWant, why, areaID?, isNewArea
+FeatureBody   whatIWant, why, areaID?, isNewArea, idea
+ChangeBody    whatToChange, instead, why
 FeedbackBody  message, areaID?
-FeedbackKind  bug | feature-request | feedback
+FeedbackKind  bug | feature-request | change-request | feedback
 Severity      critical | high | medium | low   (set by triage only)
 ```
 
@@ -95,11 +96,15 @@ Severity      critical | high | medium | low   (set by triage only)
 | Feature | `whatIWant` | Not empty, not a placeholder, at least 12 characters | Yes |
 | Feature | `why` | Empty or a placeholder gets a prompt | No |
 | Feature | area | An area is picked, or `isNewArea` is set | Yes |
+| Change request | `whatToChange` | Not empty, not a placeholder, at least 12 characters | Yes |
+| Change request | `instead` | Not empty, not a placeholder, at least 12 characters | Yes |
 | Feedback | `message` | Not empty, not a placeholder, at least 12 characters | Yes |
+
+A feature request's `idea`, and a change request's `why` and area, are optional and never block.
 
 `minimumMeaningfulCharacters` is 12. A placeholder is an answer such as "n/a", "idk", "asdf" or "it broke", matched whole and case-insensitively after trimming punctuation. The full list is `CompletenessRules.placeholders`.
 
-The page carries a copy of these rules and their messages in JavaScript. Change `Completeness.swift` first, then `Inbox/index.html`, and keep the messages identical. The page also requires a reporter name of at least 3 characters and a chosen app. It has no area rule for feature requests.
+The page carries a copy of these rules and their messages in JavaScript. Change `Completeness.swift` first, then `Inbox/index.html`, and keep the messages identical. The page also requires a reporter name of at least 3 characters and a chosen app. It has no area rule for feature requests. The page does not yet offer change requests or the idea box; only the in-app sheet does.
 
 ## Issue rendering and labels
 
@@ -110,7 +115,7 @@ The page carries a copy of these rules and their messages in JavaScript. Change 
 **Body**, in order:
 
 1. A quoted line naming the reporter and saying they agreed to be contacted.
-2. The kind's sections. Bug: `## What they expected`, `## What actually happened`, `## Steps to see it`, `## Does it happen again?`. Feature: `## What they want to be able to do`, a `## Why` section when `why` is set, `## Where it belongs` (with the area's source paths). Feedback: `## What they said`.
+2. The kind's sections. Bug: `## What they expected`, `## What actually happened`, `## Steps to see it`, `## Does it happen again?`. Feature: `## What they want to be able to do`, a `## Why` section when `why` is set, `## Where it belongs` (with the area's source paths). Change request: `## What they would like changed`, `## What they would like instead`, `## Why it matters to them` when `why` is set, `## Where it is` when an area is named. Feedback: `## What they said`. A feature request adds `## Their idea` when `idea` is set.
 3. `## How much this affects them`.
 4. `## What they attached`, when there are attachments.
 5. Collapsed `<details>` blocks: app, machine and settings; one per folder listing; the log tail.
@@ -123,7 +128,7 @@ Metadata keys: `beacon_schema` (`"1"`), `report_id`, `reference`, `kind`, `impac
 
 **Labels** set by the app: `beacon`, `type:<kind>`, `impact:<impact>`, and `area:<id>` unless the area is `not-sure`. The app never sets `severity:*`.
 
-`IssueRenderer.Labels` holds the whole label vocabulary, including the labels triage sets: `needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`, `auto-fixed`, `needs-human`, `triaged` and `severity:*`. `Scripts/beacon-labels.sh <owner/repo>` creates all of them except `area:*` on a repository.
+`IssueRenderer.Labels` holds the whole label vocabulary, including the labels triage sets: `needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`, `auto-fixed`, `needs-human`, `triaged` and `severity:*`. `Scripts/beacon-labels.sh <owner/repo>` and the relay's `FIXED_LABELS` carry one `type:<kind>` label per kind. The script creates all of them except `area:*` on a repository.
 
 ## Secret sweep
 

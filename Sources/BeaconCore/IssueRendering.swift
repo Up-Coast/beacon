@@ -75,6 +75,7 @@ public enum IssueRenderer {
         switch report.body {
         case .bug(let bug): source = bug.whatHappened
         case .feature(let feature): source = feature.whatIWant
+        case .change(let change): source = change.whatToChange
         case .feedback(let feedback): source = feedback.message
         }
         let firstLine = source.split(whereSeparator: \.isNewline).first.map(String.init) ?? source
@@ -114,6 +115,7 @@ public enum IssueRenderer {
         switch report.body {
         case .bug(let bug): out += bugSections(bug)
         case .feature(let feature): out += featureSections(feature, index: index)
+        case .change(let change): out += changeSections(change, areaID: report.areaID, index: index)
         case .feedback(let feedback): out += feedbackSections(feedback)
         }
 
@@ -188,6 +190,12 @@ public enum IssueRenderer {
             out.append(quote(feature.why))
             out.append("")
         }
+        if !feature.idea.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            out.append("## Their idea")
+            out.append("")
+            out.append(quote(feature.idea))
+            out.append("")
+        }
         out.append("## Where it belongs")
         out.append("")
         if feature.isNewArea {
@@ -204,6 +212,37 @@ public enum IssueRenderer {
             out.append("Not said.")
         }
         out.append("")
+        return out
+    }
+
+    static func changeSections(_ change: ChangeBody, areaID: String?,
+                               index: BeaconIndex?) -> [String] {
+        var out: [String] = []
+        out.append("## What they would like changed")
+        out.append("")
+        out.append(quote(change.whatToChange))
+        out.append("")
+        out.append("## What they would like instead")
+        out.append("")
+        out.append(quote(change.instead))
+        out.append("")
+        if !change.why.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            out.append("## Why it matters to them")
+            out.append("")
+            out.append(quote(change.why))
+            out.append("")
+        }
+        if let id = areaID, id != BeaconIndex.unsureAreaID {
+            let area = index?.area(id: id)
+            out.append("## Where it is")
+            out.append("")
+            out.append("**\(area?.name ?? id)**")
+            if let paths = area?.paths, !paths.isEmpty {
+                out.append("")
+                out.append("Source: " + paths.map { "`\($0)`" }.joined(separator: ", "))
+            }
+            out.append("")
+        }
         return out
     }
 

@@ -23,6 +23,7 @@ struct FormStepView: View {
                 switch session.kind {
                 case .bug: BugFormView(session: session)
                 case .featureRequest: FeatureFormView(session: session)
+                case .changeRequest: ChangeFormView(session: session)
                 case .feedback: FeedbackFormView(session: session)
                 }
 
@@ -172,11 +173,49 @@ struct FeatureFormView: View {
                     .frame(minHeight: 60).textEditorStyle(.plain)
             }
 
+            FieldBlock(label: "Your idea (optional)",
+                       hint: "If you have a thought about how it could work, "
+                            + "tell us. You can leave this empty.") {
+                TextEditor(text: $session.feature.idea)
+                    .frame(minHeight: 60).textEditorStyle(.plain)
+            }
+
             AreaPicker(title: "Which part of the app is this about?",
                        index: session.index,
                        selection: $session.feature.areaID,
                        allowsSomethingNew: true,
                        isNewArea: $session.feature.isNewArea)
+        }
+    }
+}
+
+// MARK: - Change request
+
+struct ChangeFormView: View {
+    @Bindable var session: FeedbackSession
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            FieldBlock(label: "What would you like changed?",
+                       hint: "Say what works today that you'd like done differently.") {
+                TextEditor(text: $session.change.whatToChange)
+                    .frame(minHeight: 60).textEditorStyle(.plain)
+            }
+
+            AreaPicker(title: "Where is it?",
+                       index: session.index,
+                       selection: $session.areaID,
+                       allowsSomethingNew: false)
+
+            FieldBlock(label: "What would you like instead?", hint: nil) {
+                TextEditor(text: $session.change.instead)
+                    .frame(minHeight: 60).textEditorStyle(.plain)
+            }
+
+            FieldBlock(label: "Why does it matter to you? (optional)", hint: nil) {
+                TextEditor(text: $session.change.why)
+                    .frame(minHeight: 50).textEditorStyle(.plain)
+            }
         }
     }
 }

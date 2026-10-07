@@ -42,6 +42,7 @@ public final class FeedbackSession {
 
     public var bug = BugBody(steps: [""])
     public var feature = FeatureBody()
+    public var change = ChangeBody()
     public var feedback = FeedbackBody()
     public var title = ""
     public var impact: Impact = .slowed
@@ -198,6 +199,8 @@ public final class FeedbackSession {
             case .steps: bug.steps.append(trimmed)
             case .whatIWant: feature.whatIWant += "\n\n\(trimmed)"
             case .why: feature.why += "\n\n\(trimmed)"
+            case .whatToChange: change.whatToChange += "\n\n\(trimmed)"
+            case .instead: change.instead += "\n\n\(trimmed)"
             case .message: feedback.message += "\n\n\(trimmed)"
             default: break
             }
@@ -279,6 +282,7 @@ public final class FeedbackSession {
         let body: ReportBody = switch kind {
         case .bug: .bug(bug)
         case .featureRequest: .feature(feature)
+        case .changeRequest: .change(change)
         case .feedback: .feedback(feedback)
         }
         var resolvedArea = areaID

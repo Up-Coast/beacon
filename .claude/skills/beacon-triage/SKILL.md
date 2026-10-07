@@ -104,7 +104,7 @@ explicitly and write the check into the issue comment — size, blast
 radius, evidence, certainty. One false → `needs-human` with a written
 diagnosis, and stop.
 
-A feature request is never implemented without the owner authorizing it,
+A feature request or a change request is never implemented without the owner authorizing it,
 however much of it the codebase already has. Label, route, note what
 already exists, leave open for the owner. Feedback is the same: label
 `triaged`, route, leave open.
@@ -145,7 +145,7 @@ sees it except whoever just read the whole queue.
 
 - Work on a bug that would not reproduce.
 - Change behaviour to match an expectation without checking the intent.
-- Implement a feature request, or act on feedback, without the owner
+- Implement a feature request or a change request, or act on feedback, without the owner
   authorizing it.
 - Write to a tester.
 - Merge without having run the app through the reporter's own steps.

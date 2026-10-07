@@ -26,6 +26,7 @@ label "beacon"                 "5B21B6" "Filed from inside the app with Beacon"
 
 label "type:bug"              "D73A4A" "Something is broken"
 label "type:feature-request"  "0E8A16" "Something is missing"
+label "type:change-request"   "1D76DB" "Something works, but they'd like it done differently"
 label "type:feedback"         "C5DEF5" "General feedback"
 
 # Impact — the reporter's own answer about what this costs them.

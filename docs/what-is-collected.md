@@ -1,6 +1,6 @@
 # What is collected
 
-*Last updated: 2026-10-06*
+*Last updated: 2026-10-07*
 
 A report reaches your team one of two ways: the Beacon page, a web page the app opens with a link, or the in-app sheet that the GitHub and relay setups add. This page lists what each one carries, what neither collects, and where a report goes. Use it to tell your testers what a report contains.
 
@@ -37,7 +37,7 @@ The page adds the browser's user agent to every report. When the link has no lan
 
 - Which app, when the link does not name one the page knows.
 - **Who you are**: a name or email. Required.
-- The kind of report, and its answers. A bug needs what happened, what they expected, the steps and whether it happens again. A feature request needs what they want and, optionally, why. Feedback needs a message.
+- The kind of report, and its answers. A bug needs what happened, what they expected, the steps and whether it happens again. A feature request needs what they want and, optionally, why and their own idea. A change request needs what they would like changed and what they would like instead, and optionally why. Feedback needs a message.
 - **Which part of the app**, in their own words. Optional.
 - **How much this affects you**.
 - Images.

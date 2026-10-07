@@ -1,6 +1,6 @@
 # How Beacon reports get triaged
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-07*
 
 This is Beacon's triage policy: the app files reports, and this document decides what happens to them. An agent follows it unattended, so every rule is a rule, not a preference. Where a judgement call cannot be avoided, the rule names it and states the safe answer.
 
@@ -110,7 +110,7 @@ A fix may be made and merged without a person **only when every line below is tr
 
 Everything else gets `needs-human`, a written diagnosis in the issue, and stops. That includes anything ambiguous, anything where the right behaviour is a product decision, and anything touching design or copy that is not a plain typo.
 
-**A feature request is never implemented without the owner authorizing it.** That holds however small the request looks, and however much of it the codebase already has. Triage it: label it, route it to an area, note what already exists, and leave it open for the owner.
+**A feature request or a change request is never implemented without the owner authorizing it.** That holds however small the request looks, and however much of it the codebase already has. Triage it: label it, route it to an area, note what already exists, and leave it open for the owner.
 
 **Feedback is never implemented either.** Label it `triaged`, route it to an area, and leave it open.
 
@@ -154,7 +154,7 @@ Impact and severity often disagree, and the disagreement is worth noticing. Seve
 
 ## The labels
 
-Set by the app: `beacon`, `type:bug|feature-request|feedback`, `impact:blocked|slowed|irritating|noticed`, `area:<id>`.
+Set by the app: `beacon`, `type:bug|feature-request|change-request|feedback`, `impact:blocked|slowed|irritating|noticed`, `area:<id>`.
 
 Set by triage: `severity:*`, `needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`, `auto-fixed`, `needs-human`, `triaged`.
 
@@ -164,7 +164,7 @@ Create them once per repository with `Scripts/beacon-labels.sh`.
 
 - Work on a bug it could not reproduce.
 - Change behaviour to match a reporter's expectation without checking what the product is supposed to do.
-- Implement a feature request, or act on feedback, without the owner authorizing it.
+- Implement a feature request or a change request, or act on feedback, without the owner authorizing it.
 - Close an issue as "working as intended" when the reporter expected something different, without first filing the expectation-mismatch issue.
 - Write to a tester. Triage writes on the issue and on the board, and never contacts the person who reported.
 - Touch anything on the blast-radius list.

@@ -42,6 +42,8 @@ public enum ReportField: String, Sendable, Equatable, CaseIterable {
     case area
     case whatIWant = "what-i-want"
     case why
+    case whatToChange = "what-to-change"
+    case instead
     case message
     case attachments
     case reproducibility
@@ -93,6 +95,8 @@ public enum CompletenessRules {
             issues += checkBug(bug)
         case .feature(let feature):
             issues += checkFeature(feature, offersAreas: offersAreas)
+        case .change(let change):
+            issues += checkChange(change)
         case .feedback(let feedback):
             if isEmptyInSubstance(feedback.message) || tooShort(feedback.message) {
                 issues.append(.init(field: .message,
@@ -186,6 +190,25 @@ public enum CompletenessRules {
             issues.append(.init(field: .area,
                 message: "Pick the part of the app this belongs to \u{2014} or "
                     + "say it's something new. Either answer is fine.",
+                blocking: true))
+        }
+        return issues
+    }
+
+    /// A change request needs both halves: what is wrong today and what
+    /// would be right. Why it matters is welcome and never asked for twice.
+    static func checkChange(_ change: ChangeBody) -> [CompletenessIssue] {
+        var issues: [CompletenessIssue] = []
+        if isEmptyInSubstance(change.whatToChange) || tooShort(change.whatToChange) {
+            issues.append(.init(field: .whatToChange,
+                message: "Say what you'd like changed \u{2014} the thing that "
+                    + "works today but that you'd do differently.",
+                blocking: true))
+        }
+        if isEmptyInSubstance(change.instead) || tooShort(change.instead) {
+            issues.append(.init(field: .instead,
+                message: "Say what you'd like instead. A sentence about how "
+                    + "it should work is plenty.",
                 blocking: true))
         }
         return issues

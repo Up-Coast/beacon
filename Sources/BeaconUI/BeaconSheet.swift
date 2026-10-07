@@ -173,6 +173,12 @@ struct KindPickerView: View {
         StepScaffold(title: "What would you like to tell us?",
                      subtitle: nil) {
             VStack(spacing: 10) {
+                Text(session.words.introText(
+                    organizationName: session.configuration.organizationName))
+                    .font(.subheadline).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+
                 ForEach(FeedbackKind.allCases, id: \.self) { kind in
                     Button { session.choose(kind) } label: {
                         HStack(alignment: .top, spacing: 12) {
@@ -202,6 +208,7 @@ struct KindPickerView: View {
         switch kind {
         case .bug: "ladybug"
         case .featureRequest: "lightbulb"
+        case .changeRequest: "arrow.triangle.2.circlepath"
         case .feedback: "bubble.left.and.text.bubble.right"
         }
     }

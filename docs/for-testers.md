@@ -1,6 +1,6 @@
 # Reporting something, if you're testing an app
 
-*Last updated: 2026-10-06*
+*Last updated: 2026-10-07*
 
 Use the report button inside the app. It fills in your app version, your device and more, so you only write the part only you know. You don't need to be technical, just specific.
 
@@ -17,9 +17,13 @@ The button opens one of two things, depending on the app.
 ## If it opens a form inside the app
 
 1. Read the notice about what happens to your report and accept it. You see it once, and again only if the wording changes.
-2. Choose **Something's broken**, **Something's missing** or **Something else**, fill in the form, and press **Next**. If the form asks **How can we reach you?**, leaving an email or phone number is up to you. Without one, the team can't ask you about your report.
+2. Choose **Something's broken**, **Something's missing**, **Change request** or **Something else**, fill in the form, and press **Next**. If the form asks **How can we reach you?**, leaving an email or phone number is up to you. Without one, the team can't ask you about your report.
 3. Read **Here's what we'll send**. Nothing has left your device yet.
 4. Press **Check and send**, or **Send** if your device can't run the check.
+
+The first screen starts with a line saying the app uses Beacon, the free tool behind the form. **Beacon** in that line is a link to Beacon's page.
+
+**Something's missing** has an optional **Your idea** box for how you think it could work. **Change request** is for something that works today but that you'd like done differently. It asks what you'd like changed, where it is, and what you'd like instead; why it matters to you is optional.
 
 Many apps need no account to report. If the app asks you to sign in to GitHub first, see [the last section](#if-the-app-asks-you-to-sign-in-to-github).
 

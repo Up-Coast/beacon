@@ -8,10 +8,11 @@
 
 import Foundation
 
-/// The three things a person can file.
+/// The four things a person can file.
 public enum FeedbackKind: String, Codable, Sendable, CaseIterable {
     case bug
     case featureRequest = "feature-request"
+    case changeRequest = "change-request"
     case feedback
 
     /// The word the reporter sees.
@@ -19,6 +20,7 @@ public enum FeedbackKind: String, Codable, Sendable, CaseIterable {
         switch self {
         case .bug: "Something's broken"
         case .featureRequest: "Something's missing"
+        case .changeRequest: "Change request"
         case .feedback: "Something else"
         }
     }
@@ -27,7 +29,8 @@ public enum FeedbackKind: String, Codable, Sendable, CaseIterable {
     public var blurb: String {
         switch self {
         case .bug: "The app did something you didn't expect, or stopped working."
-        case .featureRequest: "You want the app to do something it doesn't do yet."
+        case .featureRequest: "You want the app to do something it doesn't do yet \u{2014} or you have an idea."
+        case .changeRequest: "You'd like something to work or look differently."
         case .feedback: "Anything else you want to tell us."
         }
     }
@@ -153,13 +156,51 @@ public struct FeatureBody: Codable, Sendable, Equatable {
     /// Set when the reporter picked "something new" rather than leaving
     /// the picker untouched — the two are different signals.
     public var isNewArea: Bool
+    /// The reporter's own idea for how it could work. Optional, never
+    /// blocks a send, and kept apart from the request so triage can weigh
+    /// the need and the suggestion separately.
+    public var idea: String
 
     public init(whatIWant: String = "", why: String = "",
-                areaID: String? = nil, isNewArea: Bool = false) {
+                areaID: String? = nil, isNewArea: Bool = false, idea: String = "") {
         self.whatIWant = whatIWant
         self.why = why
         self.areaID = areaID
         self.isNewArea = isNewArea
+        self.idea = idea
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case whatIWant, why, areaID, isNewArea, idea
+    }
+
+    /// Reports saved before ideas existed have no `idea`; they decode with
+    /// an empty one.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        whatIWant = try c.decode(String.self, forKey: .whatIWant)
+        why = try c.decode(String.self, forKey: .why)
+        areaID = try c.decodeIfPresent(String.self, forKey: .areaID)
+        isNewArea = try c.decode(Bool.self, forKey: .isNewArea)
+        idea = try c.decodeIfPresent(String.self, forKey: .idea) ?? ""
+    }
+}
+
+/// A change request: something that works today, which the reporter would
+/// like done another way. It differs from a feature request in that the
+/// thing already exists, so it carries what they would have instead.
+public struct ChangeBody: Codable, Sendable, Equatable {
+    /// What they would like changed, in their words.
+    public var whatToChange: String
+    /// What they would like in its place.
+    public var instead: String
+    /// Why it matters to them. Optional.
+    public var why: String
+
+    public init(whatToChange: String = "", instead: String = "", why: String = "") {
+        self.whatToChange = whatToChange
+        self.instead = instead
+        self.why = why
     }
 }
 
@@ -178,12 +219,14 @@ public struct FeedbackBody: Codable, Sendable, Equatable {
 public enum ReportBody: Codable, Sendable, Equatable {
     case bug(BugBody)
     case feature(FeatureBody)
+    case change(ChangeBody)
     case feedback(FeedbackBody)
 
     public var kind: FeedbackKind {
         switch self {
         case .bug: .bug
         case .feature: .featureRequest
+        case .change: .changeRequest
         case .feedback: .feedback
         }
     }

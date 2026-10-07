@@ -66,6 +66,28 @@ public struct ReporterWords: Sendable, Equatable {
 
     var isGitHub: Bool { destination == .gitHub }
 
+    // MARK: The first screen
+
+    /// Where Beacon lives, linked from the first screen.
+    public static let beaconHome = URL(string: "https://github.com/Up-Coast/beacon")!
+
+    /// The line at the top of the first screen, saying what tool this is.
+    /// An empty organisation name leaves the name out.
+    public func introLine(organizationName: String) -> String {
+        let name = organizationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let owner = name.isEmpty ? "the free tool" : "\(name)\u{2019}s free tool"
+        return "We use \(owner) Beacon for user feedback and bug reports."
+    }
+
+    /// The same line with the word Beacon as a link to `beaconHome`.
+    public func introText(organizationName: String) -> AttributedString {
+        var text = AttributedString(introLine(organizationName: organizationName))
+        if let range = text.range(of: "Beacon") {
+            text[range].link = Self.beaconHome
+        }
+        return text
+    }
+
     // MARK: The review screen
 
     /// The "From" line, so an anonymous reporter is not shown a random id
@@ -157,6 +179,7 @@ public struct ReporterWords: Sendable, Equatable {
     /// checks the team route never names GitHub. Add new sentences here.
     public func everySentence(organizationName: String = "the Harbour team") -> [String] {
         var sentences = [
+            introLine(organizationName: organizationName),
             from(.anonymous(deviceID: "test")), contactLabel, contactHint, sentToTeam,
             deliveryRefused, couldNotReach, noReporterTitle, noReporterSubtitle, notReachable,
             refusal(status: 413), refusal(status: 429),
