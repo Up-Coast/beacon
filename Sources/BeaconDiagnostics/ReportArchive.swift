@@ -74,6 +74,20 @@ public struct ReportArchive: Sendable {
                            issueMarkdown: issueURL, attachments: attachmentURLs)
     }
 
+    /// Write where the report ended up beside the saved copy, as
+    /// `receipt.json`. On the team route this is the only place the issue
+    /// number and link are kept: the reporter is never shown them.
+    @discardableResult
+    public func recordReceipt(_ receipt: SubmissionReceipt, in folder: URL) throws -> URL {
+        var fields: [String: Any] = ["filed": receipt.isFiled, "summary": receipt.summary]
+        if let number = receipt.issueNumber { fields["issue_number"] = number }
+        if let url = receipt.url, !url.isFileURL { fields["url"] = url.absoluteString }
+        let url = folder.appendingPathComponent("receipt.json")
+        try JSONSerialization.data(withJSONObject: fields, options: [.prettyPrinted, .sortedKeys])
+            .write(to: url)
+        return url
+    }
+
     /// Reports still on disk, newest first. The host can offer these for a
     /// retry after a failed send.
     public func saved() -> [URL] {

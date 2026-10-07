@@ -51,9 +51,9 @@ public struct BeaconConfiguration: Sendable {
     /// rather than "the team".
     public var organizationName: String
 
-    /// Who is reporting. Returns nil when nobody is signed in, and Beacon
-    /// then says so and stops — an anonymous report can't be followed up,
-    /// and following up is the point.
+    /// Who is reporting. Return `Reporter.anonymous()` when the app has no
+    /// accounts, so anyone can report. Returning nil means a sign-in is
+    /// required and nobody has one: Beacon then says so and stops.
     public var currentReporter: @Sendable () -> Reporter?
 
     /// Where reports go.
@@ -144,8 +144,20 @@ public struct BeaconConfiguration: Sendable {
             .appendingPathComponent("Beacon/reports", isDirectory: true)
     }
 
-    /// The privacy notice with this host's organisation named in it.
+    /// The words a reporter reads that depend on where reports go.
+    public var reporterWords: ReporterWords {
+        ReporterWords(destination: transport.destination)
+    }
+
+    /// The privacy notice a signed-in reporter reads, with this host's
+    /// organisation named in it.
     public var consentNotice: ConsentNotice {
-        ConsentNotice.current.naming(organizationName)
+        consentNotice(for: nil)
+    }
+
+    /// The privacy notice this reporter reads: it depends on where reports
+    /// go and on whether the reporter is anonymous.
+    public func consentNotice(for reporter: Reporter?) -> ConsentNotice {
+        reporterWords.notice(for: reporter, organizationName: organizationName)
     }
 }

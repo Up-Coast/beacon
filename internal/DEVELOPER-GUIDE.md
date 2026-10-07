@@ -1,6 +1,6 @@
 # Developer guide
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-06*
 
 The technical reference for changing Beacon itself: the Swift package, the page, the pickup and the workflows. To add Beacon to an app, read [the options reference](../docs/options.md) and [GitHub setup](../docs/setup-github.md) instead. What Beacon collects is in [What is collected](../docs/what-is-collected.md), and testers have [their own page](../docs/for-testers.md). What is proven and what is not is in [STATUS.md](STATUS.md).
 
@@ -10,7 +10,7 @@ Beacon has two ways into one queue of reports. The **page** is a web form publis
 
 | Part | What it does | Where it lives |
 |---|---|---|
-| `BeaconCore` | Report values, completeness rules, issue rendering, secret sweep, consent, the transport protocol, the app map, the inbox link, seeding, `PlatformWording`. No UI, no platform APIs | `Sources/BeaconCore` |
+| `BeaconCore` | Report values, completeness rules, issue rendering, secret sweep, consent, the transport protocol, the app map, the inbox link, seeding, `PlatformWording`, `ReporterWords`. No UI, no platform APIs | `Sources/BeaconCore` |
 | `BeaconDiagnostics` | The log ring, environment probe, folder scan, context collector, report archive | `Sources/BeaconDiagnostics` |
 | `BeaconIntelligence` | The on-device completeness check on Foundation Models | `Sources/BeaconIntelligence` |
 | `BeaconCapture` | Screenshots, screen recording, frames from video, picked photos and videos | `Sources/BeaconCapture` |
@@ -25,6 +25,7 @@ Beacon has two ways into one queue of reports. The **page** is a web form publis
 | Workflows | `ci.yml` for this repository; `beacon-triage.yml` and `beacon-reproduce.yml` to copy into an app repository | `.github/workflows/` |
 | Issue forms | Bug and feature forms for people filing by hand | `.github/ISSUE_TEMPLATE/` |
 | Scripts | `beacon-labels.sh` creates the labels; `beacon-adopt-github.sh` copies the GitHub pieces into an app repository and runs it | `Scripts/` |
+| The reference relay | A Supabase Edge Function in TypeScript that files `RelayTransport` reports with a GitHub App | `Relay/supabase-edge` |
 | Example app | The smallest host, for iPhone, iPad and Mac, built from `project.yml` with xcodegen. Reports go to `LocalBundleTransport` | `Examples/BeaconExample` |
 | Tests | Five targets, one per library target except `BeaconUI` and `Beacon` | `Tests/` |
 
@@ -62,7 +63,7 @@ Each target imports only the targets above it in the table. `BeaconDiagnostics`,
 FeedbackReport
   id: UUID                 reference = "BN-" + first 6 characters of id, uppercased
   startedAt: Date          when the session started, not when the reporter sent
-  reporter: Reporter       accountID (required), displayName?, contact?
+  reporter: Reporter       accountID (required; "anonymous-<install id>" when anonymous), displayName?, contact?
   title: String            blank means the renderer derives one
   body: ReportBody         .bug(BugBody) | .feature(FeatureBody) | .feedback(FeedbackBody)
   impact: Impact           blocked | slowed | irritating | noticed   (rank 0..3, 0 is worst)
@@ -79,7 +80,7 @@ FeedbackKind  bug | feature-request | feedback
 Severity      critical | high | medium | low   (set by triage only)
 ```
 
-`impact` defaults to `slowed`. `Reporter.accountID` is required because an anonymous report cannot be followed up.
+`impact` defaults to `slowed`. `Reporter.accountID` is required. `Reporter.anonymous(deviceID:)` fills it with `anonymous-` and a random UUID kept in `UserDefaults` under `beacon.anonymous-device-id`, so an app with no accounts can still tell installs apart. `contact` is what the sheet's "How can we reach you?" field fills in, and the renderer writes it into the body.
 
 ## Completeness rules
 
@@ -249,13 +250,14 @@ Order of work, as the prompt states it:
 
 `FeedbackSession` in `BeaconUI/FeedbackSession.swift` owns one report from start to finish. Its steps: `consent`, `pickKind`, `form`, `review`, `questions`, `sending`, `done`, and `noReporter` when `currentReporter` returns `nil`.
 
+Every sentence that depends on where reports go comes from `ReporterWords` in `BeaconCore/ReporterWords.swift`, chosen by the transport's `destination`. `.gitHub`, returned only by `GitHubIssueTransport` and `SignedInGitHubIssueTransport`, keeps the GitHub wording and the link to the issue. `.team`, the protocol's default, says "the team", shows no link except a folder on the device, asks for an optional contact, and picks the team privacy notice. `FallbackTransport` takes its primary's destination. `ReporterWords.everySentence()` lists the team sentences for the test that holds them free of "GitHub", "issue", "repository" and "label".
 On send, the session:
 
 1. Runs the on-device check once, if it is available. If it returns questions, it shows them. Answers are appended to the matching field, never replacing it.
 2. Sweeps every attachment for secrets.
 3. Renders the issue, then sweeps its body.
 4. Saves the report with `ReportArchive.save` to `reportArchiveDirectory`.
-5. Calls the transport. On an error, the receipt says the report is saved and where, with `isFiled: false`.
+5. Calls the transport. On success, writes the receipt beside the saved copy as `receipt.json` with `ReportArchive.recordReceipt`, which is where a relay's issue number and link are kept. On an error, the receipt says the report is saved and where, with `isFiled: false`.
 
 `admit(_:)` applies the size limits to every attachment, whatever produced it: 25 MiB per file (`AcceptedFormats.maximumFileBytes`) and 60 MiB in total (`maximumTotalBytes`). The session stops a recording itself at `maximumRecordingSeconds` (default 180). A recording failure is kept on the session as `recordingProblem`, because on iOS the view that pressed stop is gone by the time the answer arrives.
 
@@ -263,13 +265,13 @@ On iOS, while recording, the sheet shrinks to `BeaconSheet.recordingDetent` (112
 
 ## Transports
 
-`ReportTransport` (in `BeaconCore`) has `destinationDescription`, shown on the review screen, and `submit(ReportSubmission) async throws -> SubmissionReceipt`. `ReportSubmission` carries the report, the rendered `IssueDraft` and the swept attachments. `SubmissionReceipt` carries `summary`, `issueNumber?`, `url?` and `isFiled`.
+`ReportTransport` (in `BeaconCore`) has `destinationDescription`, shown on the review screen, `destination` (`.gitHub` or `.team`, default `.team`), and `submit(ReportSubmission) async throws -> SubmissionReceipt`. `ReportSubmission` carries the report, the rendered `IssueDraft` and the swept attachments. `SubmissionReceipt` carries `summary`, `issueNumber?`, `url?` and `isFiled`.
 
 | Transport | Needs | Does |
 |---|---|---|
 | `GitHubIssueTransport(client:attachmentBranch:)` | A GitHub token for the repository; the device flow asks for the `repo` scope | Ensures the branch (default `beacon-attachments`), puts each attachment at `.beacon/attachments/<reference>/<filename>`, turns the filenames into links, creates the issue. A `403` or `404` on the attachments alone means the account may read but not write: the issue is filed anyway, with a note that the files stayed on the device |
 | `SignedInGitHubIssueTransport(owner:repository:account:attachmentBranch:)` | A `GitHubAccount` somebody has signed in to | Reads the token from the keychain at submit time, then does what `GitHubIssueTransport` does. A `401` signs the account out, so the next report offers sign-in rather than failing again |
-| `RelayTransport(endpoint:appToken:destinationName:)` | A service you run | Checks the base64 size of the attachments against 60 MiB, then `POST`s JSON `{title, body, labels, reference, account, attachments: [{filename, base64}]}` with `Authorization: Bearer <appToken>` when set. Reads `issue_number` and `html_url`, or `error` on failure |
+| `RelayTransport(endpoint:appToken:destinationName:maximumEncodedBytes:)` | A relay you run, such as `Relay/supabase-edge` | Checks the base64 size of the attachments against `maximumEncodedBytes` (30 MiB), then `POST`s JSON `{title, body, labels, reference, account, anonymous, app, contact?, attachments: [{filename, base64}]}` with `Authorization: Bearer <appToken>` when set. `app` is the bundle identifier. Reads `issue_number` and `html_url` into the receipt without showing them. On failure it shows `ReporterWords.refusal(status:)` or `notReachable`, never the relay's `error` or the system's message. Its destination is `.team` |
 | `LocalBundleTransport(folderProvider:handoverInstruction:)` | Nothing | Returns the folder from `folderProvider` with `isFiled: false` |
 | `FallbackTransport(primary:fallback:onFallback:)` | Two transports | Tries `primary`. On an error, calls `onFallback`, submits to `fallback` and prefixes the receipt summary with why |
 
@@ -351,7 +353,7 @@ The adopter registers the OAuth app under their own account. The steps are in [G
 
 ## Consent
 
-`ConsentNotice.current` is versioned data (currently `2026-09-07.1`). `naming(_:)` replaces `$ORG` with `organizationName`. Acceptance is stored per version and per account through `ConsentStoring`. The default `UserDefaultsConsentStore` uses keys `beacon.consent.<accountID>`. Changing any wording means changing the version, and every reporter is asked again.
+`ConsentNotice` holds three versioned notices: `current` (`2026-09-07.1`) for the GitHub account transports, `team` (`2026-10-06.team.1`) for a signed-in reporter on any other transport, and `teamAnonymous` (`2026-10-06.anonymous.1`) for an anonymous one. They share their last three points. `BeaconConfiguration.consentNotice(for:)` picks one through `ReporterWords.notice(for:organizationName:)`. `naming(_:)` replaces `$ORG` with `organizationName`. Acceptance is stored per version and per account through `ConsentStoring`. The default `UserDefaultsConsentStore` uses keys `beacon.consent.<accountID>`. Changing any wording means changing the version, and every reporter is asked again.
 
 ## The indexer
 
@@ -407,15 +409,17 @@ Run the same suites on the iOS Simulator:
 xcodebuild test -scheme Beacon-Package -destination 'platform=iOS Simulator,name=iPhone Air'
 ```
 
-The source declares 94 tests in 22 suites. On the Mac, `swift test` runs 93: one test in `DiagnosticsTests` builds only for iOS. `LiveTransportTests` is skipped unless `BEACON_LIVE_GITHUB_REPO` and `BEACON_LIVE_GITHUB_TOKEN` are both set. It files a real issue, so close it afterwards.
+The source declares 132 tests. On the Mac, `swift test` runs 131 in 31 suites: one test in `DiagnosticsTests` builds only for iOS. `LiveTransportTests` is skipped unless `BEACON_LIVE_GITHUB_REPO` and `BEACON_LIVE_GITHUB_TOKEN` are both set. It files a real issue, so close it afterwards.
 
 | Target | Covers |
 |---|---|
 | `BeaconCoreTests` | Completeness rules, issue rendering, the secret sweep, accepted formats, consent, the app map, seeding, the inbox link, platform wording |
 | `BeaconDiagnosticsTests` | The log ring, the folder scan (a known string written into a scanned file is asserted absent), the archive, the environment probe |
-| `BeaconGitHubTests` | The four transports, GitHub's status codes as sentences, the relay size limit, and the live test |
+| `BeaconGitHubTests` | The transports, GitHub's status codes as sentences, the relay's size limit, payload and receipt, the guard that no team sentence names GitHub, and the live test |
 | `BeaconIntelligenceTests` | Honest unavailability, the prompt's fields, and how a verdict becomes a review |
 | `BeaconCaptureTests` | Frame offsets and extraction, picked photos and videos, metadata removal, refused formats, platform sentences |
+
+The reference relay has its own tests, with no network: run `deno test supabase/functions/beacon-relay/` in `Relay/supabase-edge`.
 
 `BeaconUI`, `Beacon` and the page have no automated tests. A change to the sheet is walked in `Examples/BeaconExample` on each platform it touches.
 
@@ -444,7 +448,9 @@ xcodebuild build -scheme Beacon -destination 'generic/platform=iOS Simulator'
 
 **Beacon reads about files, never inside them.** The folder scan lists names and sizes because the layout answers most questions. Files the reporter attaches are the only files read.
 
-**Reports are not anonymous, and the reporter is told first.** A report that cannot be followed up is rarely fixed. The consent wording is versioned, and the version accepted is recorded on each report.
+**The reporter is told first who a report comes from.** A report that cannot be followed up is rarely fixed, so a signed-in reporter's report goes with their account. An app whose users have no accounts reports anonymously instead, and asks for a way to reach them that they may leave blank. The consent wording is versioned, and the version accepted is recorded on each report.
+
+**A reporter with no GitHub account never sees GitHub.** On the relay the repository is private and the reporter cannot open it, so naming it, or linking to it, only tells them where their words went. The words for both routes sit in one file, and a test reads every team sentence.
 
 **The secret sweep runs last and shows what it found.** Running last means nothing is added after it. Silent scrubbing would hide a leak in the host app's logging.
 

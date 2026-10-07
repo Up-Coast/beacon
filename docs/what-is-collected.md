@@ -1,8 +1,8 @@
 # What is collected
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-06*
 
-A report reaches your team one of two ways: the Beacon page, a web page the app opens with a link, or the in-app sheet that the GitHub setup adds. This page lists what each one carries, what neither collects, and where a report goes. Use it to tell your testers what a report contains.
+A report reaches your team one of two ways: the Beacon page, a web page the app opens with a link, or the in-app sheet that the GitHub and relay setups add. This page lists what each one carries, what neither collects, and where a report goes. Use it to tell your testers what a report contains.
 
 ## At a glance
 
@@ -14,7 +14,7 @@ A report reaches your team one of two ways: the Beacon page, a web page the app 
 | Appearance (light or dark) and text size | Yes, from the link | Yes. Text size on iPhone and iPad only |
 | The browser's user agent | Yes | No |
 | Memory, free disk space, reduced motion, whether Apple's on-device model can run | No | Yes |
-| Who is reporting | What the tester types in **Who you are**, filled in from the link when the app knows | The account the app has signed in |
+| Who is reporting | What the tester types in **Who you are**, filled in from the link when the app knows | The account the app has signed in, or, in an app with no accounts, a random id for the install and a way to reach them if they leave one |
 | What the tester writes and picks | Yes | Yes |
 | Images | Up to 6, shrunk on the tester's device | Screenshots, and pictures from Photos on iPhone and iPad |
 | Screen recordings | No | Yes, with still frames taken from them |
@@ -134,11 +134,18 @@ After sending, the sheet lists what was removed and where, never the value. The 
 
 ### Consent
 
-- Before a tester's first report, the sheet shows a notice. It says the report is not anonymous, the team may come back to them, the report becomes a GitHub issue that only `organizationName` can read, what is collected, that file names are listed but never opened, and that attachments are read.
-- The notice has a version, currently `2026-09-07.1`. Acceptance is kept per account, in `UserDefaults` under `beacon.consent.<account>` unless the app sets `consentStore`.
+- Before a tester's first report, the sheet shows a notice. Every version says what is collected, that file names are listed but never opened, and that attachments are read. The rest depends on the app's transport and reporter:
+
+    | Version | Shown when | It also says |
+    |---|---|---|
+    | `2026-09-07.1` | Reports are filed as the tester's own GitHub account | The report is not anonymous, the team may come back to them, and the report becomes a GitHub issue that only `organizationName` can read |
+    | `2026-10-06.team.1` | Any other transport, with a signed-in tester | The report goes with their account, the team may come back to them, and only `organizationName` can read it |
+    | `2026-10-06.anonymous.1` | Any other transport, with `Reporter.anonymous()` | No account is needed and their name isn't sent, the report carries a random number for the install, leaving a way to reach them is up to them, and only `organizationName` can read it |
+
+- Acceptance is kept per account, in `UserDefaults` under `beacon.consent.<account>` unless the app sets `consentStore`. An anonymous tester's account is `anonymous-<install id>`.
 - When the wording changes, the version changes and every tester is asked again.
 - Each report records the accepted version as `consent_version` in its metadata block.
-- When no one is signed in, the sheet stops at "You'll need to be signed in first".
+- When the app's `currentReporter` returns `nil`, the sheet stops at "You'll need to be signed in first".
 
 ### The saved copy
 
@@ -149,6 +156,7 @@ After the sweep and before sending, the sheet saves the report on the device. A 
 | `report.json` | The whole report, without attachment bytes |
 | `issue.md` | The issue title, labels and body |
 | `attachments/` | Every attachment, after the sweep |
+| `receipt.json` | Written after a successful send: whether it was filed, the receipt's words, and the issue number and link when the transport returned them |
 
 The folder is `<Application Support>/<app name>/Beacon/reports/<date-time>-<reference>/`. Set `reportArchiveDirectory` to change it. `report.json` holds some items the issue does not show: the bundle identifier, reduced motion and file modification dates.
 
@@ -160,7 +168,7 @@ Only to the transport the app configures. The transports and their settings are 
 |---|---|
 | `GitHubIssueTransport` | An issue on the repository, filed under the tester's own GitHub account. Attachments are committed to the `beacon-attachments` branch under `.beacon/attachments/<reference>/` and linked from the issue |
 | `SignedInGitHubIssueTransport` | The same, as whoever signed in from inside the app. The token is read from the keychain when the report is sent |
-| `RelayTransport` | Your endpoint receives the title, body, labels, reference, account and attachments, and files the issue |
+| `RelayTransport` | Your relay receives the title, body, labels, reference, account, whether the account is anonymous, the app's bundle identifier, the contact if the tester left one, and the attachments, and files the issue. The tester is told only that the team has it |
 | `LocalBundleTransport` | Nowhere. The saved copy stays on the device for the tester to hand over |
 | `FallbackTransport` | The first transport, or the second when the first fails |
 

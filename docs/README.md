@@ -1,6 +1,6 @@
 # Beacon documentation
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-06*
 
 Beacon puts a report button in your macOS or iOS app. Testers use it to send bugs, feature requests and feedback, and a Claude session works each report by a written triage policy.
 
@@ -15,32 +15,34 @@ Pick one of three ways.
   /plugin install beacon@up-coast
   ```
 
-- **The Swift package.** Add `https://github.com/Up-Coast/beacon.git` from version `0.3.0`. The [Quickstart](quickstart.md) shows the code. You still need a setup path so reports go somewhere.
+- **The Swift package.** Add `https://github.com/Up-Coast/beacon.git` from version `0.4.0`. The [Quickstart](quickstart.md) shows the code. You still need a setup path so reports go somewhere.
 - **A clone.** The setup pages assume the repository is at `~/beacon`.
 
   ```bash
   git clone https://github.com/Up-Coast/beacon.git ~/beacon
   ```
 
-## Two setup paths
+## Three setup paths
 
 Choose one per app. Every account, token and page involved is yours.
 
-| | Claude-only path | GitHub path |
-|---|---|---|
-| **Fits** | A team with a Claude organization that does not use GitHub | A team that tracks work in GitHub |
-| **Reports go to** | Your Beacon page, a Claude artifact | Labelled issues in your repository |
-| **Testers report from** | The Beacon page, opened by the button in your app | The in-app sheet, the Beacon page, or both |
-| **Testers need** | Access to your Beacon page | For the sheet, a GitHub account with access to the repository. For the page, access to the page. |
-| **A report carries** | App and device details from the link, plus what the tester writes and the images they add | From the sheet, also the app's log, settings, folder layout, screenshots, a screen recording and files |
-| **The board** | Included | Optional |
-| **Setup** | [Setup: the Claude-only path](setup-claude-only.md) | [Setup: the GitHub path](setup-github.md) |
+| | Claude-only path | GitHub path | Relay |
+|---|---|---|---|
+| **Fits** | A team with a Claude organization that does not use GitHub | A team that tracks work in GitHub, with testers who have GitHub accounts | A team that tracks work in GitHub, hearing from an app's users |
+| **Reports go to** | Your Beacon page, a Claude artifact | Labelled issues in your repository | Labelled issues in your private repository, filed by a relay you run |
+| **Testers report from** | The Beacon page, opened by the button in your app | The in-app sheet, the Beacon page, or both | The in-app sheet |
+| **Testers need** | Access to your Beacon page | For the sheet, a GitHub account with access to the repository. For the page, access to the page. | Nothing. They never see GitHub |
+| **A report carries** | App and device details from the link, plus what the tester writes and the images they add | From the sheet, also the app's log, settings, folder layout, screenshots, a screen recording and files | The same as the sheet on the GitHub path, and a way to reach the tester if they leave one |
+| **The board** | Included | Optional | Optional |
+| **Setup** | [Setup: the Claude-only path](setup-claude-only.md) | [Setup: the GitHub path](setup-github.md) | [Setup: the relay](setup-relay.md) |
 
-On both paths a Claude session picks reports up, works them by [the triage policy](../Triage/TRIAGE.md), and records an outcome on every report. [What is collected](what-is-collected.md) lists everything a report carries.
+[Options](options.md#choose-how-reports-reach-you) compares the GitHub path and the relay in more detail.
+
+On every path a Claude session picks reports up, works them by [the triage policy](../Triage/TRIAGE.md), and records an outcome on every report. [What is collected](what-is-collected.md) lists everything a report carries.
 
 ## Set up a new app
 
-1. Set up a path: [Claude-only](setup-claude-only.md) or [GitHub](setup-github.md).
+1. Set up a path: [Claude-only](setup-claude-only.md), [GitHub](setup-github.md) or [the relay](setup-relay.md).
 2. Put the button in your app: [Quickstart](quickstart.md).
 3. Send the testers [For testers](for-testers.md).
 4. Watch reports arrive on [the board](the-board.md).
@@ -52,6 +54,7 @@ On both paths a Claude session picks reports up, works them by [the triage polic
 | [Quickstart](quickstart.md) | You want the button in your app now. |
 | [Setup: the Claude-only path](setup-claude-only.md) | You have a Claude organization and do not use GitHub. |
 | [Setup: the GitHub path](setup-github.md) | You track work in GitHub and want issues and the in-app sheet. |
+| [Setup: the relay](setup-relay.md) | You track work in GitHub, and the people reporting have no GitHub account. |
 | [How it works](how-it-works.md) | You want to know what happens after a tester presses send. |
 | [The board](the-board.md) | You want to see every report and its outcome. |
 | [What happens to a report](what-happens-to-a-report.md) | You want to know what Claude does with a report, and what it never does. |

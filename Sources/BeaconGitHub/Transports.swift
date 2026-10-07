@@ -11,8 +11,10 @@
 //   an internal team and false of a public beta.
 //
 //   RelayTransport — the app posts to a small endpoint you run, which
-//   holds the GitHub credential and files on everyone's behalf. Testers
-//   need nothing. Costs you one service to deploy and keep alive.
+//   holds the GitHub credential and files on everyone's behalf. Reporters
+//   need no account and never see the word GitHub: to them the report
+//   goes to the team. Costs you one service to deploy and keep alive; a
+//   reference one is in Relay/supabase-edge.
 //
 //   LocalBundleTransport — the report is written to a folder and the
 //   reporter is shown where. Nothing is sent. Always works, needs nothing,
@@ -45,6 +47,8 @@ public struct GitHubIssueTransport: ReportTransport {
     public var destinationDescription: String {
         "an issue on \(repositoryDescription)"
     }
+
+    public var destination: ReportDestination { .gitHub }
 
     public func submit(_ submission: ReportSubmission) async throws -> SubmissionReceipt {
         var body = submission.issue.body
@@ -155,6 +159,8 @@ public struct SignedInGitHubIssueTransport: ReportTransport {
         "an issue on \(owner)/\(repository)"
     }
 
+    public var destination: ReportDestination { .gitHub }
+
     public func submit(_ submission: ReportSubmission) async throws -> SubmissionReceipt {
         guard let token = account.token else {
             throw TransportError.notConfigured("nobody is signed in to GitHub")
@@ -182,18 +188,44 @@ public struct RelayTransport: ReportTransport {
     /// file anything by itself — the difference matters, because this one
     /// does ship inside the app.
     public var appToken: String?
+    /// Who the reporter is told the report goes to.
     public var destinationName: String
+    /// The most base64 the attachments may come to. The reference relay
+    /// accepts 30 MiB, so a report over it is refused here, before upload.
+    public var maximumEncodedBytes: Int
+
+    public static let defaultMaximumEncodedBytes = 30 * 1024 * 1024
 
     public init(endpoint: URL, appToken: String? = nil,
-                destinationName: String = "the team") {
+                destinationName: String = "the team",
+                maximumEncodedBytes: Int = RelayTransport.defaultMaximumEncodedBytes) {
         self.endpoint = endpoint
         self.appToken = appToken
         self.destinationName = destinationName
+        self.maximumEncodedBytes = maximumEncodedBytes
     }
 
-    public var destinationDescription: String { "\(destinationName), as a GitHub issue" }
+    /// The team, and nothing about how: the reporter has no account
+    /// wherever the report ends up, and has no need to know where that is.
+    public var destinationDescription: String { destinationName }
+
+    var words: ReporterWords { ReporterWords(destination: .team, teamName: destinationName) }
 
     public func submit(_ submission: ReportSubmission) async throws -> SubmissionReceipt {
+        let request = try request(for: submission)
+        let data: Data, response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            // The system's message can name the address it tried.
+            throw TransportError.network(words.notReachable)
+        }
+        return try receipt(status: (response as? HTTPURLResponse)?.statusCode ?? 0, data: data)
+    }
+
+    /// The request, built apart from sending it so the payload can be
+    /// checked without a network.
+    func request(for submission: ReportSubmission) throws -> URLRequest {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -203,41 +235,50 @@ public struct RelayTransport: ReportTransport {
         // after a long upload is the worst way to tell somebody their
         // report is too big. Check it here, with the real encoded size.
         let encodedBytes = submission.attachments.reduce(0) { $0 + ($1.byteCount * 4 + 2) / 3 }
-        let limit = AcceptedFormats.maximumTotalBytes
+        let limit = maximumEncodedBytes
         guard encodedBytes <= limit else {
             throw TransportError.tooLarge(bytes: encodedBytes, limit: limit)
         }
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload(for: submission))
+        return request
+    }
 
-        let payload: [String: Any] = [
+    /// What the relay receives. `app` is the bundle identifier, so one
+    /// relay can serve several apps and file each into its own place.
+    func payload(for submission: ReportSubmission) -> [String: Any] {
+        let reporter = submission.report.reporter
+        var payload: [String: Any] = [
             "title": submission.issue.title,
             "body": submission.issue.body,
             "labels": submission.issue.labels,
             "reference": submission.report.reference,
-            "account": submission.report.reporter.accountID,
+            "account": reporter.accountID,
+            "anonymous": reporter.isAnonymous,
+            "app": submission.report.context.app.bundleIdentifier,
             "attachments": submission.attachments.map {
                 ["filename": $0.filename, "base64": $0.data.base64EncodedString()]
             },
         ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-
-        let data: Data, response: URLResponse
-        do {
-            (data, response) = try await URLSession.shared.data(for: request)
-        } catch {
-            throw TransportError.network(error.localizedDescription)
+        if let contact = reporter.contact?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !contact.isEmpty {
+            payload["contact"] = contact
         }
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        return payload
+    }
+
+    /// The relay's answer, as a receipt. The issue number and link are
+    /// kept on the receipt for the saved copy, and never shown: the
+    /// reporter can't open them, and they would say where the report went.
+    func receipt(status: Int, data: Data) throws -> SubmissionReceipt {
         let parsed = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
         guard (200..<300).contains(status) else {
-            throw TransportError.rejected(
-                status: status,
-                detail: parsed["error"] as? String ?? "The relay turned the report away.")
+            // The relay's own message is not shown: it is written by
+            // whoever runs the relay, and could say anything.
+            throw TransportError.rejected(status: status, detail: words.refusal(status: status))
         }
-        let number = parsed["issue_number"] as? Int
         return SubmissionReceipt(
-            summary: number.map { "Filed as issue #\($0). We may come back to you about it." }
-                ?? "Sent. We may come back to you about it.",
-            issueNumber: number,
+            summary: words.sentToTeam,
+            issueNumber: parsed["issue_number"] as? Int,
             url: (parsed["html_url"] as? String).flatMap(URL.init(string:)),
             isFiled: true)
     }
@@ -290,14 +331,17 @@ public struct FallbackTransport: ReportTransport {
 
     public var destinationDescription: String { primary.destinationDescription }
 
+    public var destination: ReportDestination { primary.destination }
+
     public func submit(_ submission: ReportSubmission) async throws -> SubmissionReceipt {
         do {
             return try await primary.submit(submission)
         } catch {
             onFallback?(error)
             var receipt = try await fallback.submit(submission)
-            receipt.summary = "We couldn't reach GitHub just now, so your report "
-                + "is saved on \(PlatformWording.thisDevice) instead. " + receipt.summary
+            let words = ReporterWords(destination: destination,
+                                      teamName: primary.destinationDescription)
+            receipt.summary = words.couldNotReach + receipt.summary
             return receipt
         }
     }

@@ -51,7 +51,15 @@ public protocol ReportTransport: Sendable {
     /// A name for the review screen, so the reporter can see where this is
     /// about to go before they send it.
     var destinationDescription: String { get }
+    /// Whether the reporter may be told how the report is filed. Only a
+    /// transport that files as the reporter's own GitHub account says
+    /// `.gitHub`; every other transport gets the team's words.
+    var destination: ReportDestination { get }
     func submit(_ submission: ReportSubmission) async throws -> SubmissionReceipt
+}
+
+extension ReportTransport {
+    public var destination: ReportDestination { .team }
 }
 
 public enum TransportError: Error, LocalizedError, Equatable {

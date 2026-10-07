@@ -108,9 +108,7 @@ public enum IssueRenderer {
                      review: CompletenessReview?) -> String {
         var out: [String] = []
 
-        out.append("> Filed from inside the app with Beacon. "
-            + "Reported by **\(report.reporter.displayName ?? report.reporter.accountID)** "
-            + "(`\(report.reporter.accountID)`) \u{2014} they agreed to be contacted about this.")
+        out.append("> Filed from inside the app with Beacon. " + reporterLine(report.reporter))
         out.append("")
 
         switch report.body {
@@ -300,6 +298,22 @@ public enum IssueRenderer {
             out.append("")
         }
         return out
+    }
+
+    /// Who sent it, and how to reach them. An anonymous reporter is said to
+    /// be one, so nobody goes looking for an account that does not exist.
+    static func reporterLine(_ reporter: Reporter) -> String {
+        let contact = reporter.contact?.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\n", with: " ")
+        let reach = contact.flatMap { $0.isEmpty ? nil : $0 }
+        if reporter.isAnonymous {
+            return "Reported anonymously (`\(reporter.accountID)`) \u{2014} "
+                + (reach.map { "they can be reached at **\($0)**." }
+                    ?? "they left no way to reach them.")
+        }
+        return "Reported by **\(reporter.displayName ?? reporter.accountID)** "
+            + "(`\(reporter.accountID)`) \u{2014} they agreed to be contacted about this."
+            + (reach.map { " Reach them at **\($0)**." } ?? "")
     }
 
     /// The block triage parses. Kept as an HTML comment so it never shows

@@ -1,12 +1,12 @@
 # Status
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-06*
 
 What is proven by a test, what is proven by having run it, what is written but has never run, and what is known to be wrong. Every other page in this repository describes how Beacon works; this is the only page that says how far it has been taken. The tests themselves are listed in the [developer guide](DEVELOPER-GUIDE.md#tests).
 
 ## Proven by tests
 
-`swift test` runs 110 tests in 28 suites on the Mac. The iOS Simulator runs the same suites, minus the keychain ones, which skip themselves there because a test host on the simulator has no keychain to write to.
+`swift test` runs 131 tests in 31 suites on the Mac. The iOS Simulator runs the same suites, minus the keychain ones, which skip themselves there because a test host on the simulator has no keychain to write to.
 
 | Proven | Where |
 |---|---|
@@ -14,7 +14,8 @@ What is proven by a test, what is proven by having run it, what is written but h
 | The feature gate: an area or "something new" is required; the why is asked for and never required | `BeaconCoreTests` |
 | Issue rendering: fixed headings, verbatim quoting including multi-line answers, numbered steps, the label set, that the app never sets severity, title derivation without cutting mid-word, and a metadata block that parses as JSON | `BeaconCoreTests` |
 | The secret sweep: six credential shapes, settings passwords, URLs carrying passwords, host-declared secrets, short host secrets ignored, ordinary prose untouched, text attachments swept and binaries not, home directory redaction | `BeaconCoreTests` |
-| Consent: acceptance per version and per person, rewording asks again, the notice names the organization and says the report is not anonymous | `BeaconCoreTests` |
+| Consent: acceptance per version and per person, rewording asks again, the notice names the organization and says the report is not anonymous, and the notice is chosen by route and by whether the reporter is anonymous | `BeaconCoreTests` |
+| Anonymous reporting: the install id is made once and kept, carries nothing personal, and the issue says the report is anonymous and carries a contact left on the form. No sentence the team route can show names GitHub, issues, repositories or labels | `BeaconCoreTests`, `BeaconGitHubTests` |
 | The app map: JSON round trip, a newer schema refused, hidden areas routable but not offered, sentinels always rendering a name | `BeaconCoreTests` |
 | The inbox link: keys carried, blanks left out, existing query kept, and the Swift key list matching a copy of the page's list | `BeaconCoreTests` |
 | The log ring, the folder scan (a known string written into a scanned tree is asserted absent), and the report archive | `BeaconDiagnosticsTests` |
@@ -55,7 +56,7 @@ Nothing here is known to be broken. None of it has been proven right either.
 | The reporter's flow on macOS | Every view compiles and the same state machine runs, but nobody has walked it end to end in a real Mac app |
 | Screen recording on either platform | The macOS path has never recorded a real window, and the first run needs Screen Recording permission granted by hand. On iOS the simulator's recorder starts and stops but writes an empty file, so a physical device is needed |
 | The on-device check against the real model | It ran once on the iOS Simulator and asked nothing about a short, complete bug. What it says about a thin report is unknown, and the prompt will need tuning |
-| `RelayTransport` | No relay is deployed |
+| `RelayTransport` and the reference relay | The app's payload and receipt are tested, and the relay's checks are tested with a pretend GitHub. No relay has been deployed, so no report has gone through one to a real repository. `deno test` has not been run: the relay's tests were run under Node with a stand-in for `Deno.test` |
 | The triage policy and skill | Written and copied into app repositories. Reports have been filed as issues, and no run of the policy over an open issue is recorded |
 | `beacon-reproduce.yml` | Ships failing at the run step until it is pointed at a host app's UI test scheme |
 
@@ -79,6 +80,6 @@ Nothing here is known to be broken. None of it has been proven right either.
 ## Open decisions
 
 - **The name.** "Beacon" is an authored default. It is in the module names, so changing it is a rename across the package.
-- **A relay.** None is deployed and none is planned until an adopter needs testers without GitHub accounts.
+- **Deploying the relay.** The reference relay is written for Supabase Edge Functions. Creating its GitHub App and deploying it are the owner's to do.
 - **The iOS build in CI.** Adding it is a change to `ci.yml` and the owner's call.
 - **Which way an app reports** is a per-app choice, not a decision Beacon makes. An app can start on the page and add the sheet later; both end in one queue and the board shows both. The two setup paths are in [the documentation](../docs/README.md).

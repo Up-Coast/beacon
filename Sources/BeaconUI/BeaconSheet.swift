@@ -86,7 +86,7 @@ public struct BeaconSheet: View {
                     session = FeedbackSession(configuration: session.configuration)
                 }
             } else {
-                NoReporterView()
+                NoReporterView(words: session.words)
             }
         case .consent: ConsentView(session: session)
         case .pickKind: KindPickerView(session: session)
@@ -135,11 +135,10 @@ public struct BeaconSheet: View {
 // MARK: - Steps
 
 struct NoReporterView: View {
+    let words: ReporterWords
+
     var body: some View {
-        StepScaffold(title: "You'll need to be signed in first",
-                     subtitle: "Reports aren't anonymous \u{2014} they go out with your "
-                        + "account so we can come back to you about them. Sign in "
-                        + "and the report button will work.") {
+        StepScaffold(title: words.noReporterTitle, subtitle: words.noReporterSubtitle) {
             EmptyView()
         }
     }
@@ -245,8 +244,8 @@ struct DoneView: View {
                 }
 
                 HStack {
-                    if let url = session.receipt?.url, !url.isFileURL {
-                        Button("Open the issue") { openURL(url) }
+                    if let url = session.words.link(for: session.receipt), !url.isFileURL {
+                        Button(session.words.openLinkButton) { openURL(url) }
                     }
                     #if os(macOS)
                     // A folder can be shown in the Finder; iOS has nowhere

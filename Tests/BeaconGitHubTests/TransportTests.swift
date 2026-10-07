@@ -15,6 +15,7 @@ private func submission() -> ReportSubmission {
 
 struct FailingTransport: ReportTransport {
     var destinationDescription = "a place that is down"
+    var destination: ReportDestination = .gitHub
     func submit(_ submission: ReportSubmission) async throws -> SubmissionReceipt {
         throw TransportError.network("the network is down")
     }
@@ -42,6 +43,17 @@ struct TransportTests {
         let receipt = try await transport.submit(submission())
         #expect(!receipt.isFiled)
         #expect(receipt.summary.contains("couldn't reach GitHub"))
+    }
+
+    @Test func theFallbackBehindATeamRouteSaysTheTeam() async throws {
+        let transport = FallbackTransport(
+            primary: FailingTransport(destinationDescription: "the Harbour team",
+                                      destination: .team),
+            fallback: LocalBundleTransport(folderProvider: { nil }))
+        let receipt = try await transport.submit(submission())
+        #expect(receipt.summary.contains("couldn't reach the Harbour team"))
+        #expect(!receipt.summary.contains("GitHub"))
+        #expect(transport.destination == .team)
     }
 
     @Test func theFallbackIsToldWhyItWasNeeded() async throws {

@@ -5,8 +5,8 @@
     {
       "name": "beacon",
       "description": "Bug, feature-request and feedback reporting for macOS and iOS apps, with the skills that set it up and triage the reports.",
-      "version": "0.3.0",
-      "source": { "source": "github", "repo": "Up-Coast/beacon", "ref": "0.3.0" }
+      "version": "0.4.0",
+      "source": { "source": "github", "repo": "Up-Coast/beacon", "ref": "0.4.0" }
     }
   ]
 }

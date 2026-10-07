@@ -35,8 +35,12 @@ Ask, in one message, unless the answer is already clear from what they said:
 
 - **Do they track work in GitHub?** No GitHub → the **Claude-only path**
   (`docs/setup-claude-only.md`): reports go to a page they own, and the board
-  is the whole tracker. Yes → the **GitHub path** (`docs/setup-github.md`):
-  reports become labelled issues, and the page is optional.
+  is the whole tracker. Yes → ask who reports. Developers or a team with
+  GitHub accounts → the **GitHub path** (`docs/setup-github.md`): reporters
+  sign in with GitHub, reports become labelled issues, and the page is
+  optional. The app's users, with no GitHub account → the **relay**
+  (`docs/setup-relay.md`): reporters stay anonymous and never see GitHub,
+  and a relay the owner runs files the issues.
 - **Which app, where is its source, and which platform** (macOS, iOS, both)?
 - **Where should they be told when something happened?** A Slack channel
   through a connector, an email, or nowhere.
@@ -69,7 +73,17 @@ Follow the numbered steps of the chosen setup page exactly. In outline:
    `github` (the Claude-only path's steps 1 and 2).
 5. Set up the pickup (below).
 
-**The pickup, either path.** Copy the prompt from `Triage/PICKUP.md`, fill in
+**Relay**
+1. Run the adoption script as on the GitHub path, step 1.
+2. Tell them to create and install the GitHub App, and to deploy the relay
+   to Supabase with its secrets (`docs/setup-relay.md`, steps 1 to 3).
+   **Those are theirs to do** — sign-ins, a private key and infrastructure on
+   their accounts. Ask for the relay's address and the app token when they
+   have them.
+3. Configure the app (`docs/setup-relay.md`, step 4).
+4. Set up the pickup (below).
+
+**The pickup, any path.** Copy the prompt from `Triage/PICKUP.md`, fill in
 its four values (their page link, the path to this repository, the folder
 their code lives under, and where to notify), and offer it as a scheduled
 task in Claude Code or as a prompt they paste when they want a run. On the

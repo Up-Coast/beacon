@@ -6,6 +6,7 @@ Every setting Beacon reads, and where it is set.
 
 | Where | What it sets |
 |---|---|
+| [Choose how reports reach you](#choose-how-reports-reach-you) | Whether reporters sign in to GitHub, or report with no account through a relay. |
 | [`BeaconConfiguration`](#beaconconfiguration) | The app, the reporter, where the in-app sheet sends reports, and what it collects. Set once at launch. |
 | [Transports](#transports) | Where a finished report from the in-app sheet goes. |
 | [The in-app sheet](#the-in-app-sheet) | The report button, the sheet and the first-run walkthrough. |
@@ -16,6 +17,25 @@ Every setting Beacon reads, and where it is set.
 | [The pickup](#the-pickup) | The pickup prompt and the two GitHub workflows. |
 
 Everything below is available with `import Beacon`.
+
+## Choose how reports reach you
+
+The in-app sheet files reports into your GitHub repository one of two ways. Pick one per app; both are supported.
+
+| | Reporters sign in with GitHub | Reporters stay anonymous, through a relay |
+|---|---|---|
+| **Fits** | Testers who are developers, or a team that already has GitHub accounts | An app's users, who have no GitHub account |
+| **Reporters need** | A GitHub account with write access to the repository | Nothing |
+| **What reporters see** | GitHub by name: the sign-in, the issue, a link to it | Only "the team". No GitHub, issue, repository or label anywhere, and no link. A reference they can quote |
+| **Who a report is from** | The reporter's GitHub account | A random id made for the install, plus a way to reach them if they choose to leave one |
+| **You run** | Nothing. One OAuth App on GitHub | A relay, such as the Supabase Edge Function in `Relay/supabase-edge`, and a GitHub App it files with |
+| **The repository** | Readable by every reporter | Private. Reporters never touch it |
+| **Configure with** | `SignedInGitHubIssueTransport`, and a `GitHubAccount` passed to `Beacon.configure` | `RelayTransport`, and `currentReporter: { .anonymous() }` |
+| **Setup** | [Setup: the GitHub path](setup-github.md) | [Setup: the relay](setup-relay.md) |
+
+For an app whose users are not developers, use the relay.
+
+The sheet chooses its words from the transport: a transport that files as the reporter's own GitHub account names GitHub, and every other transport says "the team". See [Your own transport](#your-own-transport).
 
 ## `BeaconConfiguration`
 
@@ -33,7 +53,7 @@ Pass it to `Beacon.configure(_:gitHubAccount:audience:)` once at launch, before 
 |---|---|---|---|
 | `app` | `AppIdentity` | required | Which app and build this is. See [`AppIdentity`](#appidentity). |
 | `organizationName` | `String` | required | Named in the privacy notice the tester accepts, as who can read the report. |
-| `currentReporter` | `() -> Reporter?` | required | Who is signed in. Return `nil` when nobody is. The sheet then says so and files nothing. See [`Reporter`](#reporter). |
+| `currentReporter` | `() -> Reporter?` | required | Who is reporting. Return `.anonymous()` to let anyone report with no account. Return `nil` when a sign-in is required and nobody has one; the sheet then says so and files nothing. See [`Reporter`](#reporter). |
 | `transport` | `any ReportTransport` | required | Where the in-app sheet sends reports. See [Transports](#transports). |
 | `index` | `BeaconIndex?` | `nil` | The app map, usually `BeaconIndex.loadFromBundle(.main)`. With `nil`, the picker offers only "not sure" and "something new". |
 | `settings` | `() -> [SettingEntry]` | `{ [] }` | Your app's settings, as you want them described on a report. See [`SettingEntry`](#settingentry). |
@@ -77,7 +97,17 @@ app: AppIdentity.mainBundle(commit: BuildInfo.commit)
 |---|---|---|
 | `accountID` | `String` | Your app's identifier for the person. Consent is remembered per account. |
 | `displayName` | `String?` | The person's name. |
-| `contact` | `String?` | How to reach them. |
+| `contact` | `String?` | How to reach them. On the team route the sheet asks "How can we reach you? (optional)", fills the answer in here, and the report carries it. |
+
+`Reporter.anonymous(deviceID:)` is a reporter with no account. Its `accountID` is `anonymous-` followed by `deviceID`. `deviceID` defaults to `AnonymousDeviceID.current()`: a random UUID made the first time it is asked for and kept in `UserDefaults` under `beacon.anonymous-device-id`, so it lasts until the app is deleted. It carries nothing about the person. `isAnonymous` tells the two kinds apart.
+
+The privacy notice depends on the reporter and the transport:
+
+| Transport | Reporter | Notice version |
+|---|---|---|
+| A GitHub account transport | Any | `2026-09-07.1`. Names GitHub |
+| Any other | Signed in | `2026-10-06.team.1`. Says the report goes to `organizationName` |
+| Any other | Anonymous | `2026-10-06.anonymous.1`. Says no account is needed, and that leaving a way to reach them is up to them |
 
 ### `SettingEntry`
 
@@ -129,7 +159,7 @@ A transport is where the in-app sheet sends a finished report. Every report is s
 |---|---|---|
 | `SignedInGitHubIssueTransport` | Files an issue as whoever signed in to GitHub in the sheet. | Testers have GitHub accounts and sign in from inside the app. |
 | `GitHubIssueTransport` | Files an issue with a GitHub token you hold. | Your app signs testers in itself. |
-| `RelayTransport` | Posts the report to a service you run, which files the issue. | Testers have no GitHub accounts, and you will run a service. |
+| `RelayTransport` | Posts the report to a relay you run, which files the issue. Reporters see only "the team". | Reporters have no GitHub accounts. See [Setup: the relay](setup-relay.md). |
 | `LocalBundleTransport` | Sends nothing. Tells the tester where the saved report is. | You collect reports by hand, or use only the Beacon page. |
 | `FallbackTransport` | Tries one transport, then another if the first throws. | Pair GitHub with a local save, so a network failure still ends with a saved report. |
 
@@ -154,13 +184,14 @@ An account that can read the repository but not write to it can still file the r
 
 ### `RelayTransport`
 
-`RelayTransport(endpoint:appToken:destinationName:)`.
+`RelayTransport(endpoint:appToken:destinationName:maximumEncodedBytes:)`. Beacon ships a relay to deploy as a Supabase Edge Function, in [`Relay/supabase-edge`](https://github.com/Up-Coast/beacon/tree/main/Relay/supabase-edge). [Setup: the relay](setup-relay.md) walks through it.
 
 | Argument | Default | What it does |
 |---|---|---|
-| `endpoint` | required | Your service's URL. |
-| `appToken` | `nil` | Sent as `Authorization: Bearer <appToken>`, so your service can refuse other callers. It is not a GitHub credential. |
-| `destinationName` | `the team` | Named on the sheet's review screen as where the report goes. |
+| `endpoint` | required | Your relay's URL. |
+| `appToken` | `nil` | Sent as `Authorization: Bearer <appToken>`, so your relay can refuse other callers. It is not a GitHub credential. |
+| `destinationName` | `the team` | Who the reporter is told the report goes to, on the review screen and the receipt. |
+| `maximumEncodedBytes` | 30 MiB | The most base64 the attachments may come to. The reference relay accepts 30 MiB. |
 
 The transport sends a `POST` with a JSON body:
 
@@ -169,13 +200,18 @@ The transport sends a `POST` with a JSON body:
   "title": "…",
   "body": "…",
   "labels": ["beacon", "type:bug", "impact:slowed"],
-  "reference": "…",
+  "reference": "BN-8EA6C3",
   "account": "<the reporter's accountID>",
+  "anonymous": true,
+  "app": "<the app's bundle identifier>",
+  "contact": "<how to reach them, only when they left one>",
   "attachments": [{"filename": "…", "base64": "…"}]
 }
 ```
 
-A `2xx` response may carry `issue_number` and `html_url`, which the tester is shown. Any other status is an error, and an `error` string in the response is shown to the tester. The transport refuses to send when the encoded attachments exceed 60 MB.
+`app` lets one relay file each app's reports into its own repository. `contact` is also written into the body.
+
+A `2xx` response may carry `issue_number` and `html_url`. The sheet keeps them in the report's saved copy, as `receipt.json`, and never shows them: the receipt says "Sent to the team. Thank you." and shows the reference. Any other status is an error. The reporter is shown a fixed sentence chosen by the status (413 too large, 429 too many, anything else not delivered), never the response's own `error` string. A network failure says the team couldn't be reached, without the system's message. The transport refuses to send when the encoded attachments exceed `maximumEncodedBytes`.
 
 ### `LocalBundleTransport`
 
@@ -188,7 +224,7 @@ A `2xx` response may carry `issue_number` and `html_url`, which the tester is sh
 
 ### `FallbackTransport`
 
-`FallbackTransport(primary:fallback:onFallback:)`. When `primary` throws, `onFallback` is called with the error and `fallback` is used. The tester is told that GitHub could not be reached and the report was saved instead.
+`FallbackTransport(primary:fallback:onFallback:)`. When `primary` throws, `onFallback` is called with the error and `fallback` is used. The tester is told that `primary` could not be reached and the report was saved instead: GitHub by name when `primary` is a GitHub account transport, otherwise its `destinationDescription`.
 
 ### Your own transport
 
@@ -197,11 +233,12 @@ Conform to `ReportTransport`:
 ```swift
 public protocol ReportTransport: Sendable {
     var destinationDescription: String { get }
+    var destination: ReportDestination { get }   // defaults to .team
     func submit(_ submission: ReportSubmission) async throws -> SubmissionReceipt
 }
 ```
 
-`destinationDescription` is shown on the review screen. `ReportSubmission` holds the `report`, the rendered `issue` (title, body, labels) and the `attachments`, after secrets are masked. Return a `SubmissionReceipt(summary:issueNumber:url:isFiled:)`. Set `isFiled` to `false` when the report still needs someone to carry it the last step.
+`destinationDescription` is shown on the review screen. `destination` decides the sheet's words: `.gitHub` names GitHub and links the filed issue, and `.team`, the default, says "the team", links nothing that isn't a folder on the device, and asks how to reach the reporter. Return `.gitHub` only when the reporter files as their own GitHub account. The words for both live in `ReporterWords`. `ReportSubmission` holds the `report`, the rendered `issue` (title, body, labels) and the `attachments`, after secrets are masked. Return a `SubmissionReceipt(summary:issueNumber:url:isFiled:)`. Set `isFiled` to `false` when the report still needs someone to carry it the last step.
 
 ### GitHub sign-in
 
@@ -244,6 +281,8 @@ A `GitHubClient` holds the token it was created with. If you build one yourself,
 | `Beacon.markWalkthroughSeen(defaults:)` | Marks the walkthrough as shown. |
 | `Beacon.isOffered` | Whether this build offers reporting, given the `audience` passed to `Beacon.configure`. |
 | `Beacon.gitHubAccount` | The `GitHubAccount` passed to `Beacon.configure`, or `nil`. |
+
+On the team route, the form ends with an optional "How can we reach you?" field. It starts with the reporter's own `contact`, and what is typed there replaces it on the report.
 
 On a device where Apple Intelligence is available, the sheet reads the report on the device before sending and may ask up to three questions. There is no setting for it.
 
