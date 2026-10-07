@@ -6,7 +6,7 @@ What is proven by a test, what is proven by having run it, what is written but h
 
 ## Proven by tests
 
-`swift test` runs 129 tests in 31 suites on the Mac. The iOS Simulator runs the same suites, minus the keychain ones, which skip themselves there because a test host on the simulator has no keychain to write to.
+`swift test` runs 131 tests in 31 suites on the Mac. The iOS Simulator runs the same suites, minus the keychain ones, which skip themselves there because a test host on the simulator has no keychain to write to.
 
 | Proven | Where |
 |---|---|

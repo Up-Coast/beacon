@@ -1,8 +1,9 @@
 // The relay's checks, with no network: run `deno test` in Relay/supabase-edge.
 
 import {
-  ANSWERS, appJWT, type Config, dependencies, handle, loadConfig, MAX_ATTACHMENT_BASE64,
-  RateLimiter, routeFor, safeFilename, tokenMatches, validatePayload,
+  allowedLabels, ANSWERS, appJWT, clientAddress, type Config, dependencies, handle, loadConfig,
+  MAX_ATTACHMENT_BASE64, MAX_REQUEST_BYTES, RateLimiter, readCapped, routeFor, safeFilename, tokenMatches,
+  validatePayload,
 } from "./relay.ts";
 
 function assert(condition: unknown, message = "assertion failed"): asserts condition {
@@ -59,6 +60,14 @@ Deno.test("each app goes to its own repository, and others to the default", () =
   equal(routeFor("com.example.unknown", config), { owner: "team", repo: "feedback", installationId: "777" });
 });
 
+Deno.test("a bundle id that names an object's own machinery finds nothing", () => {
+  const config = loadConfig(env({ ...base, TARGETS: JSON.stringify({ "com.example.harbour": "team/harbour" }) }));
+  for (const app of ["__proto__", "constructor", "toString"]) equal(routeFor(app, config), null);
+  assert("error" in validatePayload(report({ app: "__proto__" })), "not a bundle id");
+  assert("error" in validatePayload(report({ app: "com.example/../x" })), "not a bundle id");
+  assert("payload" in validatePayload(report({ app: "" })), "an app that didn't say goes to the default");
+});
+
 Deno.test("an unknown app with no default goes nowhere", () => {
   const config = loadConfig(env({ ...base, TARGETS: JSON.stringify({ "com.example.harbour": "team/harbour" }) }));
   equal(routeFor("com.example.unknown", config), null);
@@ -92,6 +101,18 @@ Deno.test("a report of the wrong shape is refused", () => {
   }
 });
 
+Deno.test("only Beacon's own labels are passed on", () => {
+  equal(allowedLabels(["beacon", "type:bug", "impact:slowed", "area:sync-engine", "area:Sync Engine",
+    "severity:critical", "anything-else", "beacon"]), ["beacon", "type:bug", "impact:slowed", "area:sync-engine"]);
+  const checked = validatePayload(report({ labels: ["beacon", "made-up"] }));
+  assert("payload" in checked);
+  equal(checked.payload.labels, ["beacon"]);
+});
+
+Deno.test("a body too long to take its attachment links is refused", () => {
+  assert("error" in validatePayload(report({ body: "x".repeat(50_001) })));
+});
+
 Deno.test("attachments over the app's own limit are refused as too large", () => {
   const big = "A".repeat(MAX_ATTACHMENT_BASE64 + 4);
   const checked = validatePayload(report({ attachments: [{ filename: "big.mov", base64: big }] }));
@@ -113,6 +134,31 @@ Deno.test("nothing the reporter can be shown names GitHub", () => {
 });
 
 // MARK: Rate limits
+
+Deno.test("the limiter forgets the oldest keys instead of growing forever", () => {
+  const limiter = new RateLimiter(5, () => 0, 3);
+  for (const key of ["a", "b", "c", "d", "e"]) limiter.allow(key);
+  equal(limiter.size, 3);
+});
+
+Deno.test("the caller's address is the hop the platform added, not one the caller wrote", () => {
+  const request = new Request("https://relay.example", { headers: { "X-Forwarded-For": "1.2.3.4, 203.0.113.9" } });
+  equal(clientAddress(request), "203.0.113.9");
+  equal(clientAddress(new Request("https://relay.example")), "unknown");
+});
+
+Deno.test("a body is cut off at the limit even with no Content-Length", async () => {
+  const stream = (size: number) => new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (let sent = 0; sent < size; sent += 1024) controller.enqueue(new Uint8Array(1024).fill(65));
+      controller.close();
+    },
+  });
+  const request = (size: number) => new Request("https://relay.example", { method: "POST", body: stream(size), duplex: "half" } as RequestInit);
+  equal(await readCapped(request(4096), 2048), null);
+  equal((await readCapped(request(2048), 2048))?.length, 2048);
+  assert(MAX_REQUEST_BYTES < 64 * 1024 * 1024);
+});
 
 Deno.test("a key is held to its hourly count, and freed an hour later", () => {
   let now = 0;
@@ -174,10 +220,16 @@ function pretendGitHub(calls: string[]): typeof fetch {
     if (url === "repos/team/found/installation") return json(200, { id: 999 });
     if (url.endsWith("/access_tokens")) return json(201, { token: "installation-token", expires_at: "2999-01-01T00:00:00Z" });
     if (url.includes("/git/ref/heads/beacon-attachments")) return json(200, { object: { sha: "abc" } });
+    if (url.includes("/contents/") && url.includes("exists.png")) {
+      return init?.method === "PUT"
+        ? json(422, { message: "\"sha\" wasn't supplied." })
+        : json(200, { html_url: "https://example.com/exists.png" });
+    }
     if (url.includes("/contents/")) return json(201, { content: { html_url: "https://example.com/shot.png" } });
     if (url.endsWith("/issues")) {
       const sent = JSON.parse(String(init?.body));
       assert(sent.body.includes("[`shot.png`](https://example.com/shot.png)"), "the filename became a link");
+      assert(!sent.labels.includes("made-up"), "unknown labels are dropped");
       return json(201, { number: 42, html_url: "https://example.com/issues/42" });
     }
     return json(404, { message: "Not Found" });
@@ -213,6 +265,19 @@ Deno.test("with no installation id set, the repository's installation is looked 
   const deps = { ...dependencies(config, pretendGitHub(calls)), log: () => {} };
   equal((await handle(post(report()), deps)).status, 201);
   assert(calls.includes("POST app/installations/999/access_tokens"), calls.join("\n"));
+});
+
+Deno.test("a report sent again uses the attachment it already committed", async () => {
+  const calls: string[] = [];
+  const deps = { ...dependencies(await testConfig(), pretendGitHub(calls)), log: () => {} };
+  const resent = report({
+    body: "## What they attached\n\n- `exists.png` (3 B)\n- `shot.png` (3 B)\n",
+    attachments: [{ filename: "exists.png", base64: "AQID" }, { filename: "shot.png", base64: "AQID" }],
+    labels: ["beacon", "made-up"],
+  });
+  equal((await handle(post(resent), deps)).status, 201);
+  assert(calls.includes("GET repos/team/feedback/contents/.beacon/attachments/BN-ABC123/exists.png?ref=beacon-attachments"),
+    calls.join("\n"));
 });
 
 Deno.test("a wrong token files nothing", async () => {

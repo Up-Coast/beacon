@@ -184,13 +184,14 @@ An account that can read the repository but not write to it can still file the r
 
 ### `RelayTransport`
 
-`RelayTransport(endpoint:appToken:destinationName:)`. Beacon ships a relay to deploy as a Supabase Edge Function, in [`Relay/supabase-edge`](https://github.com/Up-Coast/beacon/tree/main/Relay/supabase-edge). [Setup: the relay](setup-relay.md) walks through it.
+`RelayTransport(endpoint:appToken:destinationName:maximumEncodedBytes:)`. Beacon ships a relay to deploy as a Supabase Edge Function, in [`Relay/supabase-edge`](https://github.com/Up-Coast/beacon/tree/main/Relay/supabase-edge). [Setup: the relay](setup-relay.md) walks through it.
 
 | Argument | Default | What it does |
 |---|---|---|
 | `endpoint` | required | Your relay's URL. |
 | `appToken` | `nil` | Sent as `Authorization: Bearer <appToken>`, so your relay can refuse other callers. It is not a GitHub credential. |
 | `destinationName` | `the team` | Who the reporter is told the report goes to, on the review screen and the receipt. |
+| `maximumEncodedBytes` | 30 MiB | The most base64 the attachments may come to. The reference relay accepts 30 MiB. |
 
 The transport sends a `POST` with a JSON body:
 
@@ -210,7 +211,7 @@ The transport sends a `POST` with a JSON body:
 
 `app` lets one relay file each app's reports into its own repository. `contact` is also written into the body.
 
-A `2xx` response may carry `issue_number` and `html_url`. The sheet keeps them in the report's saved copy, as `receipt.json`, and never shows them: the receipt says "Sent to the team. Thank you." and shows the reference. Any other status is an error, and an `error` string in the response is shown to the reporter, so write it in the reporter's words. The transport refuses to send when the encoded attachments exceed 60 MB.
+A `2xx` response may carry `issue_number` and `html_url`. The sheet keeps them in the report's saved copy, as `receipt.json`, and never shows them: the receipt says "Sent to the team. Thank you." and shows the reference. Any other status is an error. The reporter is shown a fixed sentence chosen by the status (413 too large, 429 too many, anything else not delivered), never the response's own `error` string. A network failure says the team couldn't be reached, without the system's message. The transport refuses to send when the encoded attachments exceed `maximumEncodedBytes`.
 
 ### `LocalBundleTransport`
 

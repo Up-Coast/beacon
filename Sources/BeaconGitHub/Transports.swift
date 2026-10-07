@@ -190,12 +190,19 @@ public struct RelayTransport: ReportTransport {
     public var appToken: String?
     /// Who the reporter is told the report goes to.
     public var destinationName: String
+    /// The most base64 the attachments may come to. The reference relay
+    /// accepts 30 MiB, so a report over it is refused here, before upload.
+    public var maximumEncodedBytes: Int
+
+    public static let defaultMaximumEncodedBytes = 30 * 1024 * 1024
 
     public init(endpoint: URL, appToken: String? = nil,
-                destinationName: String = "the team") {
+                destinationName: String = "the team",
+                maximumEncodedBytes: Int = RelayTransport.defaultMaximumEncodedBytes) {
         self.endpoint = endpoint
         self.appToken = appToken
         self.destinationName = destinationName
+        self.maximumEncodedBytes = maximumEncodedBytes
     }
 
     /// The team, and nothing about how: the reporter has no account
@@ -210,7 +217,8 @@ public struct RelayTransport: ReportTransport {
         do {
             (data, response) = try await URLSession.shared.data(for: request)
         } catch {
-            throw TransportError.network(error.localizedDescription)
+            // The system's message can name the address it tried.
+            throw TransportError.network(words.notReachable)
         }
         return try receipt(status: (response as? HTTPURLResponse)?.statusCode ?? 0, data: data)
     }
@@ -227,7 +235,7 @@ public struct RelayTransport: ReportTransport {
         // after a long upload is the worst way to tell somebody their
         // report is too big. Check it here, with the real encoded size.
         let encodedBytes = submission.attachments.reduce(0) { $0 + ($1.byteCount * 4 + 2) / 3 }
-        let limit = AcceptedFormats.maximumTotalBytes
+        let limit = maximumEncodedBytes
         guard encodedBytes <= limit else {
             throw TransportError.tooLarge(bytes: encodedBytes, limit: limit)
         }
@@ -264,9 +272,9 @@ public struct RelayTransport: ReportTransport {
     func receipt(status: Int, data: Data) throws -> SubmissionReceipt {
         let parsed = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
         guard (200..<300).contains(status) else {
-            throw TransportError.rejected(
-                status: status,
-                detail: parsed["error"] as? String ?? words.deliveryRefused)
+            // The relay's own message is not shown: it is written by
+            // whoever runs the relay, and could say anything.
+            throw TransportError.rejected(status: status, detail: words.refusal(status: status))
         }
         return SubmissionReceipt(
             summary: words.sentToTeam,

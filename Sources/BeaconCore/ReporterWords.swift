@@ -99,6 +99,20 @@ public struct ReporterWords: Sendable, Equatable {
         "The report couldn't be delivered just now."
     }
 
+    /// Why a delivery was turned away, from its status alone. The team
+    /// route shows only these, never the service's own message.
+    public func refusal(status: Int) -> String {
+        switch status {
+        case 413: "The report is too large to send. Removing the largest attachment usually does it."
+        case 429: "A lot of reports have come from here just now. Please try again in a little while."
+        default: deliveryRefused
+        }
+    }
+
+    /// Why the team couldn't be reached, in place of the system's own
+    /// message, which can name the address it tried.
+    public var notReachable: String { "\(teamName) couldn't be reached" }
+
     /// The first sentence of a receipt when the primary way of sending
     /// failed and the report was saved instead.
     public var couldNotReach: String {
@@ -121,8 +135,8 @@ public struct ReporterWords: Sendable, Equatable {
     public var noReporterTitle: String { "You'll need to be signed in first" }
 
     public var noReporterSubtitle: String {
-        "Reports go out with your account so we can come back to you about them. "
-            + "Sign in and the report button will work."
+        "Reports aren't anonymous \u{2014} they go out with your account so we can come "
+            + "back to you about them. Sign in and the report button will work."
     }
 
     // MARK: The privacy notice
@@ -144,7 +158,8 @@ public struct ReporterWords: Sendable, Equatable {
     public func everySentence(organizationName: String = "the Harbour team") -> [String] {
         var sentences = [
             from(.anonymous(deviceID: "test")), contactLabel, contactHint, sentToTeam,
-            deliveryRefused, couldNotReach, noReporterTitle, noReporterSubtitle,
+            deliveryRefused, couldNotReach, noReporterTitle, noReporterSubtitle, notReachable,
+            refusal(status: 413), refusal(status: 429),
         ]
         for reporter in [Reporter(accountID: "sam"), Reporter.anonymous(deviceID: "test")] {
             let notice = notice(for: reporter, organizationName: organizationName)

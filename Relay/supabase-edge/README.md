@@ -36,23 +36,24 @@ TARGETS={"com.example.harbour": "your-org/harbour", "com.example.lighthouse": "y
 ## What it does with a request
 
 1. Refuses anything but `POST`, and any request whose `Authorization: Bearer` value is not `BEACON_APP_TOKEN`. The comparison takes the same time however much of the token matches.
-2. Refuses a request over 62 MiB, and an address that has sent its hourly count.
-3. Checks the report's shape: a title, a body under 60,000 characters, a `BN-` reference, an account, at most 20 labels and 30 attachments, attachments in base64 totalling at most 60 MiB. The app checks the same limit before sending.
-4. Refuses an install that has sent its hourly count. The install is the report's `account`.
-5. Picks the repository from the report's `app`, its bundle identifier.
-6. Signs a JWT as the GitHub App and exchanges it for an installation token. The token is reused until five minutes before it expires.
-7. Files the report the way `GitHubIssueTransport` in [`Sources/BeaconGitHub/Transports.swift`](https://github.com/Up-Coast/beacon/blob/main/Sources/BeaconGitHub/Transports.swift) does: each attachment is committed to the `beacon-attachments` branch at `.beacon/attachments/<reference>/<filename>`, each filename in the body becomes a link, and then the issue is created with its labels. If GitHub refuses the attachments with a 403 or 404, the issue is filed with a note that the files stayed on the reporter's device.
-8. Answers `201` with `{"issue_number": …, "html_url": …}`. The app keeps both in its saved copy of the report and shows neither.
+2. Refuses an address that has sent its hourly count. The address is the last `X-Forwarded-For` entry, the one the platform's proxy added; earlier entries are whatever the caller wrote.
+3. Reads the body with a running count and stops at 31 MiB, whatever `Content-Length` says.
+4. Checks the report's shape: a title, a body of at most 50,000 characters (GitHub takes 65,536, and the attachment links are added after), a `BN-` reference, an account, a bundle identifier or nothing, at most 20 labels and 30 attachments, attachments in base64 totalling at most 30 MiB. `RelayTransport` checks the same limit before sending. Labels other than Beacon's own (`beacon`, `type:*`, `impact:*`, `area:<id>`) are dropped, so a request cannot make the GitHub App create labels.
+5. Refuses an install that has sent its hourly count. The install is the report's `account`.
+6. Picks the repository from the report's `app`, its bundle identifier.
+7. Signs a JWT as the GitHub App and exchanges it for an installation token. The token is reused until five minutes before it expires.
+8. Files the report the way `GitHubIssueTransport` in [`Sources/BeaconGitHub/Transports.swift`](https://github.com/Up-Coast/beacon/blob/main/Sources/BeaconGitHub/Transports.swift) does: each attachment is committed to the `beacon-attachments` branch at `.beacon/attachments/<reference>/<filename>`, each filename in the body becomes a link, and then the issue is created with its labels. If GitHub refuses the attachments with a 403 or 404, the issue is filed with a note that the files stayed on the reporter's device. If a file is already there, because an earlier send of the same report committed it and then failed, the relay links the file already committed.
+9. Answers `201` with `{"issue_number": …, "html_url": …}`. The app keeps both in its saved copy of the report and shows neither.
 
-Every refusal answers with `{"error": "…"}`, and the app shows that sentence to the reporter. The sentences are in `ANSWERS` at the top of `relay.ts`. None of them names GitHub, and a test holds that.
+Every refusal answers with `{"error": "…"}`. The sentences are in `ANSWERS` at the top of `relay.ts`, and none of them names GitHub. `RelayTransport` shows the reporter its own sentence for the status instead, so a relay's message never reaches them.
 
 Filenames are made safe before they become a path, the same way the app's saved copy does it. The Swift code is the reference: when the attachment layout or the link rewriting changes there, change it here too.
 
 ## Limits to know
 
-- **Rate limits are kept in memory.** Each running copy of the function counts on its own, and the counts reset when Supabase starts a new copy. They slow a runaway app or a noisy device. They do not stop someone determined.
+- **Rate limits are kept in memory.** Each running copy of the function counts on its own, and the counts reset when Supabase starts a new copy. Each limiter keeps at most 10,000 addresses or installs and forgets the oldest first. They slow a runaway app or a noisy device. They do not stop someone determined.
 - **The app token ships inside the app**, so treat it as a door key, not a secret. Anyone who pulls it from the app can send reports. Change it, and ship an app update, if you see reports nobody sent.
-- **Supabase's limits apply.** Supabase lists 256 MB of memory and 2 seconds of CPU time per request. The relay passes attachments to GitHub in the base64 the app sent, without decoding them, to stay inside both.
+- **Supabase's limits apply.** Supabase lists 256 MB of memory and 2 seconds of CPU time per request. The relay holds about three copies of a request at once (the bytes, the text and the parsed report), which is why it accepts 31 MiB, and why `RelayTransport` refuses a report whose attachments come to more than 30 MiB of base64 even though the sheet lets them total 60 MiB. It passes attachments to GitHub in the base64 the app sent, without decoding them.
 
 ## Tests
 

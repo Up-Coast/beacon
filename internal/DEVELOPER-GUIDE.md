@@ -271,7 +271,7 @@ On iOS, while recording, the sheet shrinks to `BeaconSheet.recordingDetent` (112
 |---|---|---|
 | `GitHubIssueTransport(client:attachmentBranch:)` | A GitHub token for the repository; the device flow asks for the `repo` scope | Ensures the branch (default `beacon-attachments`), puts each attachment at `.beacon/attachments/<reference>/<filename>`, turns the filenames into links, creates the issue. A `403` or `404` on the attachments alone means the account may read but not write: the issue is filed anyway, with a note that the files stayed on the device |
 | `SignedInGitHubIssueTransport(owner:repository:account:attachmentBranch:)` | A `GitHubAccount` somebody has signed in to | Reads the token from the keychain at submit time, then does what `GitHubIssueTransport` does. A `401` signs the account out, so the next report offers sign-in rather than failing again |
-| `RelayTransport(endpoint:appToken:destinationName:)` | A relay you run, such as `Relay/supabase-edge` | Checks the base64 size of the attachments against 60 MiB, then `POST`s JSON `{title, body, labels, reference, account, anonymous, app, contact?, attachments: [{filename, base64}]}` with `Authorization: Bearer <appToken>` when set. `app` is the bundle identifier. Reads `issue_number` and `html_url` into the receipt without showing them, or `error` on failure. Its destination is `.team` |
+| `RelayTransport(endpoint:appToken:destinationName:maximumEncodedBytes:)` | A relay you run, such as `Relay/supabase-edge` | Checks the base64 size of the attachments against `maximumEncodedBytes` (30 MiB), then `POST`s JSON `{title, body, labels, reference, account, anonymous, app, contact?, attachments: [{filename, base64}]}` with `Authorization: Bearer <appToken>` when set. `app` is the bundle identifier. Reads `issue_number` and `html_url` into the receipt without showing them. On failure it shows `ReporterWords.refusal(status:)` or `notReachable`, never the relay's `error` or the system's message. Its destination is `.team` |
 | `LocalBundleTransport(folderProvider:handoverInstruction:)` | Nothing | Returns the folder from `folderProvider` with `isFiled: false` |
 | `FallbackTransport(primary:fallback:onFallback:)` | Two transports | Tries `primary`. On an error, calls `onFallback`, submits to `fallback` and prefixes the receipt summary with why |
 
@@ -409,7 +409,7 @@ Run the same suites on the iOS Simulator:
 xcodebuild test -scheme Beacon-Package -destination 'platform=iOS Simulator,name=iPhone Air'
 ```
 
-The source declares 130 tests. On the Mac, `swift test` runs 129 in 31 suites: one test in `DiagnosticsTests` builds only for iOS. `LiveTransportTests` is skipped unless `BEACON_LIVE_GITHUB_REPO` and `BEACON_LIVE_GITHUB_TOKEN` are both set. It files a real issue, so close it afterwards.
+The source declares 132 tests. On the Mac, `swift test` runs 131 in 31 suites: one test in `DiagnosticsTests` builds only for iOS. `LiveTransportTests` is skipped unless `BEACON_LIVE_GITHUB_REPO` and `BEACON_LIVE_GITHUB_TOKEN` are both set. It files a real issue, so close it afterwards.
 
 | Target | Covers |
 |---|---|

@@ -21,12 +21,27 @@ export const ANSWERS = {
   undelivered: "The report couldn't be delivered just now.",
 } as const;
 
-/** The same limit the app checks before sending: 60 MiB of base64. */
-export const MAX_ATTACHMENT_BASE64 = 60 * 1024 * 1024;
+/**
+ * The same limit RelayTransport checks before sending: 30 MiB of base64.
+ * Supabase gives a request 256 MB. The relay holds the raw bytes, the
+ * decoded text and the parsed report at once, about three copies, plus
+ * one attachment re-encoded for GitHub: 30 MiB keeps that near 120 MB.
+ */
+export const MAX_ATTACHMENT_BASE64 = 30 * 1024 * 1024;
 /** Room for the report's words and the JSON around the attachments. */
-export const MAX_REQUEST_BYTES = MAX_ATTACHMENT_BASE64 + 2 * 1024 * 1024;
-/** GitHub's issue body limit is 65,536 characters; links are added later. */
-const MAX_BODY = 60_000;
+export const MAX_REQUEST_BYTES = MAX_ATTACHMENT_BASE64 + 1024 * 1024;
+/** GitHub's issue body limit is 65,536 characters; up to 30 attachment links are added later. */
+const MAX_BODY = 50_000;
+/** The labels the relay passes on, so a request cannot make the GitHub App create new ones. */
+const FIXED_LABELS = new Set([
+  "beacon",
+  "type:bug", "type:feature-request", "type:feedback",
+  "impact:blocked", "impact:slowed", "impact:irritating", "impact:noticed",
+]);
+/** An area label is `area:` and the indexer's id: lowercase words joined by hyphens. */
+const AREA_LABEL = /^area:[a-z0-9][a-z0-9-]{0,44}$/;
+/** A bundle identifier, or empty when the app didn't say. */
+const BUNDLE_ID = /^([A-Za-z0-9][A-Za-z0-9.-]{0,254})?$/;
 const ATTACHMENT_BRANCH = "beacon-attachments";
 const GITHUB_API = "https://api.github.com";
 
@@ -45,8 +60,8 @@ export interface Config {
   /** Empty when GITHUB_INSTALLATION_ID is not set. */
   installationId: string;
   fallback?: { owner: string; repo: string };
-  /** Bundle id to target. */
-  targets: Record<string, Target>;
+  /** Bundle id to target. A Map, so a bundle id like `__proto__` finds nothing. */
+  targets: Map<string, Target>;
   perIPPerHour: number;
   perDevicePerHour: number;
 }
@@ -59,7 +74,7 @@ export function loadConfig(env: (name: string) => string | undefined): Config {
   // Optional: left out, the relay asks GitHub which installation covers each repository.
   const installationId = env("GITHUB_INSTALLATION_ID") ?? "";
 
-  const targets: Record<string, Target> = {};
+  const targets = new Map<string, Target>();
   const raw = env("TARGETS");
   if (raw) {
     // {"com.example.app": "owner/repo"} or
@@ -68,11 +83,11 @@ export function loadConfig(env: (name: string) => string | undefined): Config {
       const spec = typeof value === "string" ? { repo: value } : value as { repo?: string; installation?: string };
       const [owner, repo] = (spec.repo ?? "").split("/");
       if (!owner || !repo) throw new Error(`TARGETS: "${bundleID}" needs "owner/repo"`);
-      targets[bundleID] = { owner, repo, installationId: String(spec.installation ?? installationId) };
+      targets.set(bundleID, { owner, repo, installationId: String(spec.installation ?? installationId) });
     }
   }
   const owner = env("TARGET_OWNER"), repo = env("TARGET_REPO");
-  if (!Object.keys(targets).length && !(owner && repo)) {
+  if (!targets.size && !(owner && repo)) {
     throw new Error("missing settings: TARGET_OWNER and TARGET_REPO, or TARGETS");
   }
   return {
@@ -89,7 +104,8 @@ export function loadConfig(env: (name: string) => string | undefined): Config {
 
 /** Where a report from this app is filed: its own entry, or the default. */
 export function routeFor(app: string, config: Config): Target | null {
-  if (config.targets[app]) return config.targets[app];
+  const own = config.targets.get(app);
+  if (own) return own;
   return config.fallback ? { ...config.fallback, installationId: config.installationId } : null;
 }
 
@@ -132,7 +148,8 @@ export function validatePayload(raw: unknown): { payload: Payload } | { error: s
   const r = raw as Record<string, unknown>;
   if (!isString(r.title, 256, 1) || !isString(r.body, MAX_BODY, 1)) return unreadable;
   if (!isString(r.reference, 9) || !/^BN-[0-9A-F]{6}$/.test(r.reference)) return unreadable;
-  if (!isString(r.account, 200, 1) || !isString(r.app ?? "", 255)) return unreadable;
+  if (!isString(r.account, 200, 1)) return unreadable;
+  if (!isString(r.app ?? "", 255) || !BUNDLE_ID.test((r.app as string) ?? "")) return unreadable;
   if (r.contact !== undefined && !isString(r.contact, 300)) return unreadable;
   const labels = r.labels ?? [];
   if (!Array.isArray(labels) || labels.length > 20 || !labels.every((l) => isString(l, 50, 1))) return unreadable;
@@ -147,11 +164,16 @@ export function validatePayload(raw: unknown): { payload: Payload } | { error: s
   if (total > MAX_ATTACHMENT_BASE64) return { error: ANSWERS.tooLarge, status: 413 };
   return {
     payload: {
-      title: r.title, body: r.body, labels: labels as string[], reference: r.reference,
+      title: r.title, body: r.body, labels: allowedLabels(labels as string[]), reference: r.reference,
       account: r.account, app: (r.app as string) ?? "", contact: r.contact as string | undefined,
       attachments: attachments as Attachment[],
     },
   };
+}
+
+/** Beacon's own labels only, as IssueRenderer.Labels in Swift makes them. Anything else is dropped. */
+export function allowedLabels(labels: string[]): string[] {
+  return [...new Set(labels.filter((label) => FIXED_LABELS.has(label) || AREA_LABEL.test(label)))];
 }
 
 /** A filename made safe for a repository path, as ReportArchive.safeFilename does. */
@@ -162,21 +184,36 @@ export function safeFilename(name: string): string {
 
 // MARK: Rate limits
 
-/** How many reports one key may send in a rolling hour, kept in memory. */
+/**
+ * How many reports one key may send in a rolling hour, kept in memory.
+ * Stale keys are dropped as it goes, and it never holds more than
+ * `maxKeys`: past that, the keys seen longest ago are forgotten first.
+ */
 export class RateLimiter {
   private seen = new Map<string, number[]>();
-  constructor(private perHour: number, private now: () => number = Date.now) {}
+  private calls = 0;
+  constructor(private perHour: number, private now: () => number = Date.now, private maxKeys = 10_000) {}
 
   allow(key: string): boolean {
     const since = this.now() - 3_600_000;
+    if (++this.calls % 100 === 0) this.prune(since);
     const recent = (this.seen.get(key) ?? []).filter((t) => t > since);
-    if (recent.length >= this.perHour) {
-      this.seen.set(key, recent);
-      return false;
-    }
-    recent.push(this.now());
+    this.seen.delete(key); // re-inserted below, so the Map stays in order of last use
+    const allowed = recent.length < this.perHour;
+    if (allowed) recent.push(this.now());
     this.seen.set(key, recent);
-    return true;
+    while (this.seen.size > this.maxKeys) this.seen.delete(this.seen.keys().next().value!);
+    return allowed;
+  }
+
+  get size(): number {
+    return this.seen.size;
+  }
+
+  private prune(since: number) {
+    for (const [key, times] of this.seen) {
+      if (!times.some((t) => t > since)) this.seen.delete(key);
+    }
   }
 }
 
@@ -289,6 +326,27 @@ async function ensureBranch(fetchFn: typeof fetch, token: string, repoPath: stri
   });
 }
 
+/**
+ * Commit one attachment and return its link. A report sent again, after a
+ * send that committed its files but failed before the issue, finds them
+ * already there: GitHub answers 422 without the file's sha, and the file
+ * already committed is used as it is.
+ */
+async function putAttachment(
+  fetchFn: typeof fetch, token: string, contentsPath: string, reference: string, base64: string,
+): Promise<string | undefined> {
+  try {
+    const put = await gitHub(fetchFn, token, "PUT", contentsPath, {
+      message: `Beacon attachment for ${reference}`, content: base64, branch: ATTACHMENT_BRANCH,
+    });
+    return put?.content?.html_url;
+  } catch (error) {
+    if (!(error instanceof GitHubError) || error.status !== 422) throw error;
+    const existing = await gitHub(fetchFn, token, "GET", `${contentsPath}?ref=${ATTACHMENT_BRANCH}`);
+    return existing?.html_url;
+  }
+}
+
 /** Attachments first, then the issue that links to them. */
 export async function fileReport(
   payload: Payload, target: Target, token: string, fetchFn: typeof fetch,
@@ -304,12 +362,7 @@ export async function fileReport(
         while (used.has(name)) name = `_${name}`;
         used.add(name);
         const path = `.beacon/attachments/${payload.reference}/${encodeURIComponent(name)}`;
-        const put = await gitHub(fetchFn, token, "PUT", `${repoPath}/contents/${path}`, {
-          message: `Beacon attachment for ${payload.reference}`,
-          content: attachment.base64,
-          branch: ATTACHMENT_BRANCH,
-        });
-        const url = put?.content?.html_url;
+        const url = await putAttachment(fetchFn, token, `${repoPath}/contents/${path}`, payload.reference, attachment.base64);
         if (url) body = body.replaceAll("- `" + attachment.filename + "`", "- [`" + attachment.filename + "`](" + url + ")");
       }
     } catch (error) {
@@ -345,6 +398,40 @@ export function dependencies(config: Config, fetchFn: typeof fetch = fetch): Dep
   };
 }
 
+/**
+ * The caller's address. The first X-Forwarded-For entries are whatever the
+ * caller wrote; the last is the one the platform's own proxy added.
+ */
+export function clientAddress(request: Request): string {
+  const hops = (request.headers.get("X-Forwarded-For") ?? "").split(",").map((hop) => hop.trim());
+  return hops.at(-1) || "unknown";
+}
+
+/** The request body as text, or null once it passes `limit` bytes. */
+export async function readCapped(request: Request, limit: number): Promise<string | null> {
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > limit) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
 export async function handle(request: Request, deps: Dependencies): Promise<Response> {
   if (request.method !== "POST") return answer(405, { error: ANSWERS.unreadable });
   if (!tokenMatches(request.headers.get("Authorization"), deps.config.appToken)) {
@@ -353,11 +440,12 @@ export async function handle(request: Request, deps: Dependencies): Promise<Resp
   if (Number(request.headers.get("Content-Length") ?? 0) > MAX_REQUEST_BYTES) {
     return answer(413, { error: ANSWERS.tooLarge });
   }
-  const ip = (request.headers.get("X-Forwarded-For") ?? "unknown").split(",")[0].trim();
-  if (!deps.byIP.allow(ip)) return answer(429, { error: ANSWERS.tooMany });
+  if (!deps.byIP.allow(clientAddress(request))) return answer(429, { error: ANSWERS.tooMany });
 
-  const text = await request.text();
-  if (text.length > MAX_REQUEST_BYTES) return answer(413, { error: ANSWERS.tooLarge });
+  // Read with a running count: a request without Content-Length, or one
+  // that lies in it, is cut off at the limit instead of filling memory.
+  const text = await readCapped(request, MAX_REQUEST_BYTES);
+  if (text === null) return answer(413, { error: ANSWERS.tooLarge });
   let raw: unknown;
   try {
     raw = JSON.parse(text);

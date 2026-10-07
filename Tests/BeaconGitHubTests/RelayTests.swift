@@ -55,18 +55,50 @@ struct RelayTests {
         #expect(ReporterWords(destination: relay.destination).link(for: receipt) == nil)
     }
 
-    @Test func aRefusalWithoutAReasonStillSaysNothingAboutGitHub() {
+    /// The relay's own message is never shown: only a fixed sentence chosen by status.
+    @Test func aRefusalShowsOurWordsNotTheRelays() {
+        let said = Data(#"{"error": "GitHub issue creation failed on repository x"}"#.utf8)
         #expect(throws: TransportError.rejected(status: 500,
                                                 detail: "The report couldn't be delivered just now.")) {
-            try relay.receipt(status: 500, data: Data())
+            try relay.receipt(status: 500, data: said)
         }
+        #expect(throws: TransportError.rejected(status: 413, detail: ReporterWords(destination: .team)
+            .refusal(status: 413))) {
+            try relay.receipt(status: 413, data: said)
+        }
+    }
+
+    @Test func anAttachmentOverTheRelaysLimitIsRefusedBeforeUpload() {
+        let big = Attachment(kind: .screenRecording, filename: "r.mp4",
+                             data: Data(count: RelayTransport.defaultMaximumEncodedBytes))
+        var oversize = submission(reporter: .anonymous(deviceID: "abc"))
+        oversize.attachments = [big]
+        #expect(throws: TransportError.self) { _ = try relay.request(for: oversize) }
+    }
+
+    /// The relay passes on only Beacon's own labels, so its list must hold every label the app makes.
+    @Test func theRelayKnowsEveryLabelTheAppMakes() throws {
+        let relaySource = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Relay/supabase-edge/supabase/functions/beacon-relay/relay.ts")
+        let source = try String(contentsOf: relaySource, encoding: .utf8)
+        let labels = [IssueRenderer.Labels.beacon]
+            + FeedbackKind.allCases.map(IssueRenderer.Labels.kind)
+            + Impact.allCases.map(IssueRenderer.Labels.impact)
+        for label in labels { #expect(source.contains("\"\(label)\""), "relay.ts lacks \(label)") }
     }
 
     /// Every sentence the relay route puts in front of a reporter.
     @Test func noReporterFacingWordNamesGitHub() throws {
         let receipt = try relay.receipt(status: 201, data: Data(#"{"issue_number": 1}"#.utf8))
-        var sentences = ReporterWords(destination: relay.destination).everySentence()
+        let words = ReporterWords(destination: relay.destination)
+        var sentences = words.everySentence()
         sentences += [relay.destinationDescription, receipt.summary]
+        // The errors the relay route can raise, as the sheet shows them.
+        let errors: [TransportError] = [
+            .network(words.notReachable), .tooLarge(bytes: 40 << 20, limit: 30 << 20),
+        ] + [400, 401, 413, 429, 500, 502].map { .rejected(status: $0, detail: words.refusal(status: $0)) }
+        sentences += errors.compactMap(\.errorDescription)
         for sentence in sentences {
             for word in ["github", "issue", "repositor", "label"] {
                 #expect(!sentence.lowercased().contains(word), "\(word) in: \(sentence)")
