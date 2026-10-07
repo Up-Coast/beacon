@@ -145,9 +145,10 @@ public final class FeedbackSession {
     /// collection happens here rather than at send so the review screen can
     /// show real values instead of promising them.
     public func continueToReview() async {
-        blockingIssues = CompletenessRules.blocking(draftReport())
+        let offersAreas = BeaconIndex.offersAreas(index)
+        blockingIssues = CompletenessRules.blocking(draftReport(), offersAreas: offersAreas)
         guard blockingIssues.isEmpty else { return }
-        advisoryIssues = CompletenessRules.check(draftReport()).filter { !$0.blocking }
+        advisoryIssues = CompletenessRules.check(draftReport(), offersAreas: offersAreas).filter { !$0.blocking }
 
         isWorking = true
         workingMessage = "Collecting what's on \(PlatformWording.thisDevice)\u{2026}"

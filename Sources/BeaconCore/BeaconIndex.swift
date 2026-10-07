@@ -107,6 +107,13 @@ public struct BeaconIndex: Codable, Sendable, Equatable {
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
+    /// Whether the sheet has areas to offer. The one answer both the picker
+    /// and the completeness rules use, so they cannot disagree: with no map
+    /// there is no picker and no area requirement.
+    public static func offersAreas(_ index: BeaconIndex?) -> Bool {
+        index?.reporterAreas.isEmpty == false
+    }
+
     public func area(id: String) -> IndexedArea? { areas.first { $0.id == id } }
 
     /// The display name for an area id, including the two sentinels — so

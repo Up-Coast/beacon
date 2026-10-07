@@ -98,4 +98,27 @@ struct FeatureCompletenessTests {
         #expect(CompletenessRules.canSubmit(report))
         #expect(CompletenessRules.check(report).contains { $0.field == .why && !$0.blocking })
     }
+
+    @Test func anAppWithNoAreasNeverBlocksOnThem() {
+        let feature = FeatureBody(whatIWant: "I want to rename a project after making it")
+        let report = FeedbackReport(reporter: Reporter(accountID: "a@b.c"), body: .feature(feature))
+        #expect(CompletenessRules.canSubmit(report, offersAreas: false))
+        #expect(!CompletenessRules.check(report, offersAreas: false).contains { $0.field == .area })
+    }
+
+    @Test func anAppWithAreasStillAsksForOne() {
+        let feature = FeatureBody(whatIWant: "I want to rename a project after making it")
+        let report = FeedbackReport(reporter: Reporter(accountID: "a@b.c"), body: .feature(feature))
+        #expect(!CompletenessRules.canSubmit(report, offersAreas: true))
+        #expect(CompletenessRules.blocking(report, offersAreas: true).contains { $0.field == .area })
+    }
+
+    @Test func areasAreOfferedOnlyWhenTheMapHasSome() {
+        #expect(!BeaconIndex.offersAreas(nil))
+        #expect(!BeaconIndex.offersAreas(BeaconIndex(areas: [])))
+        #expect(!BeaconIndex.offersAreas(BeaconIndex(areas: [
+            IndexedArea(id: "plumbing", name: "Plumbing", hiddenFromReporters: true)])))
+        #expect(BeaconIndex.offersAreas(BeaconIndex(areas: [
+            IndexedArea(id: "settings", name: "Settings")])))
+    }
 }

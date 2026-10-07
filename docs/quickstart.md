@@ -1,6 +1,6 @@
 # Quickstart
 
-*Last updated: 2026-10-06*
+*Last updated: 2026-10-07*
 
 Put a Beacon report button in your app and send a test report.
 
@@ -16,7 +16,7 @@ In `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Up-Coast/beacon.git", from: "0.4.0"),
+    .package(url: "https://github.com/Up-Coast/beacon.git", from: "0.4.1"),
 ],
 targets: [
     .target(name: "YourApp", dependencies: [.product(name: "Beacon", package: "beacon")]),

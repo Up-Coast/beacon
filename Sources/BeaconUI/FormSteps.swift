@@ -265,9 +265,11 @@ struct AreaPicker: View {
     var isNewArea: Binding<Bool>? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.headline)
-            if let index, !index.reporterAreas.isEmpty {
+        // No map, no picker and no question: asking for something there is
+        // nothing to answer with would leave the reporter stuck.
+        if let index, BeaconIndex.offersAreas(index) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title).font(.headline)
                 Picker("", selection: pickerBinding) {
                     Text("Not sure").tag(BeaconIndex.unsureAreaID)
                     if allowsSomethingNew {
@@ -283,14 +285,6 @@ struct AreaPicker: View {
                 if let id = selection, let area = index.area(id: id), let blurb = area.blurb {
                     Text(blurb).font(.subheadline).foregroundStyle(.secondary)
                 }
-            } else {
-                // No map: say so rather than showing an empty picker, and
-                // let the report go without one.
-                Text("This app hasn't been mapped yet, so there's nothing to "
-                    + "pick from. Say where you were in the steps instead \u{2014} "
-                    + "that works just as well.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

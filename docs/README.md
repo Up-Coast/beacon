@@ -1,6 +1,6 @@
 # Beacon documentation
 
-*Last updated: 2026-10-06*
+*Last updated: 2026-10-07*
 
 Beacon puts a report button in your macOS or iOS app. Testers use it to send bugs, feature requests and feedback, and a Claude session works each report by a written triage policy.
 
@@ -15,7 +15,7 @@ Pick one of three ways.
   /plugin install beacon@up-coast
   ```
 
-- **The Swift package.** Add `https://github.com/Up-Coast/beacon.git` from version `0.4.0`. The [Quickstart](quickstart.md) shows the code. You still need a setup path so reports go somewhere.
+- **The Swift package.** Add `https://github.com/Up-Coast/beacon.git` from version `0.4.1`. The [Quickstart](quickstart.md) shows the code. You still need a setup path so reports go somewhere.
 - **A clone.** The setup pages assume the repository is at `~/beacon`.
 
   ```bash

@@ -80,14 +80,19 @@ public enum CompletenessRules {
 
     /// Everything wrong with this report. An empty result means it can be
     /// filed; anything with `blocking == true` means it cannot.
-    public static func check(_ report: FeedbackReport) -> [CompletenessIssue] {
+    ///
+    /// `offersAreas` says whether the sheet shows the reporter a list of the
+    /// app's areas. An app with no map has nothing to pick from, so naming an
+    /// area cannot be required of the reporter.
+    public static func check(_ report: FeedbackReport,
+                             offersAreas: Bool = true) -> [CompletenessIssue] {
         var issues: [CompletenessIssue] = []
 
         switch report.body {
         case .bug(let bug):
             issues += checkBug(bug)
         case .feature(let feature):
-            issues += checkFeature(feature)
+            issues += checkFeature(feature, offersAreas: offersAreas)
         case .feedback(let feedback):
             if isEmptyInSubstance(feedback.message) || tooShort(feedback.message) {
                 issues.append(.init(field: .message,
@@ -161,7 +166,8 @@ public enum CompletenessRules {
         return issues
     }
 
-    static func checkFeature(_ feature: FeatureBody) -> [CompletenessIssue] {
+    static func checkFeature(_ feature: FeatureBody,
+                             offersAreas: Bool) -> [CompletenessIssue] {
         var issues: [CompletenessIssue] = []
         if isEmptyInSubstance(feature.whatIWant) || tooShort(feature.whatIWant) {
             issues.append(.init(field: .whatIWant,
@@ -176,7 +182,7 @@ public enum CompletenessRules {
                     + "than the one you asked for.",
                 blocking: false))
         }
-        if feature.areaID == nil && !feature.isNewArea {
+        if offersAreas && feature.areaID == nil && !feature.isNewArea {
             issues.append(.init(field: .area,
                 message: "Pick the part of the app this belongs to \u{2014} or "
                     + "say it's something new. Either answer is fine.",
@@ -185,12 +191,14 @@ public enum CompletenessRules {
         return issues
     }
 
-    public static func blocking(_ report: FeedbackReport) -> [CompletenessIssue] {
-        check(report).filter(\.blocking)
+    public static func blocking(_ report: FeedbackReport,
+                                offersAreas: Bool = true) -> [CompletenessIssue] {
+        check(report, offersAreas: offersAreas).filter(\.blocking)
     }
 
-    public static func canSubmit(_ report: FeedbackReport) -> Bool {
-        blocking(report).isEmpty
+    public static func canSubmit(_ report: FeedbackReport,
+                                 offersAreas: Bool = true) -> Bool {
+        blocking(report, offersAreas: offersAreas).isEmpty
     }
 }
 
