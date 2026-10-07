@@ -10,12 +10,15 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import BeaconCore
+import BeaconGitHub
 #if os(iOS)
 import PhotosUI
 #endif
 
 struct FormStepView: View {
     @Bindable var session: FeedbackSession
+    var gitHubAccount: GitHubAccount?
+    @State private var dropTargeted = false
 
     var body: some View {
         StepScaffold(title: session.kind.title, subtitle: session.kind.blurb) {
@@ -28,9 +31,11 @@ struct FormStepView: View {
                 }
 
                 ImpactPicker(impact: $session.impact)
-                AttachmentsView(session: session)
+                AttachmentsView(session: session, dropTargeted: dropTargeted)
 
-                if session.words.asksForContact {
+                if session.asksForIdentity {
+                    IdentityBlock(session: session, gitHubAccount: gitHubAccount)
+                } else if session.words.asksForContact {
                     FieldBlock(label: session.words.contactLabel, hint: session.words.contactHint) {
                         TextField("", text: $session.contact)
                             .textFieldStyle(.plain)
@@ -52,6 +57,12 @@ struct FormStepView: View {
                 }
             }
         }
+        // The whole step takes dropped files, not only the box drawn for it:
+        // a reporter who misses the box should not be refused for it.
+        .dropDestination(for: URL.self) { urls, _ in
+            session.addFiles(urls)
+            return !urls.isEmpty
+        } isTargeted: { dropTargeted = $0 }
     }
 }
 
@@ -341,6 +352,8 @@ struct AreaPicker: View {
 
 struct AttachmentsView: View {
     @Bindable var session: FeedbackSession
+    /// Whether a drag is over the step, so the drop box can say so.
+    var dropTargeted = false
     @State private var importing = false
     @State private var problem: String?
     #if os(iOS)
@@ -394,6 +407,19 @@ struct AttachmentsView: View {
             }
             .buttonStyle(.bordered)
 
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(dropTargeted ? Color.accentColor : Color.secondary.opacity(0.6),
+                              style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .background(RoundedRectangle(cornerRadius: 10)
+                    .fill(dropTargeted ? Color.accentColor.opacity(0.12) : Color.clear))
+                .frame(height: 64)
+                .overlay {
+                    Label("Drop files here", systemImage: "square.and.arrow.down")
+                        .foregroundStyle(dropTargeted ? Color.accentColor : Color.secondary)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Drop files here")
+
             if session.isRecording {
                 Label("Recording this app's \(PlatformWording.appSurface). Go and make "
                     + "it happen, then come back and press stop.", systemImage: "record.circle")
@@ -401,7 +427,7 @@ struct AttachmentsView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if let problem = problem ?? session.recordingProblem {
+            if let problem = problem ?? session.attachmentProblem ?? session.recordingProblem {
                 Text(problem).font(.subheadline).foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -426,13 +452,7 @@ struct AttachmentsView: View {
             switch result {
             case .success(let urls):
                 problem = nil
-                for url in urls {
-                    // A file chosen through the importer is reachable only
-                    // inside this scope when the app is sandboxed.
-                    let scoped = url.startAccessingSecurityScopedResource()
-                    defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-                    if let refusal = session.addFile(at: url) { problem = refusal }
-                }
+                session.addFiles(urls)
             case .failure(let error):
                 problem = error.localizedDescription
             }

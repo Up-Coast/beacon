@@ -59,14 +59,15 @@ public struct ConsentNotice: Sendable, Equatable {
 
     /// For a reporter with no account, whose reports go to the team.
     public static let teamAnonymous = ConsentNotice(
-        version: "2026-10-06.anonymous.1",
+        version: "2026-10-07.anonymous.2",
         headline: sharedHeadline,
         points: [
-            "You don't need an account, and your name isn't sent. Your report "
-                + "carries a random number made for this app on this device, so "
-                + "we can tell your reports apart.",
-            "If you'd like us to be able to ask you about it, you can leave a "
-                + "way to reach you. That's up to you.",
+            "You don't need an account. Your report carries a random number made "
+                + "for this app on this device, so we can tell your reports apart.",
+            "If you'd like us to be able to ask you about it, you can add your "
+                + "name and email. They go in your report, and we remember them on "
+                + "this device so you only type them once. You can change or clear "
+                + "them any time, or send without them.",
             "Your report goes to $ORG, and only they can read it.",
         ] + whatIsCollected,
         acceptButton: sharedAcceptButton)

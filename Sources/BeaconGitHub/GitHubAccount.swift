@@ -47,6 +47,16 @@ public struct GitHubAccount: Sendable {
         login.map { Reporter(accountID: $0, displayName: $0, contact: "@\($0)") }
     }
 
+    /// The reporter for a signed-in person, filled with the name and email
+    /// GitHub returns, falling back to the login. Nil when nobody is
+    /// signed in.
+    public func reporterWithProfile() async -> Reporter? {
+        guard let token, let base = reporter else { return reporter }
+        guard let profile = try? await GitHubClient(owner: "", repository: "", token: token)
+            .currentProfile() else { return base }
+        return profile.reporter(login: base.accountID)
+    }
+
     public var deviceFlow: GitHubDeviceFlow {
         GitHubDeviceFlow(clientID: clientID)
     }

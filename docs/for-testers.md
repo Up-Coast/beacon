@@ -50,7 +50,7 @@ A picture of what you're looking at is usually worth more than another paragraph
 - **Take a screenshot** captures the app itself: its window on a Mac, its screen on an iPhone or iPad.
 - **Record what happens** records the app while you make the problem happen. Only the app is recorded, never your desktop, other apps or sound. On an iPhone or iPad the form shrinks to a strip at the bottom so you can use the app, and iOS asks you to confirm first. Recording stops by itself after a few minutes.
 - **Choose from Photos**, on an iPhone or iPad, adds a screenshot or screen recording you already took. Location and time details are removed from pictures.
-- **Add a file** adds text, an image, a PDF or a video.
+- **Add a file** adds text, an image, a PDF or a video. You can also drop files on the box that says "Drop files here".
 
 The web page takes images only.
 

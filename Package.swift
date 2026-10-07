@@ -57,5 +57,6 @@ let package = Package(
         .testTarget(name: "BeaconCaptureTests", dependencies: ["BeaconCapture"]),
         .testTarget(name: "BeaconGitHubTests", dependencies: ["BeaconGitHub"]),
         .testTarget(name: "BeaconTests", dependencies: ["Beacon"]),
+        .testTarget(name: "BeaconUITests", dependencies: ["BeaconUI"]),
     ]
 )

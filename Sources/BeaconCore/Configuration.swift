@@ -93,6 +93,11 @@ public struct BeaconConfiguration: Sendable {
     /// Where consent is remembered.
     public var consentStore: any ConsentStoring
 
+    /// Where an anonymous reporter's name and email are remembered, so they
+    /// are asked once. Ignored when the host supplies a reporter with an
+    /// identity of its own.
+    public var identityStore: any ReporterIdentityStoring
+
     /// Whether Beacon shows its floating report button above the app's
     /// windows. On by default, because a report button buried in Settings
     /// is a button nobody presses. Turn it off when the app offers
@@ -116,6 +121,7 @@ public struct BeaconConfiguration: Sendable {
                 allowsScreenRecording: Bool = true,
                 maximumRecordingSeconds: Int = 180,
                 consentStore: any ConsentStoring = UserDefaultsConsentStore(),
+                identityStore: any ReporterIdentityStoring = UserDefaultsReporterIdentityStore(),
                 reportArchiveDirectory: URL? = nil,
                 showsFloatingButton: Bool = true) {
         self.app = app
@@ -131,6 +137,7 @@ public struct BeaconConfiguration: Sendable {
         self.allowsScreenRecording = allowsScreenRecording
         self.maximumRecordingSeconds = maximumRecordingSeconds
         self.consentStore = consentStore
+        self.identityStore = identityStore
         self.showsFloatingButton = showsFloatingButton
         self.reportArchiveDirectory = reportArchiveDirectory
             ?? BeaconConfiguration.defaultArchiveDirectory(appName: app.name)

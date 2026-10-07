@@ -95,6 +95,12 @@ public struct GitHubClient: Sendable {
         return response["login"] as? String ?? "unknown"
     }
 
+    /// The signed-in person's name and email as GitHub gives them. Either
+    /// may be missing: GitHub only returns the email a person made public.
+    public func currentProfile() async throws -> GitHubProfile {
+        GitHubProfile(json: try await send("GET", "user"))
+    }
+
     /// Put one file into the repository. Attachments go through here
     /// because GitHub's issue API cannot take a file: the browser uploader
     /// is a separate, unpublished endpoint, and building on an unpublished

@@ -67,6 +67,27 @@ public enum AcceptedFormats {
             + "you're looking at is usually the most useful thing you can add."
     }
 
+    /// The sentence for a folder that was dropped or chosen where a file
+    /// was expected.
+    public static let folderRefusal = "That's a folder. Drop the files inside it instead."
+
+    /// The one place the size limits are applied, whatever produced the
+    /// attachments: a chosen file, a dropped file, a picked photo, a
+    /// finished recording. Returns the sentence to show when they don't
+    /// fit, nil when they do.
+    public static func sizeRefusal(for produced: [Attachment], alreadyAttached: Int) -> String? {
+        if let oversized = produced.first(where: { $0.byteCount > maximumFileBytes }) {
+            return "\(oversized.filename) is \(oversized.byteCount / 1024 / 1024) MB, over the "
+                + "\(maximumFileBytes / 1024 / 1024) MB limit for one file."
+        }
+        guard alreadyAttached + produced.reduce(0, { $0 + $1.byteCount }) <= maximumTotalBytes else {
+            return "That would take the report over "
+                + "\(maximumTotalBytes / 1024 / 1024) MB in total. "
+                + "Removing something else first will make room."
+        }
+        return nil
+    }
+
     /// The largest single file Beacon will carry. Past this the reporter is
     /// asked to trim rather than being told "upload failed" at the end.
     public static let maximumFileBytes = 25 * 1024 * 1024

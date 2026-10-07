@@ -64,6 +64,7 @@ Pass it to `Beacon.configure(_:gitHubAccount:audience:)` once at launch, before 
 | `allowsScreenRecording` | `Bool` | `true` | Whether the sheet offers screen recording. With `false`, the record button and the walkthrough's mention of it are hidden. |
 | `maximumRecordingSeconds` | `Int` | `180` | A recording stops by itself after this many seconds. |
 | `consentStore` | `any ConsentStoring` | `UserDefaultsConsentStore()` | Where the tester's acceptance of the privacy notice is kept. |
+| `identityStore` | `any ReporterIdentityStoring` | `UserDefaultsReporterIdentityStore()` | Where an anonymous tester's name and email are kept, so they are asked once. Stored under the key `beacon.reporter-identity`. |
 | `reportArchiveDirectory` | `URL?` | see below | Where each report is saved on the device before it is sent. |
 | `showsFloatingButton` | `Bool` | `true` | Whether Beacon shows a round report button that floats above the app's windows. Set it to `false` when testers should report only from your own button or settings. |
 
@@ -107,7 +108,7 @@ The privacy notice depends on the reporter and the transport:
 |---|---|---|
 | A GitHub account transport | Any | `2026-09-07.1`. Names GitHub |
 | Any other | Signed in | `2026-10-06.team.1`. Says the report goes to `organizationName` |
-| Any other | Anonymous | `2026-10-06.anonymous.1`. Says no account is needed, and that leaving a way to reach them is up to them |
+| Any other | Anonymous | `2026-10-07.anonymous.2`. Says no account is needed, and that adding a name and email is up to them and is remembered on the device |
 
 ### `SettingEntry`
 
@@ -282,7 +283,9 @@ A `GitHubClient` holds the token it was created with. If you build one yourself,
 | `Beacon.isOffered` | Whether this build offers reporting, given the `audience` passed to `Beacon.configure`. |
 | `Beacon.gitHubAccount` | The `GitHubAccount` passed to `Beacon.configure`, or `nil`. |
 
-On the team route, the form ends with an optional "How can we reach you?" field. It starts with the reporter's own `contact`, and what is typed there replaces it on the report.
+For `Reporter.anonymous()`, the first screen and the form ask for a name and email, both optional: "Your name and email, so we can follow up. We remember them on this device." They are filled in on every later report, can be edited, and "Forget them" clears them. "Send without my name" is an explicit choice and is remembered. The name and email go in the report's "From" line and as the reporter's `displayName` and `contact`; the `accountID` stays the install's random id. A reporter the host supplies with a `displayName` or a `contact` is never overridden. When the host passes a `GitHubAccount`, the block also offers "Sign in with GitHub instead", which files as that account with the name and email GitHub returns.
+
+For any other reporter on the team route, the form ends with an optional "How can we reach you?" field. It starts with the reporter's own `contact`, and what is typed there replaces it on the report.
 
 On a device where Apple Intelligence is available, the sheet reads the report on the device before sending and may ask up to three questions. There is no setting for it.
 

@@ -94,8 +94,26 @@ public struct ReporterWords: Sendable, Equatable {
     /// as if it were their name.
     public func from(_ reporter: Reporter?) -> String {
         guard let reporter else { return "\u{2014}" }
-        return reporter.isAnonymous ? "You, without your name" : reporter.accountID
+        guard reporter.isAnonymous else { return reporter.accountID }
+        let given = [reporter.displayName, reporter.contact].compactMap { $0 }
+        return given.isEmpty ? "You, without your name" : given.joined(separator: ", ")
     }
+
+    // MARK: Who it is from
+
+    /// The line above the name and email fields.
+    public var identityLabel: String {
+        "Your name and email, so we can follow up. We remember them on this device."
+    }
+
+    public var nameLabel: String { "Name" }
+    public var emailLabel: String { "Email" }
+    public var withoutNameButton: String { "Send without my name" }
+    public var forgetButton: String { "Forget them" }
+    public var withoutNameNote: String {
+        "Your report will go without your name or email. You can add them any time."
+    }
+    public var addNameButton: String { "Add my name" }
 
     /// Whether the sheet asks how to reach the reporter. A GitHub account
     /// already is a way to reach someone; everywhere else it is optional.
@@ -181,6 +199,8 @@ public struct ReporterWords: Sendable, Equatable {
         var sentences = [
             introLine(organizationName: organizationName),
             from(.anonymous(deviceID: "test")), contactLabel, contactHint, sentToTeam,
+            identityLabel, nameLabel, emailLabel, withoutNameButton, forgetButton,
+            withoutNameNote, addNameButton,
             deliveryRefused, couldNotReach, noReporterTitle, noReporterSubtitle, notReachable,
             refusal(status: 413), refusal(status: 429),
         ]

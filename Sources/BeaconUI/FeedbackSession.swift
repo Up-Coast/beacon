@@ -51,6 +51,14 @@ public final class FeedbackSession {
     /// The optional "how can we reach you?" answer. Rides on the report
     /// as the reporter's contact when it isn't empty.
     public var contact = ""
+    /// The optional name, remembered on this device with the contact when
+    /// the host's reporter is anonymous.
+    public var name = ""
+    /// The reporter chose to send without a name or email. Explicit, and
+    /// remembered, so it is not asked again as if new.
+    public private(set) var sendsWithoutName = false
+    /// What went wrong with the last files added by choosing or dropping.
+    public private(set) var attachmentProblem: String?
 
     /// Answers typed into the on-device pass's questions. Appended to the
     /// relevant field rather than replacing it — the reporter's first words
@@ -82,7 +90,7 @@ public final class FeedbackSession {
     let archive: ReportArchive
     /// Set once at the start and kept, so the session's reporter can't
     /// change under it if the host signs somebody else in mid-report.
-    public let reporter: Reporter?
+    public private(set) var reporter: Reporter?
     let startedAt = Date()
 
     public init(configuration: BeaconConfiguration,
@@ -94,6 +102,12 @@ public final class FeedbackSession {
         self.archive = ReportArchive(directory: configuration.reportArchiveDirectory)
         self.reporter = configuration.currentReporter()
         self.contact = reporter?.contact ?? ""
+        if reporter?.acceptsRememberedIdentity == true,
+           let remembered = configuration.identityStore.load() {
+            name = remembered.name
+            contact = remembered.email
+            sendsWithoutName = remembered.decided && remembered.isEmpty
+        }
 
         if reporter == nil {
             step = .noReporter
@@ -123,8 +137,58 @@ public final class FeedbackSession {
 
     // MARK: Moving through the steps
 
+    /// Whether the host's reporter is anonymous, so the sheet asks for a
+    /// name and email. A reporter the host names is never asked.
+    public var asksForIdentity: Bool { reporter?.acceptsRememberedIdentity == true }
+
+    /// Keep what the reporter typed, so the next report starts filled in.
+    func rememberIdentity() {
+        guard asksForIdentity else { return }
+        configuration.identityStore.save(ReporterIdentity(
+            name: sendsWithoutName ? "" : name,
+            email: sendsWithoutName ? "" : contact,
+            decided: true))
+    }
+
+    /// "Send without my name": an explicit choice, kept.
+    public func chooseToSendWithoutName() {
+        name = ""
+        contact = ""
+        sendsWithoutName = true
+        rememberIdentity()
+    }
+
+    /// Typing a name or email again after choosing to send without.
+    public func chooseToAddName() {
+        sendsWithoutName = false
+    }
+
+    /// Forget the name and email, here and on this device.
+    public func clearIdentity() {
+        name = ""
+        contact = ""
+        sendsWithoutName = false
+        configuration.identityStore.clear()
+    }
+
+    /// The reporter signed in to GitHub from the sheet instead: that
+    /// account becomes the reporter, with the name and email GitHub gave.
+    public func adoptGitHub(_ account: Reporter) {
+        reporter = account
+        name = ""
+        contact = account.contact ?? ""
+        sendsWithoutName = false
+        if configuration.consentStore.needsAcceptance(
+            accountID: account.accountID, notice: notice), step == .pickKind || step == .consent {
+            step = .consent
+        } else if step == .consent {
+            step = .pickKind
+        }
+    }
+
     public func acceptConsent() {
         guard let reporter else { return }
+        rememberIdentity()
         configuration.consentStore.save(ConsentRecord(
             acceptedVersion: notice.version,
             acceptedAt: Date(),
@@ -213,6 +277,7 @@ public final class FeedbackSession {
         isWorking = true
         workingMessage = "Sending\u{2026}"
         failure = nil
+        rememberIdentity()
 
         var report = draftReport()
         report.review = review
@@ -305,10 +370,14 @@ public final class FeedbackSession {
 
     /// The session's reporter, carrying the contact they typed, if any.
     var reporterWithContact: Reporter {
-        var sender = reporter ?? Reporter(accountID: "unknown")
-        let typed = contact.trimmingCharacters(in: .whitespacesAndNewlines)
-        sender.contact = typed.isEmpty ? nil : typed
-        return sender
+        let sender = reporter ?? Reporter(accountID: "unknown")
+        if sender.acceptsRememberedIdentity {
+            return sender.carrying(ReporterIdentity(name: sendsWithoutName ? "" : name,
+                                                    email: sendsWithoutName ? "" : contact))
+        }
+        var typed = sender
+        typed.contact = ReporterIdentity.clean(contact)
+        return typed
     }
 
     /// Stable for the whole session, so the reference the reporter is shown
@@ -329,10 +398,30 @@ public final class FeedbackSession {
             <= AcceptedFormats.maximumTotalBytes
     }
 
+    /// Add files the reporter chose or dropped: the one path both take, so
+    /// the same types, sizes and sentences apply. Returns the last refusal,
+    /// and keeps it in `attachmentProblem` for the sheet to show.
+    @discardableResult
+    public func addFiles(_ urls: [URL]) -> String? {
+        var problem: String?
+        for url in urls {
+            // A file chosen or dropped is reachable only inside this scope
+            // when the app is sandboxed.
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            if let refusal = addFile(at: url) { problem = refusal }
+        }
+        attachmentProblem = problem
+        return problem
+    }
+
     /// Add a file the reporter chose. Refuses what nobody downstream could
     /// read, and says why.
     @discardableResult
     public func addFile(at url: URL) -> String? {
+        if (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+            return AcceptedFormats.folderRefusal
+        }
         guard AcceptedFormats.accepts(url) else { return AcceptedFormats.refusal(for: url) }
         guard let data = try? Data(contentsOf: url) else {
             return "That file couldn't be read from disk."
@@ -344,14 +433,9 @@ public final class FeedbackSession {
     /// attachments — a chosen file, a picked photo, a finished recording.
     /// Returns the sentence to show when they don't fit, nil when they do.
     func admit(_ produced: [Attachment]) -> String? {
-        if let oversized = produced.first(where: { $0.byteCount > AcceptedFormats.maximumFileBytes }) {
-            return "\(oversized.filename) is \(oversized.byteCount / 1024 / 1024) MB, over the "
-                + "\(AcceptedFormats.maximumFileBytes / 1024 / 1024) MB limit for one file."
-        }
-        guard canAcceptMore(produced.reduce(0) { $0 + $1.byteCount }) else {
-            return "That would take the report over "
-                + "\(AcceptedFormats.maximumTotalBytes / 1024 / 1024) MB in total. "
-                + "Removing something else first will make room."
+        if let refusal = AcceptedFormats.sizeRefusal(
+            for: produced, alreadyAttached: attachments.reduce(0) { $0 + $1.byteCount }) {
+            return refusal
         }
         attachments += produced
         return nil

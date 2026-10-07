@@ -1,6 +1,6 @@
 # Setup: the relay
 
-*Last updated: 2026-10-06*
+*Last updated: 2026-10-07*
 
 People report from inside your app with no GitHub account, and the reports become issues in your private repository. They never see the word GitHub: the sheet says their report goes to the team, and thanks them with a reference they can quote. Use this path when the people reporting are your app's users, not developers.
 
@@ -104,7 +104,7 @@ The relay's address is `https://<project-ref>.supabase.co/functions/v1/beacon-re
     }
     ```
 
-    `.anonymous()` lets anyone report, with a random id made for this install and nothing else about them. The sheet then asks "How can we reach you? (optional)". If your app has its own accounts, return a `Reporter` for whoever is signed in instead.
+    `.anonymous()` lets anyone report, with a random id made for this install and nothing else about them. The sheet then asks once for a name and email, both optional, and remembers them on the device. If your app has its own accounts, return a `Reporter` for whoever is signed in instead.
 
     The app token is in your app's binary, so anyone determined can read it. It lets them send reports and nothing else. The relay limits how many reports one address and one install can send in an hour.
 

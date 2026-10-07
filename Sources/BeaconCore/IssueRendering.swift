@@ -345,6 +345,11 @@ public enum IssueRenderer {
         let contact = reporter.contact?.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "\n", with: " ")
         let reach = contact.flatMap { $0.isEmpty ? nil : $0 }
+        if reporter.isAnonymous, let name = reporter.displayName {
+            return "Reported by **\(name)** (`\(reporter.accountID)`) \u{2014} they chose to give "
+                + "their name without an account."
+                + (reach.map { " Reach them at **\($0)**." } ?? "")
+        }
         if reporter.isAnonymous {
             return "Reported anonymously (`\(reporter.accountID)`) \u{2014} "
                 + (reach.map { "they can be reached at **\($0)**." }

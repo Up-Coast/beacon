@@ -88,9 +88,9 @@ public struct BeaconSheet: View {
             } else {
                 NoReporterView(words: session.words)
             }
-        case .consent: ConsentView(session: session)
+        case .consent: ConsentView(session: session, gitHubAccount: gitHubAccount)
         case .pickKind: KindPickerView(session: session)
-        case .form: FormStepView(session: session)
+        case .form: FormStepView(session: session, gitHubAccount: gitHubAccount)
         case .review: ReviewStepView(session: session)
         case .questions: QuestionsStepView(session: session)
         case .sending: WorkingOverlay(message: "Sending\u{2026}")
@@ -146,6 +146,7 @@ struct NoReporterView: View {
 
 struct ConsentView: View {
     let session: FeedbackSession
+    var gitHubAccount: GitHubAccount?
 
     var body: some View {
         StepScaffold(title: session.notice.headline,
@@ -158,6 +159,7 @@ struct ConsentView: View {
                         Text(point).fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                IdentityBlock(session: session, gitHubAccount: gitHubAccount)
                 Button(session.notice.acceptButton) { session.acceptConsent() }
                     .keyboardShortcut(.defaultAction)
                     .padding(.top, 8)

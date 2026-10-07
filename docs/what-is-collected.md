@@ -101,7 +101,7 @@ The sheet collects these when the tester presses **Next** on the form, so the re
 ### Photos and files
 
 - **Choose from Photos** (iPhone and iPad): a picture is re-encoded from its pixels, so its location, camera and time details are dropped. A video is attached as it is, with 6 still frames.
-- **Add a file**: text and source files, images, PDFs and `mov`, `mp4` or `m4v` videos. Any other file type is refused with a message. The full list is `AcceptedFormats` in `Attachment.swift`.
+- **Add a file**: text and source files, images, PDFs and `mov`, `mp4` or `m4v` videos. Any other file type is refused with a message. Files can also be dropped on the attachments step, and go through the same checks. The full list is `AcceptedFormats` in `Attachment.swift`.
 - One file may be at most 25 MB. A report's attachments may total at most 60 MB.
 
 ### The on-device check
@@ -140,9 +140,10 @@ After sending, the sheet lists what was removed and where, never the value. The 
     |---|---|---|
     | `2026-09-07.1` | Reports are filed as the tester's own GitHub account | The report is not anonymous, the team may come back to them, and the report becomes a GitHub issue that only `organizationName` can read |
     | `2026-10-06.team.1` | Any other transport, with a signed-in tester | The report goes with their account, the team may come back to them, and only `organizationName` can read it |
-    | `2026-10-06.anonymous.1` | Any other transport, with `Reporter.anonymous()` | No account is needed and their name isn't sent, the report carries a random number for the install, leaving a way to reach them is up to them, and only `organizationName` can read it |
+    | `2026-10-07.anonymous.2` | Any other transport, with `Reporter.anonymous()` | No account is needed, the report carries a random number for the install, adding a name and email is up to them and is remembered on the device, and only `organizationName` can read it |
 
 - Acceptance is kept per account, in `UserDefaults` under `beacon.consent.<account>` unless the app sets `consentStore`. An anonymous tester's account is `anonymous-<install id>`.
+- An anonymous tester's name and email, when they give them, are kept in `UserDefaults` under `beacon.reporter-identity` unless the app sets `identityStore`. They are sent only in the report. The tester can edit or clear them on the first screen and on the form.
 - When the wording changes, the version changes and every tester is asked again.
 - Each report records the accepted version as `consent_version` in its metadata block.
 - When the app's `currentReporter` returns `nil`, the sheet stops at "You'll need to be signed in first".

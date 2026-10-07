@@ -358,7 +358,9 @@ The adopter registers the OAuth app under their own account. The steps are in [G
 
 ## Consent
 
-`ConsentNotice` holds three versioned notices: `current` (`2026-09-07.1`) for the GitHub account transports, `team` (`2026-10-06.team.1`) for a signed-in reporter on any other transport, and `teamAnonymous` (`2026-10-06.anonymous.1`) for an anonymous one. They share their last three points. `BeaconConfiguration.consentNotice(for:)` picks one through `ReporterWords.notice(for:organizationName:)`. `naming(_:)` replaces `$ORG` with `organizationName`. Acceptance is stored per version and per account through `ConsentStoring`. The default `UserDefaultsConsentStore` uses keys `beacon.consent.<accountID>`. Changing any wording means changing the version, and every reporter is asked again.
+`ConsentNotice` holds three versioned notices: `current` (`2026-09-07.1`) for the GitHub account transports, `team` (`2026-10-06.team.1`) for a signed-in reporter on any other transport, and `teamAnonymous` (`2026-10-07.anonymous.2`) for an anonymous one. They share their last three points. `BeaconConfiguration.consentNotice(for:)` picks one through `ReporterWords.notice(for:organizationName:)`. `naming(_:)` replaces `$ORG` with `organizationName`. Acceptance is stored per version and per account through `ConsentStoring`. The default `UserDefaultsConsentStore` uses keys `beacon.consent.<accountID>`. Changing any wording means changing the version, and every reporter is asked again.
+
+An anonymous reporter's name and email live in `ReporterIdentity` (`BeaconCore/ReporterIdentity.swift`), kept through `ReporterIdentityStoring` (default `UserDefaultsReporterIdentityStore`, key `beacon.reporter-identity`). `Reporter.carrying(_:)` applies it, and only when `acceptsRememberedIdentity` is true: a host reporter with its own name or contact wins. `FeedbackSession` loads it at the start and saves it on consent and on send; `IdentityBlock` in `BeaconUI` is the one view that edits it. Files added by choosing or dropping both go through `FeedbackSession.addFiles`, and the size limits are `AcceptedFormats.sizeRefusal`.
 
 ## The indexer
 
