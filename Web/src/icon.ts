@@ -1,0 +1,8 @@
+/** The Beacon mark on the button: a blue chat bubble with a tower drawn in line. Replace by passing `icon` to
+ * `Beacon.mount`, or by replacing this one string with the final artwork. */
+export const BEACON_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+<path d="M6 5h20a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H15l-6 5v-5H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z" fill="#2563eb"/>
+<g fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+<path d="M13 21l1.8-9h2.4l1.8 9"/><path d="M14.2 16.5h3.6"/><path d="M15 12v-1.6h2V12"/>
+<path d="M16 8.6V7"/><path d="M12.6 9.4l-1.2-1"/><path d="M19.4 9.4l1.2-1"/>
+</g></svg>`;

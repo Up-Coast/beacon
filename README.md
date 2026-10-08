@@ -2,7 +2,7 @@
 
 *Last updated: 2026-09-17*
 
-Beacon is bug, feature-request and feedback reporting for macOS 26 and iOS 26 apps. A tester presses a button in your app, and the report arrives with the app version, build, device and, from the in-app sheet, the app's log, screenshots and a screen recording. A Claude session then works each report by a written triage policy: it reproduces it, fixes what is small, and explains the rest.
+Beacon is bug, feature-request and feedback reporting for macOS 26 and iOS 26 apps, and for websites. A tester presses a button in your app, and the report arrives with the app version, build, device and, from the in-app sheet, the app's log, screenshots and a screen recording. A Claude session then works each report by a written triage policy: it reproduces it, fixes what is small, and explains the rest.
 
 Documentation site: [up-coast.github.io/beacon](https://up-coast.github.io/beacon/)
 
@@ -52,6 +52,7 @@ The [Quickstart](docs/quickstart.md) has the full steps. The two setup paths, Cl
 | `Sources/` | The Swift package: `BeaconCore`, `BeaconDiagnostics`, `BeaconIntelligence`, `BeaconCapture`, `BeaconGitHub`, `BeaconUI`, the `Beacon` library your app imports, and the `beacon-index` command-line tool. |
 | `Tests/` | The package's tests. |
 | `Inbox/` | The Beacon page: a Claude artifact testers report through, with the board. See [Inbox/README.md](Inbox/README.md). |
+| `Web/` | Beacon for websites: the Report a problem button and sheet, with its tests and built files. See [Web/README.md](Web/README.md). |
 | `Triage/` | The triage policy and the pickup prompt. |
 | `Scripts/` | `beacon-adopt-github.sh`, which puts the GitHub pieces into an app's repository, and `beacon-labels.sh`, which creates the labels. |
 | `.claude/skills/` | The `beacon-setup` and `beacon-triage` skills. |
@@ -72,6 +73,7 @@ The [Quickstart](docs/quickstart.md) has the full steps. The two setup paths, Cl
 | [The board](docs/the-board.md) | You want to see every report and its outcome. |
 | [What happens to a report](docs/what-happens-to-a-report.md) | You want to know what Claude does with a report, and what it never does. |
 | [What is collected](docs/what-is-collected.md) | You need to tell testers what a report contains. |
+| [Setup: a website](docs/setup-web.md) | You want the button on a website or web app. |
 | [Options](docs/options.md) | You want every configuration field, transport and flag. |
 | [For testers](docs/for-testers.md) | You want the page to send to your testers. |
 | [FAQ](docs/faq.md) | You want short answers to common questions. |
