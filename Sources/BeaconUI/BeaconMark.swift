@@ -1,7 +1,7 @@
-// Beacon's own mark: a blue chat bubble with a tower drawn in line.
+// Beacon's own mark: a blue chat bubble with a lighthouse drawn in line.
 //
 // The same artwork, on the same 32-unit grid, as the web button
-// (Web/src/icon.ts), so a report button looks the same in a Mac app, an
+// (Brand/beacon-mark.svg, the one source), so a report button looks the same in a Mac app, an
 // iPhone app and a website. It is drawn here rather than taken from
 // SF Symbols so nothing about it depends on the host app.
 
@@ -15,47 +15,46 @@ struct BeaconBubbleShape: Shape {
             CGPoint(x: rect.minX + x * s, y: rect.minY + y * s)
         }
         var path = Path()
-        path.move(to: p(6, 5))
-        path.addLine(to: p(26, 5))
-        path.addArc(tangent1End: p(29, 5), tangent2End: p(29, 8), radius: 3 * s)
+        path.move(to: p(6, 4))
+        path.addLine(to: p(26, 4))
+        path.addArc(tangent1End: p(29, 4), tangent2End: p(29, 7), radius: 3 * s)
         path.addLine(to: p(29, 20))
         path.addArc(tangent1End: p(29, 23), tangent2End: p(26, 23), radius: 3 * s)
-        path.addLine(to: p(15, 23))
-        path.addLine(to: p(9, 28))
+        path.addLine(to: p(15.5, 23))
+        path.addLine(to: p(9, 28.5))
         path.addLine(to: p(9, 23))
         path.addLine(to: p(6, 23))
         path.addArc(tangent1End: p(3, 23), tangent2End: p(3, 20), radius: 3 * s)
-        path.addLine(to: p(3, 8))
-        path.addArc(tangent1End: p(3, 5), tangent2End: p(6, 5), radius: 3 * s)
+        path.addLine(to: p(3, 7))
+        path.addArc(tangent1End: p(3, 4), tangent2End: p(6, 4), radius: 3 * s)
         path.closeSubpath()
         return path
     }
 }
 
-/// The tower, as strokes.
+/// The lighthouse, as strokes.
 struct BeaconTowerShape: Shape {
+    static let lineWidth: CGFloat = 1.4
+
     func path(in rect: CGRect) -> Path {
         let s = min(rect.width, rect.height) / 32
         func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
             CGPoint(x: rect.minX + x * s, y: rect.minY + y * s)
         }
         var path = Path()
-        path.move(to: p(13, 21))
-        path.addLine(to: p(14.8, 12))
-        path.addLine(to: p(17.2, 12))
-        path.addLine(to: p(19, 21))
-        path.move(to: p(14.2, 16.5))
-        path.addLine(to: p(17.8, 16.5))
-        path.move(to: p(15, 12))
-        path.addLine(to: p(15, 10.4))
-        path.addLine(to: p(17, 10.4))
-        path.addLine(to: p(17, 12))
-        path.move(to: p(16, 8.6))
-        path.addLine(to: p(16, 7))
-        path.move(to: p(12.6, 9.4))
-        path.addLine(to: p(11.4, 8.4))
-        path.move(to: p(19.4, 9.4))
-        path.addLine(to: p(20.6, 8.4))
+        func line(_ points: (CGFloat, CGFloat)...) {
+            path.move(to: p(points[0].0, points[0].1))
+            for point in points.dropFirst() { path.addLine(to: p(point.0, point.1)) }
+        }
+        line((12.8, 20), (14.3, 12.6), (17.7, 12.6), (19.2, 20))
+        line((13.6, 16.2), (18.4, 16.2))
+        line((13.6, 12.6), (13.6, 9.9), (18.4, 9.9), (18.4, 12.6))
+        line((13.2, 9.9), (16, 7.4), (18.8, 9.9))
+        line((10, 10.4), (11.9, 10.4))
+        line((20.1, 10.4), (22, 10.4))
+        line((10.8, 7.8), (12.3, 8.8))
+        line((21.2, 7.8), (19.7, 8.8))
+        line((11.8, 20), (20.2, 20))
         return path
     }
 }
@@ -73,7 +72,7 @@ public struct BeaconMark: View {
                 BeaconBubbleShape().fill(Self.blue)
                 BeaconTowerShape().stroke(
                     .white,
-                    style: StrokeStyle(lineWidth: 1.6 * side / 32, lineCap: .round, lineJoin: .round))
+                    style: StrokeStyle(lineWidth: BeaconTowerShape.lineWidth * side / 32, lineCap: .round, lineJoin: .round))
             }
             .frame(width: side, height: side)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

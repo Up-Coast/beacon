@@ -7,11 +7,11 @@ import SwiftUI
         let box = BeaconBubbleShape().path(in: CGRect(x: 0, y: 0, width: 32, height: 32)).boundingRect
         #expect(abs(box.minX - 3) < 0.01)
         #expect(abs(box.maxX - 29) < 0.01)
-        #expect(abs(box.minY - 5) < 0.01)
-        #expect(abs(box.maxY - 28) < 0.01)
+        #expect(abs(box.minY - 4) < 0.01)
+        #expect(abs(box.maxY - 28.5) < 0.01)
     }
 
-    @Test func towerSitsInsideTheBubble() {
+    @Test func lighthouseSitsInsideTheBubble() {
         let rect = CGRect(x: 0, y: 0, width: 32, height: 32)
         let bubble = BeaconBubbleShape().path(in: rect).boundingRect
         let tower = BeaconTowerShape().path(in: rect).boundingRect
