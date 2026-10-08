@@ -55,6 +55,7 @@ On every path a Claude session picks reports up, works them by [the triage polic
 | [Setup: the Claude-only path](setup-claude-only.md) | You have a Claude organization and do not use GitHub. |
 | [Setup: the GitHub path](setup-github.md) | You track work in GitHub and want issues and the in-app sheet. |
 | [Setup: the relay](setup-relay.md) | You track work in GitHub, and the people reporting have no GitHub account. |
+| [Setup: a website](setup-web.md) | You want the Report a problem button on a website or web app. |
 | [How it works](how-it-works.md) | You want to know what happens after a tester presses send. |
 | [The board](the-board.md) | You want to see every report and its outcome. |
 | [What happens to a report](what-happens-to-a-report.md) | You want to know what Claude does with a report, and what it never does. |
