@@ -1,9 +1,21 @@
-import { blockingIssues, checkCompleteness, type CompletenessIssue } from "./completeness";
+import { blockingIssues, checkCompleteness } from "./completeness";
 import { BEACON_ICON_SVG } from "./icon";
 import { collectContext } from "./context";
-import { newReference, renderIssue } from "./render";
+import { displaySize, newReference, renderIssue } from "./render";
 import { sendToRelay, type RelayConfig } from "./transport";
-import { FIELD_LABELS as F, IMPACT_WORDS, KIND_WORDS, REPRODUCIBILITY_WORDS, UI } from "./wording";
+import {
+  ACCEPTED_EXTENSIONS,
+  FIELD_HINTS as H,
+  FIELD_LABELS as F,
+  IMPACT_WORDS,
+  KIND_WORDS,
+  MAX_FILE_BYTES,
+  MAX_SEND_BASE64,
+  MAX_TOTAL_BYTES,
+  REPRODUCIBILITY_WORDS,
+  UI,
+  refusalFor,
+} from "./wording";
 import {
   IMPACTS,
   KINDS,
@@ -15,7 +27,7 @@ import {
   type Reporter,
 } from "./types";
 
-export const CONSENT_VERSION = "2026-10-08.web.1";
+export const CONSENT_VERSION = "2026-10-08.anonymous.2";
 
 export interface BeaconOptions {
   app: AppIdentity;
@@ -69,34 +81,71 @@ function anonymousId(): string {
   return id;
 }
 
+
+interface Identity {
+  name: string;
+  contact: string;
+  /** The reporter chose "Send without my name". */
+  decided: boolean;
+}
+
+function readIdentity(): Identity {
+  try {
+    const raw = JSON.parse(get("identity") ?? "{}") as Partial<Identity>;
+    return { name: raw.name ?? "", contact: raw.contact ?? "", decided: raw.decided === true };
+  } catch {
+    return { name: "", contact: "", decided: false };
+  }
+}
+
 const CSS = `
 :host{all:initial;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2937}
 *{box-sizing:border-box}
-.launch{position:fixed;bottom:16px;z-index:2147483000;display:inline-flex;align-items:center;gap:8px;border:1px solid #d1d5db;background:#fff;color:#111827;border-radius:999px;padding:8px 14px 8px 10px;font:600 14px system-ui;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.18)}
-.launch.right{right:16px}.launch.left{left:16px}
-.launch:hover{background:#f3f4f6}
+.launch{position:fixed;bottom:24px;z-index:2147483000;width:48px;height:48px;padding:0;border:0;background:none;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));border-radius:12px}
+.launch svg{display:block;width:100%;height:100%}
+.launch.right{right:24px}.launch.left{left:24px}
+.launch:hover{filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))}
 .launch:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
-dialog{border:0;border-radius:14px;padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 24px);box-shadow:0 20px 60px rgba(0,0,0,.35);color:#1f2937;background:#fff}
+dialog{border:0;border-radius:14px;padding:0;width:min(620px,calc(100vw - 24px));max-height:calc(100vh - 24px);box-shadow:0 20px 60px rgba(0,0,0,.35);color:#1f2937;background:#fff}
 dialog::backdrop{background:rgba(17,24,39,.55)}
-.sheet{padding:22px 22px 18px;overflow:auto;max-height:calc(100vh - 24px)}
-h2{font:700 19px system-ui;margin:0 0 6px}p{margin:0 0 12px;line-height:1.45;font-size:14px}
+.frame{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
+.sheet{padding:24px;overflow:auto;flex:1}
+.foot{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:14px 24px;border-top:1px solid #e5e7eb}
+h2{font:700 22px system-ui;margin:0 0 6px}h3{font:600 15px system-ui;margin:0}
+p{margin:0 0 12px;line-height:1.45;font-size:14px}.sub{color:#6b7280}.hint{color:#6b7280;font-size:13px;margin:0 0 6px;line-height:1.4}
+a{color:#2563eb}
+label{display:block;font:600 13px system-ui;margin:10px 0 5px}label.choice{font:14px system-ui;margin:4px 0}
+h3{margin:0 0 4px}
 .kinds{display:grid;gap:10px;margin-top:12px}
-.kind{text-align:left;border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:12px 14px;cursor:pointer;font:inherit}
+.kind{text-align:left;border:1px solid #d1d5db;background:#f9fafb;border-radius:10px;padding:14px;cursor:pointer;font:inherit}
 .kind:hover{border-color:#2563eb;background:#eff6ff}.kind b{display:block;font-size:15px}.kind span{font-size:13px;color:#4b5563}
-label{display:block;font:600 13px system-ui;margin:14px 0 5px}
-textarea,input,select{width:100%;font:14px system-ui;padding:9px 10px;border:1px solid #9ca3af;border-radius:8px;background:#fff;color:#111827}
-textarea{min-height:84px;resize:vertical}
-.err{color:#b91c1c;font-size:13px;margin:5px 0 0}.ask{color:#92400e;font-size:13px;margin:5px 0 0}
-.row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;align-items:center}
-.primary{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:10px 18px;font:600 14px system-ui;cursor:pointer}
-.primary:disabled{background:#9ca3af;cursor:not-allowed}.ghost{background:transparent;border:0;color:#2563eb;font:600 14px system-ui;cursor:pointer;padding:10px}
+.block{margin:0 0 20px}
+textarea,input[type=text],input[type=email]{width:100%;font:14px system-ui;padding:9px 10px;border:1px solid #d1d5db;border-radius:8px;background:#f3f4f6;color:#111827}
+textarea{min-height:64px;resize:vertical}
+.choice{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:4px 0;line-height:1.4}.choice input{margin-top:3px}
+.box{border:1px solid #d1d5db;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:14px;background:#f9fafb}
+.box ul{margin:6px 0 0}
+.warn{color:#b45309;font-size:13px;margin:6px 0}
 ul{margin:0 0 12px;padding-left:20px;font-size:14px;line-height:1.5}
-table{border-collapse:collapse;font-size:13px;width:100%}td{padding:4px 6px;border-bottom:1px solid #e5e7eb;vertical-align:top;word-break:break-word}td:first-child{color:#6b7280;white-space:nowrap}
-.ref{font:700 22px ui-monospace,Menlo,monospace;letter-spacing:.05em;margin:6px 0 14px}
-.close{float:right;background:transparent;border:0;font-size:22px;line-height:1;cursor:pointer;color:#6b7280}
+.primary{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:10px 20px;font:600 14px system-ui;cursor:pointer}
+.primary:disabled{background:#9ca3af;cursor:not-allowed}
+.ghost{background:transparent;border:0;color:#2563eb;font:600 14px system-ui;cursor:pointer;padding:10px}
+.small{background:#fff;border:1px solid #d1d5db;border-radius:8px;padding:7px 12px;font:600 13px system-ui;cursor:pointer;color:#111827}
+.small:hover{background:#f3f4f6}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.drop{border:1.5px dashed #9ca3af;border-radius:10px;height:64px;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:14px;margin:8px 0}
+.drop.over{border-color:#2563eb;background:rgba(37,99,235,.1);color:#2563eb}
+.file{display:flex;gap:8px;align-items:center;font-size:13px;margin:4px 0}.file span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.file .x{margin-left:auto;background:none;border:0;cursor:pointer;color:#6b7280;font-size:16px}
+.row2{display:flex;gap:12px;font-size:14px;margin:0 0 12px}.row2 b{min-width:70px;color:#6b7280;font-weight:600}
+details{font-size:14px;margin:0 0 14px}summary{cursor:pointer;font-weight:600}
+pre{white-space:pre-wrap;word-break:break-word;font:12px ui-monospace,Menlo,monospace;background:#f3f4f6;border-radius:8px;padding:10px;max-height:260px;overflow:auto;margin:8px 0 0}
+table{border-collapse:collapse;font-size:13px;width:100%;margin-top:8px}td{padding:4px 6px;border-bottom:1px solid #e5e7eb;vertical-align:top;word-break:break-word}td:first-child{color:#6b7280;white-space:nowrap}
+.err{color:#b91c1c;font-size:13px;margin:0 0 10px}
+.ref{font:700 22px ui-monospace,Menlo,monospace;letter-spacing:.05em;margin:6px 0 14px;user-select:all}
+.close{position:absolute;right:14px;top:12px;background:transparent;border:0;font-size:24px;line-height:1;cursor:pointer;color:#6b7280}
 `;
 
-type Step = "pick" | "consent" | "form" | "review" | "sent";
+type Step = "consent" | "pick" | "form" | "review" | "sent";
 
 export class BeaconSheet {
   private host: HTMLElement;
@@ -105,7 +154,11 @@ export class BeaconSheet {
   private launch: HTMLButtonElement | null = null;
   private step: Step = "pick";
   private answers: Answers = { kind: "bug", impact: "irritating", steps: [""] };
-  private shown: Record<string, string> = {};
+  private identity: Identity = readIdentity();
+  private files: File[] = [];
+  private problem = "";
+  private blocking: string[] = [];
+  private advisory: string[] = [];
   private busy = false;
   private failure = "";
   private reference = "";
@@ -124,7 +177,9 @@ export class BeaconSheet {
       const b = document.createElement("button");
       b.type = "button";
       b.className = `launch ${opts.position === "bottom-left" ? "left" : "right"}`;
-      b.innerHTML = `${opts.icon ?? BEACON_ICON_SVG}<span>${UI.button}</span>`;
+      b.setAttribute("aria-label", UI.button);
+      b.title = UI.button;
+      b.innerHTML = opts.icon ?? BEACON_ICON_SVG;
       b.addEventListener("click", () => this.open());
       this.launch = b;
       this.root.append(b);
@@ -138,12 +193,16 @@ export class BeaconSheet {
 
   open() {
     this.startedAt = new Date();
-    this.step = "pick";
+    this.identity = readIdentity();
+    this.files = [];
+    this.problem = "";
+    this.blocking = [];
     this.failure = "";
-    this.shown = {};
     this.answers = { kind: "bug", impact: "irritating", steps: [""] };
+    this.step = get("consent") === CONSENT_VERSION ? "pick" : "consent";
     this.render();
     if (!this.dialog.open) this.dialog.showModal();
+    if (this.launch) this.launch.style.display = "none";
   }
 
   close() {
@@ -152,25 +211,30 @@ export class BeaconSheet {
 
   private onClosed() {
     this.step = "pick";
+    if (this.launch) this.launch.style.display = "";
   }
 
   private org(): string {
     return this.opts.organizationName ?? "the team";
   }
 
+  private saveIdentity() {
+    if (this.opts.reporter) return;
+    set("identity", JSON.stringify(this.identity));
+  }
+
   private reporter(): { reporter: Reporter; anonymous: boolean } {
     const given = this.opts.reporter;
+    const contact = this.identity.contact.trim();
     if (given) {
-      return {
-        reporter: { ...given, contact: this.answers.contact?.trim() || given.contact },
-        anonymous: false,
-      };
+      return { reporter: { ...given, contact: contact || given.contact }, anonymous: false };
     }
+    const without = this.identity.decided && !this.identity.name && !this.identity.contact;
     return {
       reporter: {
         accountID: anonymousId(),
-        displayName: this.answers.name?.trim() || undefined,
-        contact: this.answers.contact?.trim() || undefined,
+        displayName: without ? undefined : this.identity.name.trim() || undefined,
+        contact: without ? undefined : contact || undefined,
       },
       anonymous: true,
     };
@@ -183,148 +247,345 @@ export class BeaconSheet {
     return e;
   }
 
-  private render() {
-    const sheet = this.el("div", { class: "sheet" });
-    const x = this.el("button", { class: "close", type: "button", "aria-label": UI.close }, "×");
-    x.addEventListener("click", () => this.close());
-    sheet.append(x);
-    if (this.step === "pick") this.renderPick(sheet);
-    else if (this.step === "consent") this.renderConsent(sheet);
-    else if (this.step === "form") this.renderForm(sheet);
-    else if (this.step === "review") this.renderReview(sheet);
-    else this.renderSent(sheet);
-    this.dialog.replaceChildren(sheet);
+  private button(cls: string, label: string, on: () => void, disabled = false) {
+    const b = this.el("button", { class: cls, type: "button" }, label);
+    b.disabled = disabled;
+    b.addEventListener("click", on);
+    return b;
   }
 
-  private renderPick(sheet: HTMLElement) {
+  private render() {
+    const frame = this.el("div", { class: "frame" });
+    const sheet = this.el("div", { class: "sheet" });
+    const foot = this.el("div", { class: "foot" });
+    const x = this.el("button", { class: "close", type: "button", "aria-label": UI.close }, "×");
+    x.addEventListener("click", () => this.close());
+    if (this.step === "consent") this.renderConsent(sheet, foot);
+    else if (this.step === "pick") this.renderPick(sheet, foot);
+    else if (this.step === "form") this.renderForm(sheet, foot);
+    else if (this.step === "review") this.renderReview(sheet, foot);
+    else this.renderSent(sheet, foot);
+    frame.append(sheet, foot);
+    frame.style.position = "relative";
+    frame.append(x);
+    this.dialog.replaceChildren(frame);
+  }
+
+  private title(sheet: HTMLElement, title: string, subtitle?: string) {
+    sheet.append(this.el("h2", {}, title));
+    if (subtitle) sheet.append(this.el("p", { class: "sub" }, subtitle));
+  }
+
+  // MARK: Consent
+
+  private renderConsent(sheet: HTMLElement, foot: HTMLElement) {
+    this.title(sheet, UI.consentHeadline, UI.consentSubtitle);
+    const ul = this.el("ul");
+    for (const point of UI.consentPoints(this.org())) ul.append(this.el("li", {}, point));
+    sheet.append(ul);
+    if (!this.opts.reporter) this.identityBlock(sheet);
+    foot.append(
+      this.button("ghost", UI.cancel, () => this.close()),
+      this.button("primary", UI.consentAccept, () => {
+        this.saveIdentity();
+        set("consent", CONSENT_VERSION);
+        this.step = "pick";
+        this.render();
+      }),
+    );
+  }
+
+  /** Who it is from, asked once and remembered on this browser; same words as the Mac and iPhone sheet. */
+  private identityBlock(sheet: HTMLElement) {
+    const id = this.identity;
+    const block = this.el("div", { class: "block" });
+    block.append(this.el("h3", {}, UI.identityLabel));
+    if (id.decided && !id.name && !id.contact) {
+      block.append(this.el("p", { class: "hint" }, UI.withoutNameNote));
+      block.append(
+        this.button("small", UI.addName, () => {
+          id.decided = false;
+          this.render();
+        }),
+      );
+      sheet.append(block);
+      return;
+    }
+    const input = (label: string, key: "name" | "contact", type: string) => {
+      const wrap = this.el("div", { class: "block" });
+      wrap.append(this.el("label", { for: `beacon-id-${key}` }, label));
+      const i = this.el("input", { id: `beacon-id-${key}`, type });
+      i.value = id[key];
+      i.addEventListener("input", () => {
+        id[key] = i.value;
+        this.saveIdentity();
+      });
+      wrap.append(i);
+      return wrap;
+    };
+    block.append(input(UI.nameLabel, "name", "text"), input(UI.emailLabel, "contact", "email"));
+    const btns = this.el("div", { class: "btns" });
+    btns.append(
+      this.button("small", UI.withoutName, () => {
+        id.name = "";
+        id.contact = "";
+        id.decided = true;
+        this.saveIdentity();
+        this.render();
+      }),
+    );
+    if (id.name || id.contact) {
+      btns.append(
+        this.button("small", UI.forget, () => {
+          this.identity = { name: "", contact: "", decided: false };
+          try {
+            store()?.removeItem(STORE + "identity");
+          } catch {
+            /* nothing to clear */
+          }
+          this.render();
+        }),
+      );
+    }
+    block.append(btns);
+    sheet.append(block);
+  }
+
+  // MARK: Pick
+
+  private renderPick(sheet: HTMLElement, foot: HTMLElement) {
     sheet.append(this.el("h2", {}, UI.pickTitle));
-    sheet.append(this.el("p", {}, `This goes straight to ${this.org()}. You do not need an account.`));
+    const intro = this.el("p", { class: "sub" });
+    const link = this.el("a", { href: UI.beaconHome, target: "_blank", rel: "noopener" }, UI.introLink);
+    intro.append(document.createTextNode(UI.intro(this.opts.organizationName ?? "")), link, document.createTextNode(UI.introTail));
+    sheet.append(intro);
     const list = this.el("div", { class: "kinds" });
     for (const kind of KINDS) {
       const b = this.el("button", { class: "kind", type: "button" });
       b.append(this.el("b", {}, KIND_WORDS[kind].title), this.el("span", {}, KIND_WORDS[kind].blurb));
       b.addEventListener("click", () => {
         this.answers = { ...this.answers, kind, steps: this.answers.steps ?? [""] };
-        this.step = get("consent") === CONSENT_VERSION ? "form" : "consent";
+        this.step = "form";
         this.render();
       });
       list.append(b);
     }
     sheet.append(list);
+    foot.append(this.el("span"), this.button("ghost", UI.cancel, () => this.close()));
   }
 
-  private renderConsent(sheet: HTMLElement) {
-    sheet.append(this.el("h2", {}, UI.consentHeadline));
-    const ul = this.el("ul");
-    for (const point of UI.consentPoints(this.org())) ul.append(this.el("li", {}, point));
-    sheet.append(ul);
-    const row = this.el("div", { class: "row" });
-    const back = this.el("button", { class: "ghost", type: "button" }, UI.back);
-    back.addEventListener("click", () => {
-      this.step = "pick";
-      this.render();
-    });
-    const ok = this.el("button", { class: "primary", type: "button" }, UI.consentAccept);
-    ok.addEventListener("click", () => {
-      set("consent", CONSENT_VERSION);
-      this.step = "form";
-      this.render();
-    });
-    row.append(back, ok);
-    sheet.append(row);
+  // MARK: Form
+
+  private block(sheet: HTMLElement, label: string, hint?: string) {
+    const b = this.el("div", { class: "block" });
+    b.append(this.el("h3", {}, label));
+    if (hint) b.append(this.el("p", { class: "hint" }, hint));
+    sheet.append(b);
+    return b;
   }
 
-  private field(
+  private text(sheet: HTMLElement, key: keyof Answers & string, label: string, hint?: string, rows = 3) {
+    const b = this.block(sheet, label, hint);
+    const area = this.el("textarea", { id: `beacon-${key}`, "aria-label": label, rows: String(rows) });
+    area.value = ((this.answers[key] as string | undefined) ?? "") as string;
+    area.addEventListener("input", () => {
+      (this.answers as unknown as Record<string, unknown>)[key] = area.value;
+    });
+    b.append(area);
+  }
+
+  private choice<T extends string>(
     sheet: HTMLElement,
-    key: keyof Answers & string,
+    name: string,
     label: string,
-    kind: "text" | "long" = "long",
-    issue?: CompletenessIssue,
+    hint: string | undefined,
+    values: readonly T[],
+    words: Record<T, string>,
+    current: T,
+    on: (v: T) => void,
   ) {
-    const id = `beacon-${key}`;
-    sheet.append(this.el("label", { for: id }, label));
-    const input = kind === "long" ? this.el("textarea", { id }) : this.el("input", { id, type: "text" });
-    (input as HTMLTextAreaElement).value = ((this.answers[key] as string | undefined) ?? "") as string;
-    input.addEventListener("input", () => {
-      (this.answers as unknown as Record<string, unknown>)[key] = (input as HTMLTextAreaElement).value;
-    });
-    sheet.append(input);
-    if (issue) sheet.append(this.el("p", { class: issue.blocking ? "err" : "ask", role: "alert" }, issue.message));
+    const b = this.block(sheet, label, hint);
+    for (const v of values) {
+      const wrap = this.el("label", { class: "choice" });
+      const r = this.el("input", { type: "radio", name: `beacon-${name}`, value: v });
+      r.checked = current === v;
+      r.addEventListener("change", () => on(v));
+      wrap.append(r, document.createTextNode(words[v]));
+      b.append(wrap);
+    }
   }
 
-  private renderForm(sheet: HTMLElement) {
+  private renderForm(sheet: HTMLElement, foot: HTMLElement) {
     const a = this.answers;
-    sheet.append(this.el("h2", {}, KIND_WORDS[a.kind].title));
-    const issues = Object.keys(this.shown).length ? checkCompleteness(a) : [];
-    const at = (field: string) => issues.find((i) => i.field === field);
+    this.title(sheet, KIND_WORDS[a.kind].title, KIND_WORDS[a.kind].blurb);
     if (a.kind === "bug") {
-      this.field(sheet, "whatHappened", F.whatHappened, "long", at("whatHappened"));
-      this.field(sheet, "expected", F.expected, "long", at("expected"));
-      sheet.append(this.el("label", { for: "beacon-steps" }, F.steps));
-      const steps = this.el("textarea", { id: "beacon-steps", placeholder: "One step per line" });
+      this.text(sheet, "expected", F.expected, H.expected);
+      this.text(sheet, "whatHappened", F.whatHappened, H.whatHappened);
+      const b = this.block(sheet, F.steps, H.steps);
+      const steps = this.el("textarea", { id: "beacon-steps", "aria-label": F.steps, rows: "3" });
       steps.value = (a.steps ?? []).join("\n");
       steps.addEventListener("input", () => (a.steps = steps.value.split("\n")));
-      sheet.append(steps);
-      const s = at("steps");
-      if (s) sheet.append(this.el("p", { class: "err", role: "alert" }, s.message));
-      sheet.append(this.el("label", { for: "beacon-repro" }, F.reproducibility));
-      const repro = this.el("select", { id: "beacon-repro" });
-      for (const r of REPRODUCIBILITIES) {
-        const o = this.el("option", { value: r }, REPRODUCIBILITY_WORDS[r]);
-        if ((a.reproducibility ?? "unknown") === r) o.selected = true;
-        repro.append(o);
-      }
-      repro.addEventListener("change", () => (a.reproducibility = repro.value as never));
-      sheet.append(repro);
-      const r = at("reproducibility");
-      if (r) sheet.append(this.el("p", { class: "ask" }, r.message));
+      b.append(steps);
+      this.choice(sheet, "repro", F.reproducibility, undefined, REPRODUCIBILITIES, REPRODUCIBILITY_WORDS, a.reproducibility ?? "unknown", (v) => (a.reproducibility = v));
     } else if (a.kind === "feature-request") {
-      this.field(sheet, "whatIWant", F.whatIWant, "long", at("whatIWant"));
-      this.field(sheet, "why", F.why, "long", at("why"));
-      this.field(sheet, "idea", F.idea);
+      this.text(sheet, "whatIWant", F.whatIWant, H.whatIWant);
+      this.text(sheet, "why", F.why, H.why);
+      this.text(sheet, "idea", F.idea, H.idea);
     } else if (a.kind === "change-request") {
-      this.field(sheet, "whatToChange", F.whatToChange, "long", at("whatToChange"));
-      this.field(sheet, "instead", F.instead, "long", at("instead"));
-      this.field(sheet, "why", F.why);
+      this.text(sheet, "whatToChange", F.whatToChange, H.whatToChange);
+      this.text(sheet, "instead", F.instead);
+      this.text(sheet, "why", F.changeWhy, undefined, 2);
     } else {
-      this.field(sheet, "message", F.message, "long", at("message"));
+      this.text(sheet, "message", F.message, undefined, 5);
     }
-    sheet.append(this.el("label", { for: "beacon-impact" }, F.impact));
-    const impact = this.el("select", { id: "beacon-impact" });
-    for (const i of IMPACTS) {
-      const o = this.el("option", { value: i }, IMPACT_WORDS[i]);
-      if (a.impact === i) o.selected = true;
-      impact.append(o);
+    this.choice(sheet, "impact", F.impact, H.impact, IMPACTS, IMPACT_WORDS, a.impact, (v) => (a.impact = v));
+    this.attachments(sheet);
+    if (this.opts.reporter) {
+      const b = this.block(sheet, "How can we reach you? (optional)", H.contact);
+      const i = this.el("input", { type: "text", "aria-label": "How can we reach you?" });
+      i.value = this.identity.contact;
+      i.addEventListener("input", () => (this.identity.contact = i.value));
+      b.append(i);
+    } else {
+      this.identityBlock(sheet);
     }
-    impact.addEventListener("change", () => (a.impact = impact.value as never));
-    sheet.append(impact);
-    if (!this.opts.reporter) {
-      this.field(sheet, "name", F.name, "text");
-      this.field(sheet, "contact", F.contact, "text");
+    if (this.blocking.length) {
+      const box = this.el("div", { class: "box", role: "alert" });
+      box.append(this.el("h3", {}, UI.blockingTitle));
+      const ul = this.el("ul");
+      for (const m of this.blocking) ul.append(this.el("li", {}, m));
+      box.append(ul);
+      sheet.append(box);
     }
-    const row = this.el("div", { class: "row" });
-    const back = this.el("button", { class: "ghost", type: "button" }, UI.back);
-    back.addEventListener("click", () => {
-      this.step = "pick";
-      this.render();
-    });
-    const next = this.el("button", { class: "primary", type: "button" }, UI.next);
-    next.addEventListener("click", () => {
-      this.shown = { checked: "1" };
-      if (blockingIssues(this.answers).length) {
+    foot.append(
+      this.button("ghost", UI.back, () => {
+        this.step = "pick";
         this.render();
-        return;
-      }
-      this.step = "review";
-      this.render();
-    });
-    row.append(back, next);
-    sheet.append(row);
+      }),
+      this.button("primary", UI.next, () => this.toReview()),
+    );
   }
 
-  private renderReview(sheet: HTMLElement) {
-    sheet.append(this.el("h2", {}, UI.reviewTitle));
+  private toReview() {
+    this.blocking = blockingIssues(this.answers).map((i) => i.message);
+    if (this.blocking.length) {
+      this.render();
+      return;
+    }
+    this.advisory = checkCompleteness(this.answers)
+      .filter((i) => !i.blocking)
+      .map((i) => i.message);
+    const bytes = new Uint8Array(3);
+    crypto.getRandomValues(bytes);
+    this.reference = newReference(bytes);
+    this.saveIdentity();
+    this.failure = "";
+    this.step = "review";
+    this.render();
+  }
+
+  // MARK: Attachments
+
+  private attachments(sheet: HTMLElement) {
+    const b = this.block(sheet, UI.attachTitle, UI.attachHint);
+    const input = this.el("input", { type: "file", multiple: "" });
+    input.style.display = "none";
+    input.addEventListener("change", () => {
+      this.addFiles([...(input.files ?? [])]);
+    });
+    const btns = this.el("div", { class: "btns" });
+    btns.append(this.button("small", UI.addFile, () => input.click()), input);
+    const drop = this.el("div", { class: "drop" }, UI.dropHere);
+    drop.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      drop.classList.add("over");
+    });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      drop.classList.remove("over");
+      this.addFiles([...(e.dataTransfer?.files ?? [])]);
+    });
+    b.append(btns, drop);
+    if (this.problem) b.append(this.el("p", { class: "warn", role: "alert" }, this.problem));
+    this.files.forEach((f, i) => {
+      const line = this.el("div", { class: "file" });
+      const x = this.el("button", { class: "x", type: "button", "aria-label": UI.remove, title: UI.remove }, "×");
+      x.addEventListener("click", () => {
+        this.files.splice(i, 1);
+        this.render();
+      });
+      line.append(this.el("span", {}, f.name), this.el("span", { class: "sub" }, displaySize(f.size)), x);
+      b.append(line);
+    });
+  }
+
+  private addFiles(picked: File[]) {
+    this.problem = "";
+    const added: File[] = [];
+    for (const f of picked) {
+      const ext = f.name.includes(".") ? f.name.split(".").pop()!.toLowerCase() : "";
+      if (!ACCEPTED_EXTENSIONS.has(ext)) {
+        this.problem = refusalFor(f.name);
+        continue;
+      }
+      if (f.size > MAX_FILE_BYTES) {
+        this.problem = `${f.name} is ${Math.round(f.size / 1024 / 1024)} MB, over the ${MAX_FILE_BYTES / 1024 / 1024} MB limit for one file.`;
+        continue;
+      }
+      const total = [...this.files, ...added].reduce((n, x) => n + x.size, 0) + f.size;
+      if (total > MAX_TOTAL_BYTES) {
+        this.problem = `That would take the report over ${MAX_TOTAL_BYTES / 1024 / 1024} MB in total. Removing something else first will make room.`;
+        continue;
+      }
+      added.push(f);
+    }
+    this.files.push(...added);
+    this.render();
+  }
+
+  private async encode(file: File): Promise<string> {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(binary);
+  }
+
+  // MARK: Review
+
+  private issue(ctx: ReturnType<typeof collectContext>) {
+    const { reporter, anonymous } = this.reporter();
+    const issue = renderIssue({
+      answers: this.answers,
+      reporter,
+      anonymous,
+      app: this.opts.app,
+      context: ctx,
+      reference: this.reference,
+      startedAt: this.startedAt,
+      consentVersion: CONSENT_VERSION,
+      attachments: this.files.map((f) => ({ filename: f.name, bytes: f.size })),
+    });
+    return { issue, reporter, anonymous };
+  }
+
+  private renderReview(sheet: HTMLElement, foot: HTMLElement) {
+    this.title(sheet, UI.reviewTitle, UI.reviewSubtitle);
     const ctx = collectContext(this.opts.hostNotes?.());
+    const { issue, reporter, anonymous } = this.issue(ctx);
+    const line = (k: string, v: string) => {
+      const r = this.el("div", { class: "row2" });
+      r.append(this.el("b", {}, k), this.el("span", {}, v));
+      sheet.append(r);
+    };
+    line(UI.goingTo, this.org());
+    const given = [reporter.displayName, reporter.contact].filter(Boolean).join(", ");
+    line(UI.from, anonymous ? given || UI.anonymousFrom : (reporter.displayName ?? reporter.accountID));
+    if (this.advisory.length) {
+      const box = this.el("div", { class: "box" });
+      for (const m of this.advisory) box.append(this.el("p", {}, m));
+      sheet.append(box);
+    }
     const table = this.el("table");
     const rows: [string, string][] = [
       ["Page", ctx.page],
@@ -338,53 +599,44 @@ export class BeaconSheet {
       tr.append(this.el("td", {}, k), this.el("td", {}, v));
       table.append(tr);
     }
-    sheet.append(this.el("p", {}, "Along with what you wrote, this is everything that will be sent:"), table);
+    const details = this.el("details");
+    details.append(this.el("summary", {}, UI.everything), table, this.el("pre", {}, issue.body));
+    sheet.append(details);
     if (this.failure) sheet.append(this.el("p", { class: "err", role: "alert" }, this.failure));
-    const row = this.el("div", { class: "row" });
-    const back = this.el("button", { class: "ghost", type: "button" }, UI.back);
-    back.addEventListener("click", () => {
-      this.step = "form";
-      this.render();
-    });
-    const send = this.el("button", { class: "primary", type: "button" }, this.busy ? UI.sending : UI.send);
-    send.disabled = this.busy;
-    send.addEventListener("click", () => void this.send(ctx));
-    row.append(back, send);
-    sheet.append(row);
+    foot.append(
+      this.button("ghost", UI.back, () => {
+        this.step = "form";
+        this.render();
+      }),
+      this.button("primary", this.busy ? UI.sending : UI.send, () => void this.send(ctx), this.busy),
+    );
   }
 
   private async send(ctx: ReturnType<typeof collectContext>) {
     this.busy = true;
     this.failure = "";
     this.render();
-    const bytes = new Uint8Array(3);
-    crypto.getRandomValues(bytes);
-    const reference = newReference(bytes);
-    const { reporter, anonymous } = this.reporter();
-    const issue = renderIssue({
-      answers: this.answers,
-      reporter,
-      anonymous,
-      app: this.opts.app,
-      context: ctx,
-      reference,
-      startedAt: this.startedAt,
-      consentVersion: CONSENT_VERSION,
-    });
+    const { issue, reporter } = this.issue(ctx);
+    const attachments = await Promise.all(this.files.map(async (f) => ({ filename: f.name, base64: await this.encode(f) })));
+    if (attachments.reduce((n, a) => n + a.base64.length, 0) > MAX_SEND_BASE64) {
+      this.busy = false;
+      this.failure = UI.tooLarge;
+      this.render();
+      return;
+    }
     const payload: Payload = {
       ...issue,
-      reference,
+      reference: this.reference,
       account: reporter.accountID,
       app: this.opts.app.id,
       ...(reporter.contact ? { contact: reporter.contact } : {}),
-      attachments: [],
+      attachments,
     };
     const result = await sendToRelay(this.opts.relay, payload);
     this.busy = false;
     if (result.ok) {
-      this.reference = reference;
       this.step = "sent";
-      this.opts.onSent?.(reference);
+      this.opts.onSent?.(this.reference);
     } else {
       this.failure =
         result.reason === "unreachable" ? UI.notReachable(this.org()) : result.reason === "too-many" ? UI.tooMany : UI.refused;
@@ -392,13 +644,11 @@ export class BeaconSheet {
     this.render();
   }
 
-  private renderSent(sheet: HTMLElement) {
-    sheet.append(this.el("h2", {}, "Thank you"));
+  private renderSent(sheet: HTMLElement, foot: HTMLElement) {
+    this.title(sheet, UI.sentTitle);
     sheet.append(this.el("p", {}, UI.sentTo(this.org())));
-    sheet.append(this.el("div", {}, UI.referenceLabel), this.el("div", { class: "ref" }, this.reference));
-    const done = this.el("button", { class: "primary", type: "button" }, UI.done);
-    done.addEventListener("click", () => this.close());
-    sheet.append(done);
+    sheet.append(this.el("div", { class: "sub" }, UI.referenceLabel), this.el("div", { class: "ref" }, this.reference));
+    foot.append(this.el("span"), this.button("primary", UI.done, () => this.close()));
   }
 }
 

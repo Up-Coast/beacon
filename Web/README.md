@@ -2,7 +2,7 @@
 
 *Last updated: 2026-10-08*
 
-Beacon for websites puts a **Report a problem** button on your site. A visitor files a bug, a feature request, a change request or a thought without a GitHub account. The report arrives as a labelled issue in the same layout as a report from a Mac or iPhone app, so the same triage works it.
+Beacon for websites puts Beacon's mark, a lighthouse in a blue chat bubble, on your site as a button (it is named **Report a problem** for screen readers). The sheet it opens follows the same steps and uses the same words as the Mac and iPhone sheet. A visitor files a bug, a feature request, a change request or a thought without a GitHub account. The report arrives as a labelled issue in the same layout as a report from a Mac or iPhone app, so the same triage works it.
 
 It is a small script with no dependencies. It sends through the [Beacon relay](../docs/setup-relay.md), which holds the only GitHub credential.
 
@@ -42,7 +42,7 @@ Beacon.mount({
 
 ## What a report holds
 
-What the reporter wrote, how much it affects them, and the page address without anything after a `?` or `#`, the browser, the window size, the language and time zone, plus anything the host adds. Nothing from inside the page is read, and there are no screenshots. Anything credential-shaped in what they typed is masked first.
+What the reporter wrote, how much it affects them, and the page address without anything after a `?` or `#`, the browser, the window size, the language and time zone, plus anything the host adds. Anything they attach themselves (images, text files, PDFs) goes too. Nothing from inside the page is read, and Beacon takes no screenshots or recordings of its own. Anything credential-shaped in what they typed is masked first.
 
 ## Develop
 

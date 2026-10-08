@@ -7,19 +7,30 @@ export declare const KIND_WORDS: Record<FeedbackKind, {
 export declare const IMPACT_WORDS: Record<Impact, string>;
 export declare const REPRODUCIBILITY_WORDS: Record<Reproducibility, string>;
 export declare const FIELD_LABELS: {
-    readonly whatHappened: "What actually happened?";
     readonly expected: "What did you expect to happen?";
-    readonly steps: "What did you do, step by step?";
+    readonly whatHappened: "What actually happened?";
+    readonly steps: "What did you do to get there?";
     readonly reproducibility: "Does it happen again?";
     readonly whatIWant: "What do you want to be able to do?";
-    readonly why: "What are you trying to do that is hard right now?";
-    readonly idea: "Do you have an idea how it could work? (optional)";
+    readonly why: "What makes that hard today?";
+    readonly idea: "Your idea (optional)";
     readonly whatToChange: "What would you like changed?";
     readonly instead: "What would you like instead?";
+    readonly changeWhy: "Why does it matter to you? (optional)";
     readonly message: "What's on your mind?";
-    readonly impact: "How much does this affect you?";
-    readonly name: "Your name (optional)";
-    readonly contact: "Your email, if you'd like us to be able to ask you about it (optional)";
+    readonly impact: "How much is this affecting you?";
+};
+/** The sentence under a label, where the Mac and iPhone sheet has one. */
+export declare const FIELD_HINTS: {
+    readonly expected: "This is the one that tells us whether the page is broken or just confusing. Both are worth fixing.";
+    readonly whatHappened: "Say what you saw on screen.";
+    readonly steps: "One action per line, starting from where you were.";
+    readonly whatIWant: "Describe the thing you're trying to get done, rather than the button you think it needs.";
+    readonly why: "Knowing this often turns up a better answer than the one you asked for.";
+    readonly idea: "If you have a thought about how it could work, tell us. You can leave this empty.";
+    readonly whatToChange: "Say what works today that you'd like done differently.";
+    readonly impact: "This is what decides the order things get looked at, so an honest answer helps more than a dramatic one.";
+    readonly contact: "An email or a phone number, if you'd like us to be able to ask you about this. Leave it empty and your report is sent without one.";
 };
 export declare const COMPLETENESS: {
     readonly whatHappenedEmpty: "Say what actually happened. Even “the page went white and stayed white” is enough to start from.";
@@ -39,19 +50,52 @@ export declare const COMPLETENESS: {
 export declare const UI: {
     readonly button: "Report a problem";
     readonly pickTitle: "What would you like to tell us?";
+    readonly intro: (org: string) => string;
+    readonly introLink: "Beacon";
+    readonly introTail: " for user feedback and bug reports.";
+    readonly beaconHome: "https://github.com/Up-Coast/beacon";
     readonly back: "Back";
     readonly next: "Next";
+    readonly cancel: "Cancel";
     readonly send: "Send";
     readonly sending: "Sending…";
     readonly close: "Close";
-    readonly done: "Close";
+    readonly done: "Done";
     readonly consentHeadline: "Before you send this, here's what happens to it";
+    readonly consentSubtitle: "You'll only see this once, unless it changes.";
     readonly consentAccept: "I understand — let's go";
     readonly consentPoints: (org: string) => string[];
-    readonly reviewTitle: "This is what will be sent";
+    readonly identityLabel: "Your name and email, so we can follow up. We remember them on this browser.";
+    readonly nameLabel: "Name";
+    readonly emailLabel: "Email";
+    readonly withoutName: "Send without my name";
+    readonly withoutNameNote: "Your report will go without your name or email. You can add them any time.";
+    readonly addName: "Add my name";
+    readonly forget: "Forget them";
+    readonly blockingTitle: "Before this can go";
+    readonly attachTitle: "Anything to show us?";
+    readonly attachHint: "A picture of what you're looking at is usually worth more than another paragraph. Text, images and PDFs all work.";
+    readonly addFile: "Add a file";
+    readonly dropHere: "Drop files here";
+    readonly remove: "Remove";
+    readonly reviewTitle: "Here's what we'll send";
+    readonly reviewSubtitle: "Read it over. Nothing has left your browser yet.";
+    readonly goingTo: "Going to";
+    readonly from: "From";
+    readonly everything: "Everything being sent";
+    readonly sentTitle: "Sent — thank you";
     readonly sentTo: (org: string) => string;
-    readonly referenceLabel: "Reference";
+    readonly referenceLabel: "Your reference";
     readonly notReachable: (org: string) => string;
-    readonly refused: "That didn't go through. Try again in a minute.";
-    readonly tooMany: "That is a lot of reports in a short time. Try again later.";
+    readonly refused: "The report couldn't be delivered just now.";
+    readonly tooMany: "A lot of reports have come from here just now. Please try again in a little while.";
+    readonly tooLarge: "The report is too large to send. Removing the largest attachment usually does it.";
+    readonly anonymousFrom: "You, without your name";
 };
+/** Files a reporter may add: the formats the triaging agent can read (Sources/BeaconCore/Attachment.swift). */
+export declare const ACCEPTED_EXTENSIONS: Set<string>;
+export declare const MAX_FILE_BYTES: number;
+export declare const MAX_TOTAL_BYTES: number;
+/** What the relay takes in base64 (Relay/supabase-edge README). */
+export declare const MAX_SEND_BASE64: number;
+export declare function refusalFor(filename: string): string;

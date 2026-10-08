@@ -49,15 +49,70 @@ final class FloatingReportButton {
     private var panel: NSPanel?
     private var reportWindow: NSWindow?
     private var closeObserver: NSObjectProtocol?
+    private var windowObservers: [NSObjectProtocol] = []
+    /// How far the button sits from the bottom-right corner of the app's window. Dragging the button changes
+    /// it; moving or resizing the window keeps it.
+    private var inset = CGSize(width: FloatingReportButton.margin, height: FloatingReportButton.margin)
+    private var isPlacing = false
 
     func show() {
-        if panel == nil { panel = makePanel() }
+        if panel == nil {
+            panel = makePanel()
+            observeWindows()
+        }
         guard !isReporting else { return }
+        place()
         panel?.orderFrontRegardless()
     }
 
     func hide() {
         panel?.orderOut(nil)
+    }
+
+    /// The window the button belongs to: the app's main window, never the button's own or the report's.
+    private func hostWindow() -> NSWindow? {
+        let candidates = NSApp.windows.filter {
+            $0 !== panel && $0 !== reportWindow && $0.isVisible && !$0.isMiniaturized && $0.canBecomeMain
+        }
+        if let main = NSApp.mainWindow, candidates.contains(main) { return main }
+        return candidates.first
+    }
+
+    /// Puts the button at its inset from the bottom-right of the host window, or of the screen when the app
+    /// has no window yet.
+    private func place() {
+        guard let panel else { return }
+        let size = FloatingReportBadge.diameter
+        let area = hostWindow()?.frame ?? NSScreen.main?.visibleFrame
+        guard let area else { return }
+        isPlacing = true
+        panel.setFrameOrigin(NSPoint(x: area.maxX - size - inset.width, y: area.minY + inset.height))
+        isPlacing = false
+    }
+
+    private func observeWindows() {
+        let center = NotificationCenter.default
+        let follow: @Sendable (Notification) -> Void = { [weak self] note in
+            let window = note.object as? NSWindow
+            MainActor.assumeIsolated {
+                guard let self, let window, window !== self.panel else { return }
+                self.place()
+            }
+        }
+        for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification,
+                     NSWindow.didBecomeMainNotification, NSWindow.didEndLiveResizeNotification] {
+            windowObservers.append(center.addObserver(forName: name, object: nil, queue: .main, using: follow))
+        }
+        // A drag of the button itself becomes its new inset.
+        windowObservers.append(center.addObserver(forName: NSWindow.didMoveNotification, object: panel,
+                                                  queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, !self.isPlacing, let panel = self.panel,
+                      let area = self.hostWindow()?.frame ?? NSScreen.main?.visibleFrame else { return }
+                self.inset = CGSize(width: area.maxX - FloatingReportBadge.diameter - panel.frame.origin.x,
+                                    height: panel.frame.origin.y - area.minY)
+            }
+        })
     }
 
     private func makePanel() -> NSPanel {
@@ -78,10 +133,6 @@ final class FloatingReportButton {
         panel.contentView = NSHostingView(rootView:
             FloatingReportBadge(title: Self.title) { [weak self] in self?.openReport() }
                 .gesture(WindowDragGesture()))
-        if let visible = NSScreen.main?.visibleFrame {
-            panel.setFrameOrigin(NSPoint(x: visible.maxX - size - Self.margin,
-                                         y: visible.minY + Self.margin))
-        }
         return panel
     }
 

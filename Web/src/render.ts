@@ -58,6 +58,12 @@ export function reporterLine(reporter: Reporter, anonymous: boolean): string {
   return `Reported by **${reporter.displayName ?? reporter.accountID}** (\`${reporter.accountID}\`) — they agreed to be contacted about this.${reach ? ` Reach them at **${reach}**.` : ""}`;
 }
 
+export function displaySize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} bytes`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 const esc = (v: string) => v.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
 
 export interface RenderInput {
@@ -69,6 +75,8 @@ export interface RenderInput {
   reference: string;
   startedAt: Date;
   consentVersion: string;
+  /** Files the reporter added: name and size only; the bytes travel in the payload. */
+  attachments?: { filename: string; bytes: number }[];
 }
 
 export function renderIssue(input: RenderInput): Issue {
@@ -97,6 +105,12 @@ export function renderIssue(input: RenderInput): Issue {
   }
 
   out.push("## How much this affects them", "", `**${IMPACT_WORDS[a.impact]}**`, "");
+
+  if (input.attachments?.length) {
+    out.push("## What they attached", "");
+    for (const f of input.attachments) out.push(`- \`${f.filename}\` (${displaySize(f.bytes)})`);
+    out.push("");
+  }
 
   out.push("<details>", "<summary>Page, browser and settings</summary>", "", "| | |", "|---|---|");
   out.push(`| App | ${app.name}${app.version ? ` ${app.version}` : ""}${app.build ? ` (${app.build})` : ""} |`);

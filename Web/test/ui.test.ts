@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Beacon } from "../src/index";
 
 describe("the sheet", () => {
-  afterEach(() => Beacon.unmount());
+  afterEach(() => {
+    Beacon.unmount();
+    localStorage.clear();
+  });
 
   it("puts a Report a problem button on the page and opens the kind picker", () => {
     HTMLDialogElement.prototype.showModal = function () {
@@ -17,9 +20,11 @@ describe("the sheet", () => {
     const host = document.querySelector("[data-beacon]") as HTMLElement;
     const root = host.shadowRoot!;
     const launch = root.querySelector("button.launch") as HTMLButtonElement;
-    expect(launch.textContent).toContain("Report a problem");
+    expect(launch.getAttribute("aria-label")).toBe("Report a problem");
+    expect(launch.textContent?.trim()).toBe("");
     expect(launch.querySelector("svg")).not.toBeNull();
     launch.click();
+    ([...root.querySelectorAll("button.primary")].find((b) => /understand/.test(b.textContent!)) as HTMLButtonElement).click();
     const titles = [...root.querySelectorAll("button.kind b")].map((b) => b.textContent);
     expect(titles).toEqual(["Something's broken", "Something's missing", "Change request", "Something else"]);
     void sheet;
@@ -34,15 +39,15 @@ describe("the sheet", () => {
     Beacon.mount({ app: { id: "x", name: "X" }, relay: { url: "https://r.test/f" }, organizationName: "the team" });
     const root = (document.querySelector("[data-beacon]") as HTMLElement).shadowRoot!;
     (root.querySelector("button.launch") as HTMLButtonElement).click();
+    ([...root.querySelectorAll("button.primary")].find((b) => /understand/.test(b.textContent!)) as HTMLButtonElement).click();
     const kinds = [...root.querySelectorAll("button.kind")] as HTMLButtonElement[];
     kinds[3]!.click();
-    ([...root.querySelectorAll("button.primary")].find((b) => /understand/.test(b.textContent!)) as HTMLButtonElement).click();
     const message = root.querySelector("#beacon-message") as HTMLTextAreaElement;
     message.value = "Thank you, this is really useful";
     message.dispatchEvent(new Event("input"));
     ([...root.querySelectorAll("button.primary")].find((b) => b.textContent === "Next") as HTMLButtonElement).click();
     ([...root.querySelectorAll("button.primary")].find((b) => b.textContent === "Send") as HTMLButtonElement).click();
-    await vi.waitFor(() => expect(root.textContent).toContain("Thank you"));
+    await vi.waitFor(() => expect(root.textContent).toContain("Sent \u2014 thank you"));
     const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
     expect(body.app).toBe("x");
     expect(body.labels).toContain("type:feedback");

@@ -1,6 +1,6 @@
 import { type RelayConfig } from "./transport";
 import { type AppIdentity, type FeedbackKind, type Reporter } from "./types";
-export declare const CONSENT_VERSION = "2026-10-08.web.1";
+export declare const CONSENT_VERSION = "2026-10-08.anonymous.2";
 export interface BeaconOptions {
     app: AppIdentity;
     relay: RelayConfig;
@@ -29,7 +29,11 @@ export declare class BeaconSheet {
     private launch;
     private step;
     private answers;
-    private shown;
+    private identity;
+    private files;
+    private problem;
+    private blocking;
+    private advisory;
     private busy;
     private failure;
     private reference;
@@ -40,13 +44,25 @@ export declare class BeaconSheet {
     close(): void;
     private onClosed;
     private org;
+    private saveIdentity;
     private reporter;
     private el;
+    private button;
     private render;
-    private renderPick;
+    private title;
     private renderConsent;
-    private field;
+    /** Who it is from, asked once and remembered on this browser; same words as the Mac and iPhone sheet. */
+    private identityBlock;
+    private renderPick;
+    private block;
+    private text;
+    private choice;
     private renderForm;
+    private toReview;
+    private attachments;
+    private addFiles;
+    private encode;
+    private issue;
     private renderReview;
     private send;
     private renderSent;

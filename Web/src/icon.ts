@@ -1,8 +1,8 @@
 /** The Beacon mark on the button: a blue chat bubble with a lighthouse drawn in line. The one source is
  * Brand/beacon-mark.svg; these are the same shapes as a string. Replace by passing `icon` to `Beacon.mount`. */
-export const BEACON_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+export const BEACON_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
 <path d="M6 4h20a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3H15.5L9 28.5V23H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z" fill="#2563eb"/>
-<g fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(16 13.5) scale(.8) translate(-16 -13.5)" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
 <path d="M12.8 20L14.3 12.6h3.4L19.2 20"/>
 <path d="M13.6 16.2h4.8"/>
 <path d="M13.6 12.6V9.9h4.8v2.7"/>

@@ -35,11 +35,15 @@ struct BeaconBubbleShape: Shape {
 /// The lighthouse, as strokes.
 struct BeaconTowerShape: Shape {
     static let lineWidth: CGFloat = 1.4
+    /// The tower is drawn at 80% about the middle of the bubble's body, so there is room between it and the
+    /// bubble's edge. The SVG does the same with a transform on the group.
+    static let inset: CGFloat = 0.8
 
     func path(in rect: CGRect) -> Path {
         let s = min(rect.width, rect.height) / 32
         func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-            CGPoint(x: rect.minX + x * s, y: rect.minY + y * s)
+            let k = Self.inset
+            return CGPoint(x: rect.minX + (16 + (x - 16) * k) * s, y: rect.minY + (13.5 + (y - 13.5) * k) * s)
         }
         var path = Path()
         func line(_ points: (CGFloat, CGFloat)...) {
