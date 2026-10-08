@@ -1,3 +1,5 @@
+<p align="center"><img src="Brand/beacon-mark-512.png" alt="Beacon" width="160"></p>
+
 # Beacon
 
 *Last updated: 2026-09-17*

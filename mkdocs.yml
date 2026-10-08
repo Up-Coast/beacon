@@ -16,6 +16,8 @@ site_dir: site
 
 theme:
   name: material
+  logo: assets/beacon-mark.svg
+  favicon: assets/beacon-mark.svg
   features:
     - navigation.instant
     - navigation.tracking
