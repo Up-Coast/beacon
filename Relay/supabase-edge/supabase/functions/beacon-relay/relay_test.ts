@@ -296,3 +296,32 @@ Deno.test("one device sending too much is slowed down", async () => {
   equal(second.status, 429);
   equal(await second.json(), { error: ANSWERS.tooMany });
 });
+
+function browserPost(origin: string, method = "POST") {
+  const request = method === "OPTIONS" ? post(report()) : post(report());
+  const headers = new Headers(request.headers);
+  headers.set("Origin", origin);
+  return new Request(request.url, { method, headers, body: method === "POST" ? request.body : undefined });
+}
+
+Deno.test("a browser on a listed site is answered with CORS headers, and preflight is allowed", async () => {
+  const config = { ...await testConfig(), allowedOrigins: ["https://site.test"] };
+  const deps = { ...dependencies(config, pretendGitHub([])), log: () => {} };
+  const preflight = await handle(browserPost("https://site.test", "OPTIONS"), deps);
+  equal(preflight.status, 204);
+  equal(preflight.headers.get("Access-Control-Allow-Origin"), "https://site.test");
+  const sent = await handle(browserPost("https://site.test"), deps);
+  equal(sent.status, 201);
+  equal(sent.headers.get("Access-Control-Allow-Origin"), "https://site.test");
+});
+
+Deno.test("a browser on any other site is refused before anything is read", async () => {
+  const calls: string[] = [];
+  const config = { ...await testConfig(), allowedOrigins: ["https://site.test"] };
+  const deps = { ...dependencies(config, pretendGitHub(calls)), log: () => {} };
+  const response = await handle(browserPost("https://evil.test"), deps);
+  equal(response.status, 403);
+  equal(calls.length, 0);
+  const none = await handle(browserPost("https://site.test"), { ...deps, config: { ...config, allowedOrigins: [] } });
+  equal(none.status, 403);
+});

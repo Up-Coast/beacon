@@ -16,6 +16,7 @@ export const ANSWERS = {
   unauthorized: "This app can't send reports right now.",
   unrouted: "This app can't send reports right now.",
   unreadable: "The report couldn't be read. Please try sending it again.",
+  forbiddenOrigin: "This site can't send reports right now.",
   tooLarge: "The report is too large to send. Removing the largest attachment usually does it.",
   tooMany: "A lot of reports have come from here just now. Please try again in a little while.",
   undelivered: "The report couldn't be delivered just now.",
@@ -64,6 +65,8 @@ export interface Config {
   targets: Map<string, Target>;
   perIPPerHour: number;
   perDevicePerHour: number;
+  /** Websites allowed to send from a browser (ALLOWED_ORIGINS, comma separated). Empty: no browser may. */
+  allowedOrigins?: string[];
 }
 
 /** Reads the configuration, or names every setting that is missing. */
@@ -99,6 +102,10 @@ export function loadConfig(env: (name: string) => string | undefined): Config {
     targets,
     perIPPerHour: Number(env("RATE_LIMIT_PER_IP") ?? 30),
     perDevicePerHour: Number(env("RATE_LIMIT_PER_DEVICE") ?? 10),
+    allowedOrigins: (env("ALLOWED_ORIGINS") ?? "")
+      .split(",")
+      .map((o) => o.trim().replace(/\/$/, ""))
+      .filter(Boolean),
   };
 }
 
@@ -432,7 +439,32 @@ export async function readCapped(request: Request, limit: number): Promise<strin
   return new TextDecoder().decode(bytes);
 }
 
+/** The headers a browser needs to read an answer. A native app sends no Origin and never needs them. */
+function corsHeaders(origin: string): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, content-type",
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
+  };
+}
+
+/** Browser support for Beacon on the web (Web/ in this repository). A request that carries an Origin is a
+ * browser's; it is answered only for a site listed in ALLOWED_ORIGINS, so the app token alone, lifted from a
+ * page's source, cannot be used from some other site. Requests without an Origin are native apps and unchanged. */
 export async function handle(request: Request, deps: Dependencies): Promise<Response> {
+  const origin = request.headers.get("Origin");
+  if (!origin) return await handleReport(request, deps);
+  const allowed = (deps.config.allowedOrigins ?? []).includes(origin.replace(/\/$/, ""));
+  if (!allowed) return answer(403, { error: ANSWERS.forbiddenOrigin });
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
+  const response = await handleReport(request, deps);
+  for (const [name, value] of Object.entries(corsHeaders(origin))) response.headers.set(name, value);
+  return response;
+}
+
+async function handleReport(request: Request, deps: Dependencies): Promise<Response> {
   if (request.method !== "POST") return answer(405, { error: ANSWERS.unreadable });
   if (!tokenMatches(request.headers.get("Authorization"), deps.config.appToken)) {
     return answer(401, { error: ANSWERS.unauthorized });
