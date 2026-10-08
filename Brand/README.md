@@ -1,6 +1,6 @@
 # Beacon's mark
 
-`beacon-mark.svg` is the one source of Beacon's mark: a blue chat bubble with a tower drawn in line. Everything else is made from it and must look the same:
+`beacon-mark.svg` is the one source of Beacon's mark: a blue speech bubble with a line-drawn lighthouse (the same one Coast drew for its own badge). Everything else is made from it and must look the same:
 
 - the website button: `Web/src/icon.ts` (same shapes, as a string)
 - the Mac and iPhone button: `Sources/BeaconUI/BeaconMark.swift` (same shapes, drawn in code)

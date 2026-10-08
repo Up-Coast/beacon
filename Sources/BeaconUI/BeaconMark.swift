@@ -1,71 +1,85 @@
-// Beacon's own mark: a blue chat bubble with a lighthouse drawn in line.
+// Beacon's own mark: a blue speech bubble, tail at the bottom right, with a
+// lighthouse drawn in line.
 //
-// The same artwork, on the same 32-unit grid, as the web button
-// (Brand/beacon-mark.svg, the one source), so a report button looks the same in a Mac app, an
-// iPhone app and a website. It is drawn here rather than taken from
-// SF Symbols so nothing about it depends on the host app.
+// The same artwork, on the same 64-unit grid, as the web button
+// (Brand/beacon-mark.svg, the one source), so a report button looks the same
+// in a Mac app, an iPhone app and a website. It is drawn here rather than
+// taken from SF Symbols so nothing about it depends on the host app.
 
 import SwiftUI
 
-/// The bubble, filled.
+/// Maps the 64 x 64 drawing grid onto a rect.
+private struct MarkGrid {
+    let rect: CGRect
+    func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+        CGPoint(x: rect.minX + x / 64 * rect.width, y: rect.minY + y / 64 * rect.height)
+    }
+    func length(_ units: CGFloat) -> CGFloat { units / 64 * min(rect.width, rect.height) }
+}
+
+/// The bubble, filled: a rounded body and a small tail at the bottom right.
 struct BeaconBubbleShape: Shape {
     func path(in rect: CGRect) -> Path {
-        let s = min(rect.width, rect.height) / 32
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-            CGPoint(x: rect.minX + x * s, y: rect.minY + y * s)
-        }
-        var path = Path()
-        path.move(to: p(6, 4))
-        path.addLine(to: p(26, 4))
-        path.addArc(tangent1End: p(29, 4), tangent2End: p(29, 7), radius: 3 * s)
-        path.addLine(to: p(29, 20))
-        path.addArc(tangent1End: p(29, 23), tangent2End: p(26, 23), radius: 3 * s)
-        path.addLine(to: p(15.5, 23))
-        path.addLine(to: p(9, 28.5))
-        path.addLine(to: p(9, 23))
-        path.addLine(to: p(6, 23))
-        path.addArc(tangent1End: p(3, 23), tangent2End: p(3, 20), radius: 3 * s)
-        path.addLine(to: p(3, 7))
-        path.addArc(tangent1End: p(3, 4), tangent2End: p(6, 4), radius: 3 * s)
-        path.closeSubpath()
+        let g = MarkGrid(rect: rect)
+        let body = CGRect(x: g.point(2, 2).x, y: g.point(2, 2).y,
+                          width: g.point(62, 2).x - g.point(2, 2).x,
+                          height: g.point(2, 50).y - g.point(2, 2).y)
+        var path = Path(roundedRect: body, cornerRadius: g.length(14), style: .continuous)
+        var tail = Path()
+        tail.move(to: g.point(40, 49))
+        tail.addLine(to: g.point(54, 62))
+        tail.addLine(to: g.point(52, 49))
+        tail.closeSubpath()
+        path.addPath(tail)
         return path
     }
 }
 
-/// The lighthouse, as strokes.
+/// The lighthouse, as strokes: a roof cap, an open lantern room wider than the
+/// tower, a gallery line, the tower (two sides, one stripe, a base line) and
+/// four short rays. Stroke it with round caps and joins.
 struct BeaconTowerShape: Shape {
-    static let lineWidth: CGFloat = 1.4
-    /// The tower is drawn at 80% about the middle of the bubble's body, so there is room between it and the
-    /// bubble's edge. The SVG does the same with a transform on the group.
-    static let inset: CGFloat = 0.8
+    /// Stroke width on the 64-unit grid.
+    static let lineWidth: CGFloat = 1.75
 
     func path(in rect: CGRect) -> Path {
-        let s = min(rect.width, rect.height) / 32
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-            let k = Self.inset
-            return CGPoint(x: rect.minX + (16 + (x - 16) * k) * s, y: rect.minY + (13.5 + (y - 13.5) * k) * s)
+        let g = MarkGrid(rect: rect)
+        var p = Path()
+        func line(_ a: (CGFloat, CGFloat), _ b: (CGFloat, CGFloat)) {
+            p.move(to: g.point(a.0, a.1))
+            p.addLine(to: g.point(b.0, b.1))
         }
-        var path = Path()
-        func line(_ points: (CGFloat, CGFloat)...) {
-            path.move(to: p(points[0].0, points[0].1))
-            for point in points.dropFirst() { path.addLine(to: p(point.0, point.1)) }
-        }
-        line((12.8, 20), (14.3, 12.6), (17.7, 12.6), (19.2, 20))
-        line((13.6, 16.2), (18.4, 16.2))
-        line((13.6, 12.6), (13.6, 9.9), (18.4, 9.9), (18.4, 12.6))
-        line((13.2, 9.9), (16, 7.4), (18.8, 9.9))
-        line((10, 10.4), (11.9, 10.4))
-        line((20.1, 10.4), (22, 10.4))
-        line((10.8, 7.8), (12.3, 8.8))
-        line((21.2, 7.8), (19.7, 8.8))
-        line((11.8, 20), (20.2, 20))
-        return path
+        p.move(to: g.point(26, 13))
+        p.addLine(to: g.point(32, 7.5))
+        p.addLine(to: g.point(38, 13))
+        p.closeSubpath()
+        p.addRect(CGRect(x: g.point(27, 16).x, y: g.point(27, 16).y,
+                         width: g.point(37, 16).x - g.point(27, 16).x,
+                         height: g.point(27, 24).y - g.point(27, 16).y))
+        line((24.5, 27.5), (39.5, 27.5))
+        line((29.5, 27.5), (25.5, 44))
+        line((34.5, 27.5), (38.5, 44))
+        line((26.2, 36.5), (37.8, 36.5))
+        line((22.5, 44), (41.5, 44))
+        line((24.5, 18), (20.5, 15.5)); line((39.5, 18), (43.5, 15.5))
+        line((24.5, 22.5), (20.5, 21)); line((39.5, 22.5), (43.5, 21))
+        return p
+    }
+}
+
+/// The light inside the lantern room: a small solid dot.
+struct BeaconLightShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let g = MarkGrid(rect: rect)
+        let r = g.length(2.4)
+        let c = g.point(32, 20)
+        return Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r))
     }
 }
 
 /// Beacon's mark at whatever size the host gives it.
 public struct BeaconMark: View {
-    static let blue = Color(red: 37 / 255, green: 99 / 255, blue: 235 / 255)
+    static let blue = Color(red: 47 / 255, green: 111 / 255, blue: 237 / 255)
 
     public init() {}
 
@@ -76,7 +90,8 @@ public struct BeaconMark: View {
                 BeaconBubbleShape().fill(Self.blue)
                 BeaconTowerShape().stroke(
                     .white,
-                    style: StrokeStyle(lineWidth: BeaconTowerShape.lineWidth * side / 32, lineCap: .round, lineJoin: .round))
+                    style: StrokeStyle(lineWidth: BeaconTowerShape.lineWidth * side / 64, lineCap: .round, lineJoin: .round))
+                BeaconLightShape().fill(.white)
             }
             .frame(width: side, height: side)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -1,14 +1,13 @@
-/** The Beacon mark on the button: a blue chat bubble with a lighthouse drawn in line. The one source is
+/** The Beacon mark on the button: a blue speech bubble, tail at the bottom right, with a line-drawn lighthouse. The one source is
  * Brand/beacon-mark.svg; these are the same shapes as a string. Replace by passing `icon` to `Beacon.mount`. */
-export const BEACON_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
-<path d="M6 4h20a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3H15.5L9 28.5V23H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z" fill="#2563eb"/>
-<g transform="translate(16 13.5) scale(.8) translate(-16 -13.5)" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-<path d="M12.8 20L14.3 12.6h3.4L19.2 20"/>
-<path d="M13.6 16.2h4.8"/>
-<path d="M13.6 12.6V9.9h4.8v2.7"/>
-<path d="M13.2 9.9L16 7.4l2.8 2.5"/>
-<path d="M10 10.4h1.9"/><path d="M20.1 10.4H22"/>
-<path d="M10.8 7.8l1.5 1"/><path d="M21.2 7.8l-1.5 1"/>
-<path d="M11.8 20h8.4"/>
+export const BEACON_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true">
+<path d="M16 2H48A14 14 0 0 1 62 16V36A14 14 0 0 1 48 50H52L54 62L40 49H16A14 14 0 0 1 2 36V16A14 14 0 0 1 16 2Z" fill="#2f6fed"/>
+<g fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<path d="M26 13L32 7.5L38 13Z"/>
+<path d="M27 16H37V24H27Z"/>
+<path d="M24.5 27.5H39.5"/>
+<path d="M29.5 27.5L25.5 44M34.5 27.5L38.5 44M26.2 36.5H37.8M22.5 44H41.5"/>
+<path d="M24.5 18L20.5 15.5M39.5 18L43.5 15.5M24.5 22.5L20.5 21M39.5 22.5L43.5 21"/>
 </g>
+<circle cx="32" cy="20" r="2.4" fill="#fff"/>
 </svg>`;
