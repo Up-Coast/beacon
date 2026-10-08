@@ -160,7 +160,7 @@ public struct BeaconReportButton: View {
             Button {
                 reporting = true
             } label: {
-                Label(title, systemImage: "exclamationmark.bubble")
+                Label { Text(title) } icon: { BeaconMark() }
             }
             .beaconReportSheet(isPresented: $reporting)
         }

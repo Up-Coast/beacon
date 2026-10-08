@@ -3,6 +3,7 @@
 import SwiftUI
 import BeaconCore
 import BeaconDiagnostics
+import BeaconUI
 
 public extension BeaconInbox {
     /// The link for this host, right now: the configured app identity,
@@ -37,7 +38,7 @@ public struct BeaconInboxButton: View {
         Button {
             openURL(inbox.url(area: area))
         } label: {
-            Label(title, systemImage: "exclamationmark.bubble")
+            Label { Text(title) } icon: { BeaconMark() }
         }
     }
 }

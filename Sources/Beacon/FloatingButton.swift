@@ -24,13 +24,10 @@ struct FloatingReportBadge: View {
     var action: () -> Void
 
     var body: some View {
-        Image(systemName: "exclamationmark.bubble.fill")
-            .font(.system(size: 18, weight: .semibold))
-            .foregroundStyle(.white)
+        BeaconMark()
             .frame(width: Self.diameter, height: Self.diameter)
-            .background(Circle().fill(Color.accentColor))
             .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
-            .contentShape(Circle())
+            .contentShape(Rectangle())
             .onTapGesture(perform: action)
             .accessibilityElement()
             .accessibilityAddTraits(.isButton)
