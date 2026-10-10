@@ -57,6 +57,8 @@ export declare class BeaconSheet {
     private renderConsent;
     /** Who it is from, asked once and remembered on this browser; same words as the Mac and iPhone sheet. */
     private identityBlock;
+    /** The first line the reporter reads: what tool this is and where to get it. */
+    private introLine;
     private renderPick;
     private block;
     private text;

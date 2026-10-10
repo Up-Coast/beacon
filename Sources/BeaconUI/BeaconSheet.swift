@@ -152,6 +152,7 @@ struct ConsentView: View {
         StepScaffold(title: session.notice.headline,
                      subtitle: "You'll only see this once, unless it changes.") {
             VStack(alignment: .leading, spacing: 14) {
+                IntroLine(words: session.words)
                 ForEach(Array(session.notice.points.enumerated()), id: \.offset) { _, point in
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Image(systemName: "circle.fill").font(.system(size: 5))
@@ -168,6 +169,18 @@ struct ConsentView: View {
     }
 }
 
+/// The first line the reporter reads: what tool this is and where to get it.
+struct IntroLine: View {
+    let words: ReporterWords
+
+    var body: some View {
+        Text(words.introText)
+            .font(.subheadline).foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
 struct KindPickerView: View {
     let session: FeedbackSession
 
@@ -175,11 +188,7 @@ struct KindPickerView: View {
         StepScaffold(title: "What would you like to tell us?",
                      subtitle: nil) {
             VStack(spacing: 10) {
-                Text(session.words.introText(
-                    organizationName: session.configuration.organizationName))
-                    .font(.subheadline).foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                IntroLine(words: session.words)
 
                 ForEach(FeedbackKind.allCases, id: \.self) { kind in
                     Button { session.choose(kind) } label: {

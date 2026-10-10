@@ -289,6 +289,7 @@ export class BeaconSheet {
 
   private renderConsent(sheet: HTMLElement, foot: HTMLElement) {
     this.title(sheet, UI.consentHeadline, UI.consentSubtitle);
+    this.introLine(sheet);
     const ul = this.el("ul");
     for (const point of UI.consentPoints(this.org())) ul.append(this.el("li", {}, point));
     sheet.append(ul);
@@ -360,14 +361,19 @@ export class BeaconSheet {
     sheet.append(block);
   }
 
+  /** The first line the reporter reads: what tool this is and where to get it. */
+  private introLine(sheet: HTMLElement) {
+    const intro = this.el("p", { class: "sub" });
+    const link = this.el("a", { href: UI.beaconHome, target: "_blank", rel: "noopener" }, UI.introLink);
+    intro.append(document.createTextNode(UI.intro), link);
+    sheet.append(intro);
+  }
+
   // MARK: Pick
 
   private renderPick(sheet: HTMLElement, foot: HTMLElement) {
     sheet.append(this.el("h2", {}, UI.pickTitle));
-    const intro = this.el("p", { class: "sub" });
-    const link = this.el("a", { href: UI.beaconHome, target: "_blank", rel: "noopener" }, UI.introLink);
-    intro.append(document.createTextNode(UI.intro(this.opts.organizationName ?? "")), link, document.createTextNode(UI.introTail));
-    sheet.append(intro);
+    this.introLine(sheet);
     const list = this.el("div", { class: "kinds" });
     for (const kind of KINDS) {
       const b = this.el("button", { class: "kind", type: "button" });

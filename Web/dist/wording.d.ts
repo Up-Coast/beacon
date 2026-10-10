@@ -50,9 +50,8 @@ export declare const COMPLETENESS: {
 export declare const UI: {
     readonly button: "Report a problem";
     readonly pickTitle: "What would you like to tell us?";
-    readonly intro: (org: string) => string;
-    readonly introLink: "Beacon";
-    readonly introTail: " for user feedback and bug reports.";
+    readonly intro: "We use Up Coast’s free tool, Beacon, for your feedback and suggestions. Get it here: ";
+    readonly introLink: "github.com/Up-Coast/beacon";
     readonly beaconHome: "https://github.com/Up-Coast/beacon";
     readonly back: "Back";
     readonly next: "Next";

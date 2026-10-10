@@ -77,12 +77,8 @@ export const COMPLETENESS = {
 export const UI = {
   button: "Report a problem",
   pickTitle: "What would you like to tell us?",
-  intro: (org: string) => {
-    const owner = org.trim() ? `${org.trim()}\u2019s free tool` : "the free tool";
-    return `We use ${owner} `;
-  },
-  introLink: "Beacon",
-  introTail: " for user feedback and bug reports.",
+  intro: "We use Up Coast\u2019s free tool, Beacon, for your feedback and suggestions. Get it here: ",
+  introLink: "github.com/Up-Coast/beacon",
   beaconHome: "https://github.com/Up-Coast/beacon",
   back: "Back",
   next: "Next",

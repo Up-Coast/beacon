@@ -117,22 +117,17 @@ struct ChangeRequestTests {
 struct IntroLineTests {
     private let words = ReporterWords(destination: .team)
 
-    @Test func itNamesTheOrganisation() {
-        #expect(words.introLine(organizationName: "Up Coast")
-            == "We use Up Coast\u{2019}s free tool Beacon for user feedback and bug reports.")
+    @Test func itSaysWhoseToolItIsAndWhereToGetIt() {
+        #expect(words.introLine
+            == "We use Up Coast\u{2019}s free tool, Beacon, for your feedback and suggestions. "
+            + "Get it here: github.com/Up-Coast/beacon")
     }
 
-    @Test func withoutAnOrganisationItStillReadsWell() {
-        let expected = "We use the free tool Beacon for user feedback and bug reports."
-        #expect(words.introLine(organizationName: "") == expected)
-        #expect(words.introLine(organizationName: "  ") == expected)
-    }
-
-    @Test func beaconIsTheLink() {
-        let text = words.introText(organizationName: "Up Coast")
+    @Test func theAddressIsTheLink() {
+        let text = words.introText
         let linked = text.runs.filter { $0.link != nil }
         #expect(linked.count == 1)
-        #expect(String(text[linked[0].range].characters) == "Beacon")
+        #expect(String(text[linked[0].range].characters) == "github.com/Up-Coast/beacon")
         #expect(linked[0].link == URL(string: "https://github.com/Up-Coast/beacon"))
     }
 }

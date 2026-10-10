@@ -71,18 +71,20 @@ public struct ReporterWords: Sendable, Equatable {
     /// Where Beacon lives, linked from the first screen.
     public static let beaconHome = URL(string: "https://github.com/Up-Coast/beacon")!
 
-    /// The line at the top of the first screen, saying what tool this is.
-    /// An empty organisation name leaves the name out.
-    public func introLine(organizationName: String) -> String {
-        let name = organizationName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let owner = name.isEmpty ? "the free tool" : "\(name)\u{2019}s free tool"
-        return "We use \(owner) Beacon for user feedback and bug reports."
+    /// The address shown at the end of the intro line, linked to `beaconHome`.
+    public static let beaconHomeShown = "github.com/Up-Coast/beacon"
+
+    /// The line at the top of the first screen, before the reporter reads
+    /// anything else: what tool this is and where to get it.
+    public var introLine: String {
+        "We use Up Coast\u{2019}s free tool, Beacon, for your feedback and suggestions. "
+            + "Get it here: \(Self.beaconHomeShown)"
     }
 
-    /// The same line with the word Beacon as a link to `beaconHome`.
-    public func introText(organizationName: String) -> AttributedString {
-        var text = AttributedString(introLine(organizationName: organizationName))
-        if let range = text.range(of: "Beacon") {
+    /// The same line with the address as a link to `beaconHome`.
+    public var introText: AttributedString {
+        var text = AttributedString(introLine)
+        if let range = text.range(of: Self.beaconHomeShown) {
             text[range].link = Self.beaconHome
         }
         return text
@@ -195,9 +197,10 @@ public struct ReporterWords: Sendable, Equatable {
 
     /// Every sentence above that a reporter can read, for the test that
     /// checks the team route never names GitHub. Add new sentences here.
+    /// The intro line is left out on purpose: its link says where to get
+    /// Beacon, not where the report goes.
     public func everySentence(organizationName: String = "the Harbour team") -> [String] {
         var sentences = [
-            introLine(organizationName: organizationName),
             from(.anonymous(deviceID: "test")), contactLabel, contactHint, sentToTeam,
             identityLabel, nameLabel, emailLabel, withoutNameButton, forgetButton,
             withoutNameNote, addNameButton,

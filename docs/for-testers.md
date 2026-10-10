@@ -21,7 +21,7 @@ The button opens one of two things, depending on the app.
 3. Read **Here's what we'll send**. Nothing has left your device yet.
 4. Press **Check and send**, or **Send** if your device can't run the check.
 
-The first screen starts with a line saying the app uses Beacon, the free tool behind the form. **Beacon** in that line is a link to Beacon's page.
+The first screen starts with a line saying the app uses Beacon, Up Coast's free tool for feedback and suggestions, with a link to Beacon's page on GitHub.
 
 **Something's missing** has an optional **Your idea** box for how you think it could work. **Change request** is for something that works today but that you'd like done differently. It asks what you'd like changed, where it is, and what you'd like instead; why it matters to you is optional.
 
