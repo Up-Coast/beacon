@@ -1,11 +1,24 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Beacon } from "../src/index";
+import { launchBottom } from "../src/ui";
 
 describe("the sheet", () => {
   afterEach(() => {
     Beacon.unmount();
     localStorage.clear();
+  });
+
+  it("raises the floating button by bottomOffset, and only upward", () => {
+    Beacon.mount({
+      app: { id: "ca.upcoast.portal", name: "Up Coast" },
+      relay: { url: "https://r.test/f", token: "t" },
+      bottomOffset: 40,
+    });
+    const launch = document.querySelector("[data-beacon]")!.shadowRoot!.querySelector("button.launch") as HTMLButtonElement;
+    expect(launch.style.bottom).toBe("64px");
+    expect(launchBottom()).toBe(24);
+    expect(launchBottom(-10)).toBe(24);
   });
 
   it("puts a Report a problem button on the page and opens the kind picker", () => {

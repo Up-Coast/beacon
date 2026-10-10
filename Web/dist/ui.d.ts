@@ -17,10 +17,14 @@ export interface BeaconOptions {
     icon?: string;
     /** Where the floating button sits. Default bottom-right. */
     position?: "bottom-right" | "bottom-left";
+    /** How many pixels higher than its usual spot the floating button sits, to clear a bar along the bottom of the page. Default 0. */
+    bottomOffset?: number;
     /** Set false to open the sheet only from your own control with `Beacon.open()`. */
     button?: boolean;
     onSent?: (reference: string) => void;
 }
+/** The floating button's distance from the bottom of the window: the usual 24px, raised by `bottomOffset`. */
+export declare function launchBottom(bottomOffset?: number): number;
 export declare class BeaconSheet {
     private opts;
     private host;

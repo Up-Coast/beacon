@@ -37,6 +37,7 @@ Beacon.mount({
 | `hostNotes` | A function returning extra `{ name, value }` facts for every report. |
 | `icon` | An SVG string that replaces the mark on the button. |
 | `position` | `"bottom-right"` (default) or `"bottom-left"`. |
+| `bottomOffset` | How many pixels higher than its usual spot the button sits, to clear a bar along the bottom of the page. Default `0`. |
 | `button` | `false` to hide the floating button. |
 | `onSent` | Called with the reference after a report is sent. |
 

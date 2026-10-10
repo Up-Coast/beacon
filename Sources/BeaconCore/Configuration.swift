@@ -104,6 +104,11 @@ public struct BeaconConfiguration: Sendable {
     /// reporting only from its own menu or settings.
     public var showsFloatingButton: Bool
 
+    /// How many points higher than its usual spot the floating button sits,
+    /// so it clears a bar along the bottom of the app's window or screen
+    /// (a status bar, a tab bar). 0 keeps the usual spot.
+    public var floatingButtonBottomOffset: Double
+
     /// Where reports are kept on disk — always written before sending, so
     /// a failed send never loses someone's work.
     public var reportArchiveDirectory: URL
@@ -123,7 +128,8 @@ public struct BeaconConfiguration: Sendable {
                 consentStore: any ConsentStoring = UserDefaultsConsentStore(),
                 identityStore: any ReporterIdentityStoring = UserDefaultsReporterIdentityStore(),
                 reportArchiveDirectory: URL? = nil,
-                showsFloatingButton: Bool = true) {
+                showsFloatingButton: Bool = true,
+                floatingButtonBottomOffset: Double = 0) {
         self.app = app
         self.organizationName = organizationName
         self.currentReporter = currentReporter
@@ -139,6 +145,7 @@ public struct BeaconConfiguration: Sendable {
         self.consentStore = consentStore
         self.identityStore = identityStore
         self.showsFloatingButton = showsFloatingButton
+        self.floatingButtonBottomOffset = max(0, floatingButtonBottomOffset)
         self.reportArchiveDirectory = reportArchiveDirectory
             ?? BeaconConfiguration.defaultArchiveDirectory(appName: app.name)
     }

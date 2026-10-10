@@ -42,6 +42,8 @@ export interface BeaconOptions {
   icon?: string;
   /** Where the floating button sits. Default bottom-right. */
   position?: "bottom-right" | "bottom-left";
+  /** How many pixels higher than its usual spot the floating button sits, to clear a bar along the bottom of the page. Default 0. */
+  bottomOffset?: number;
   /** Set false to open the sheet only from your own control with `Beacon.open()`. */
   button?: boolean;
   onSent?: (reference: string) => void;
@@ -98,10 +100,16 @@ function readIdentity(): Identity {
   }
 }
 
+/** The floating button's distance from the bottom of the window: the usual 24px, raised by `bottomOffset`. */
+export function launchBottom(bottomOffset?: number): number {
+  const offset = Number.isFinite(bottomOffset) ? Math.max(0, bottomOffset as number) : 0;
+  return 24 + offset;
+}
+
 const CSS = `
 :host{all:initial;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2937}
 *{box-sizing:border-box}
-.launch{position:fixed;bottom:24px;z-index:2147483000;width:48px;height:48px;padding:0;border:0;background:none;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));border-radius:12px}
+.launch{position:fixed;z-index:2147483000;width:48px;height:48px;padding:0;border:0;background:none;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));border-radius:12px}
 .launch svg{display:block;width:100%;height:100%}
 .launch.right{right:24px}.launch.left{left:24px}
 .launch:hover{filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))}
@@ -177,6 +185,7 @@ export class BeaconSheet {
       const b = document.createElement("button");
       b.type = "button";
       b.className = `launch ${opts.position === "bottom-left" ? "left" : "right"}`;
+      b.style.bottom = `${launchBottom(opts.bottomOffset)}px`;
       b.setAttribute("aria-label", UI.button);
       b.title = UI.button;
       b.innerHTML = opts.icon ?? BEACON_ICON_SVG;

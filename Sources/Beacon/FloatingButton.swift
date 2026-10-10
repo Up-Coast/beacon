@@ -43,6 +43,17 @@ final class FloatingReportButton {
     static let title = "Report a problem"
     static let margin: CGFloat = 24
 
+    /// How far the button rests from the bottom-right corner before anyone drags it: the margin on both
+    /// sides, raised by the host's `floatingButtonBottomOffset`.
+    static func restingInset(bottomOffset: Double) -> CGSize {
+        CGSize(width: margin, height: margin + CGFloat(max(0, bottomOffset)))
+    }
+
+    /// The host's bottom offset, or 0 before Beacon is configured.
+    static var configuredBottomOffset: Double {
+        Beacon.isConfigured ? Beacon.configuration.floatingButtonBottomOffset : 0
+    }
+
     private var isReporting = false
 
     #if os(macOS)
@@ -52,7 +63,7 @@ final class FloatingReportButton {
     private var windowObservers: [NSObjectProtocol] = []
     /// How far the button sits from the bottom-right corner of the app's window. Dragging the button changes
     /// it; moving or resizing the window keeps it.
-    private var inset = CGSize(width: FloatingReportButton.margin, height: FloatingReportButton.margin)
+    private var inset = FloatingReportButton.restingInset(bottomOffset: FloatingReportButton.configuredBottomOffset)
     private var isPlacing = false
 
     func show() {
@@ -266,7 +277,8 @@ private struct FloatingOverlay: View {
         GeometryReader { proxy in
             let resting = position ?? CGPoint(
                 x: proxy.size.width - FloatingReportBadge.diameter / 2 - FloatingReportButton.margin,
-                y: proxy.size.height - FloatingReportBadge.diameter / 2 - FloatingReportButton.margin * 3)
+                y: proxy.size.height - FloatingReportBadge.diameter / 2 - FloatingReportButton.margin * 3
+                    - CGFloat(FloatingReportButton.configuredBottomOffset))
             FloatingReportBadge(title: FloatingReportButton.title, action: action)
                 .position(x: resting.x + drag.width, y: resting.y + drag.height)
                 .gesture(DragGesture()

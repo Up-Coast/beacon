@@ -67,6 +67,7 @@ Pass it to `Beacon.configure(_:gitHubAccount:audience:)` once at launch, before 
 | `identityStore` | `any ReporterIdentityStoring` | `UserDefaultsReporterIdentityStore()` | Where an anonymous tester's name and email are kept, so they are asked once. Stored under the key `beacon.reporter-identity`. |
 | `reportArchiveDirectory` | `URL?` | see below | Where each report is saved on the device before it is sent. |
 | `showsFloatingButton` | `Bool` | `true` | Whether Beacon shows a round report button that floats above the app's windows. Set it to `false` when testers should report only from your own button or settings. |
+| `floatingButtonBottomOffset` | `Double` | `0` | How many points higher than its usual spot the floating button sits, so it clears a bar along the bottom of the app's window or screen. A negative value counts as `0`. |
 
 The default archive directory is `BeaconConfiguration.defaultArchiveDirectory(appName:)`: `Application Support/<app name>/Beacon/reports`, or `Application Support/Beacon/Beacon/reports` when the app name is empty. Each report is a folder named `<yyyy-MM-dd-HHmmss>-<reference>` holding `report.json`, `issue.md` and an `attachments` folder. `ReportArchive(directory:).saved()` lists the folders, newest first.
 
