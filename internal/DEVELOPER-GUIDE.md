@@ -104,7 +104,7 @@ A feature request's `idea`, and a change request's `why` and area, are optional 
 
 `minimumMeaningfulCharacters` is 12. A placeholder is an answer such as "n/a", "idk", "asdf" or "it broke", matched whole and case-insensitively after trimming punctuation. The full list is `CompletenessRules.placeholders`.
 
-The page carries a copy of these rules and their messages in JavaScript. Change `Completeness.swift` first, then `Inbox/index.html`, and keep the messages identical. The page also requires a reporter name of at least 3 characters and a chosen app. It has no area rule for feature requests. The page does not yet offer change requests or the idea box; only the in-app sheet does.
+The page carries a copy of these rules and their messages in JavaScript. Change `Completeness.swift` first, then `Inbox/index.html`, and keep the messages identical. The page also requires a reporter name of at least 3 characters and a chosen app. It has no area rule for feature requests. The page offers change requests; it does not yet offer the idea box, which only the in-app sheet has.
 
 ## Issue rendering and labels
 

@@ -74,7 +74,8 @@
   .panel > header p { margin: 6px 0 0; color: var(--ink-2); max-width: 58ch; }
   form { padding: 20px 24px 24px; display: grid; gap: 22px; }
 
-  .kinds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .kinds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 760px) { .kinds { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 560px) { .kinds { grid-template-columns: 1fr; } }
   .kind { display: grid; gap: 4px; text-align: left; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); cursor: pointer; }
   .kind strong { font-family: var(--display); font-size: 15px; }
@@ -182,6 +183,7 @@
       <div class="kinds" role="group" aria-label="What kind of report">
         <button type="button" class="kind" data-kind="bug" aria-pressed="true"><strong>Something's broken</strong><span>The app did something you didn't expect, or stopped working.</span></button>
         <button type="button" class="kind" data-kind="feature-request" aria-pressed="false"><strong>Something's missing</strong><span>You want the app to do something it doesn't do yet.</span></button>
+        <button type="button" class="kind" data-kind="change-request" aria-pressed="false"><strong>Change request</strong><span>You'd like something to work or look differently.</span></button>
         <button type="button" class="kind" data-kind="feedback" aria-pressed="false"><strong>Something else</strong><span>Anything else you want to tell us.</span></button>
       </div>
 
@@ -228,6 +230,22 @@
         </div>
       </div>
 
+      <div data-section="change-request" hidden>
+        <div class="field" data-for="what-to-change">
+          <label for="whatToChange">What would you like changed?</label>
+          <p class="hint">Say what works today that you'd like done differently.</p>
+          <textarea id="whatToChange"></textarea>
+        </div>
+        <div class="field" data-for="instead" style="margin-top:22px">
+          <label for="instead">What would you like instead?</label>
+          <textarea id="instead"></textarea>
+        </div>
+        <div class="field" data-for="change-why" style="margin-top:22px">
+          <label for="changeWhy">Why does it matter to you? (optional)</label>
+          <textarea id="changeWhy"></textarea>
+        </div>
+      </div>
+
       <div data-section="feedback" hidden>
         <div class="field" data-for="message">
           <label for="message">What's on your mind</label>
@@ -271,7 +289,7 @@
     <div class="filters">
       <select id="fApp" aria-label="App"><option value="">Every app</option></select>
       <select id="fStatus" aria-label="Status"><option value="">Every status</option></select>
-      <select id="fKind" aria-label="Kind"><option value="">Every kind</option><option value="bug">Bugs</option><option value="feature-request">Requests</option><option value="feedback">Feedback</option></select>
+      <select id="fKind" aria-label="Kind"><option value="">Every kind</option><option value="bug">Bugs</option><option value="feature-request">Requests</option><option value="change-request">Change requests</option><option value="feedback">Feedback</option></select>
       <input type="text" id="fSearch" placeholder="Search words">
       <span class="count" id="fCount"></span>
     </div>
@@ -326,7 +344,7 @@
     "expectation-mismatch":["hold", "App isn't explaining itself"],
     triaged:               ["hold", "Triaged"],
   };
-  const KIND = { bug: "Bug", "feature-request": "Request", feedback: "Feedback" };
+  const KIND = { bug: "Bug", "feature-request": "Request", "change-request": "Change request", feedback: "Feedback" };
 
   // ---- What the app put in the link. ----
   const q = new URLSearchParams(location.search);
@@ -484,6 +502,10 @@
       const want = $("#whatIWant").value;
       if (emptyInSubstance(want) || tooShort(want)) add("what-i-want", "Say what you want to be able to do. Describe it as the thing you're trying to get done, not the button.", true);
       if (emptyInSubstance($("#why").value)) add("why", "What are you trying to do that the app makes hard right now? Knowing this often finds a better answer than the one you asked for.", false);
+    } else if (kind === "change-request") {
+      const change = $("#whatToChange").value, instead = $("#instead").value;
+      if (emptyInSubstance(change) || tooShort(change)) add("what-to-change", "Say what you'd like changed — the thing that works today but that you'd do differently.", true);
+      if (emptyInSubstance(instead) || tooShort(instead)) add("instead", "Say what you'd like instead. A sentence about how it should work is plenty.", true);
     } else {
       const m = $("#message").value;
       if (emptyInSubstance(m) || tooShort(m)) add("message", "Tell us what's on your mind — a sentence or two is plenty.", true);
@@ -522,8 +544,10 @@
       ? { kind, whatHappened: $("#whatHappened").value.trim(), expected: $("#expected").value.trim(), steps: cleanSteps(), reproducibility: checked("reproducibility") }
       : kind === "feature-request"
         ? { kind, whatIWant: $("#whatIWant").value.trim(), why: $("#why").value.trim() }
-        : { kind, message: $("#message").value.trim() };
-    const source = body.whatHappened || body.whatIWant || body.message;
+        : kind === "change-request"
+          ? { kind, whatToChange: $("#whatToChange").value.trim(), instead: $("#instead").value.trim(), why: $("#changeWhy").value.trim() }
+          : { kind, message: $("#message").value.trim() };
+    const source = body.whatHappened || body.whatIWant || body.whatToChange || body.message;
     const app = chosenApp();
     return {
       app: { id: app.id, name: app.name, repository: app.repository || ctx.repository, platform: app.platform || "" },
@@ -621,6 +645,8 @@
       if (b.reproducibility) prose.append(words("Does it happen again?", REPRO_LABEL[b.reproducibility] || b.reproducibility));
     } else if (r.kind === "feature-request") {
       prose.append(...[words("What they want to be able to do", b.whatIWant), words("Why", b.why)].filter(Boolean));
+    } else if (r.kind === "change-request") {
+      prose.append(...[words("What they would like changed", b.whatToChange), words("What they would like instead", b.instead), words("Why it matters to them", b.why)].filter(Boolean));
     } else {
       prose.append(...[words("What's on their mind", b.message)].filter(Boolean));
     }
@@ -658,7 +684,7 @@
         box.append(el("p", { text: "That didn't save: " + (err && err.message || err) }));
       }
     };
-    const approve = el("button", { type: "button", class: "primary", text: r.kind === "feature-request" ? "Approve building it" : "Approve the fix" });
+    const approve = el("button", { type: "button", class: "primary", text: r.kind === "bug" ? "Approve the fix" : "Approve building it" });
     const decline = el("button", { type: "button", class: "linkish", text: "Decline" });
     approve.addEventListener("click", () => decide("approved"));
     decline.addEventListener("click", () => decide("declined"));
