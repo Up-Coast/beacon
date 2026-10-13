@@ -4,6 +4,7 @@
 
 - the website button: `Web/src/icon.ts` (same shapes, as a string)
 - the Mac and iPhone button: `Sources/BeaconUI/BeaconMark.swift` (same shapes, drawn in code)
+- the Beacon page's header: `Inbox/index.html` (same shapes, inline)
 - the README and the documentation site: `beacon-mark.svg`
 - `beacon-mark-512.png` and `beacon-mark-1024.png`: for any place that takes an uploaded image (a GitHub App logo, the repository's social preview, a marketplace listing)
 

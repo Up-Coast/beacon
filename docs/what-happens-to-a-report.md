@@ -1,6 +1,6 @@
 # What happens to a report
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-13*
 
 A Claude session works every report by a written triage policy, without waiting for you. It fixes and merges only what it cannot get badly wrong, and leaves everything else labelled and explained. This page is a summary. The full policy, which the session follows as written, is [TRIAGE.md](../Triage/TRIAGE.md).
 
@@ -35,8 +35,8 @@ Triage sets severity. The app never does. The tester's `impact:` label says what
 - Change behaviour to match a tester's expectation without checking what the product is supposed to do.
 - Implement a feature request, or act on feedback, without you authorizing it.
 - Close a report as working as intended, when the tester expected something different, without first filing the expectation-mismatch issue.
-- Write to a tester. Triage writes on the issue and on the board, and you decide whether anyone replies.
+- Write to a tester. Triage writes on the issue and on the dashboard, and you decide whether anyone replies.
 - Touch anything on the blast-radius list.
 - Merge without running the app through the tester's own steps.
 
-What each status means on the board is in [How it works](how-it-works.md#statuses).
+What each status means on the dashboard is in [How it works](how-it-works.md#statuses).

@@ -1,301 +1,462 @@
 <title>Beacon</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
   :root {
-    --bg: #F2F4F6;
+    --bg: #F3F4F6;
     --surface: #FFFFFF;
-    --surface-2: #E9EDF1;
-    --line: #D3DAE1;
-    --ink: #16202B;
-    --ink-2: #4E5C6B;
-    --ink-3: #7B8794;
-    --accent: #D9481F;
+    --surface-2: #F9FAFB;
+    --field: #F3F4F6;
+    --line: #E5E7EB;
+    --line-2: #D1D5DB;
+    --ink: #111827;
+    --ink-2: #4B5563;
+    --ink-3: #6B7280;
+    --accent: #2F6FED;
     --accent-ink: #FFFFFF;
-    --accent-soft: #FBE7E0;
-    --ok: #1F7A4D;
-    --ok-soft: #DDF2E6;
-    --wait: #A86B08;
-    --wait-soft: #FBEFD5;
-    --hold: #4B5B6E;
-    --hold-soft: #E3E8EE;
-    --focus: #1F5FBF;
-    --shadow: 0 1px 2px rgba(22,32,43,.06), 0 8px 24px -12px rgba(22,32,43,.18);
-    --display: "Bricolage Grotesque", "Avenir Next", "Helvetica Neue", sans-serif;
-    --body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
-    --mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+    --accent-soft: #EFF6FF;
+    --link: #2563EB;
+    --ok: #15803D;
+    --ok-soft: #DCFCE7;
+    --wait: #B45309;
+    --wait-soft: #FEF3C7;
+    --hold: #4B5563;
+    --hold-soft: #E5E7EB;
+    --bad: #B91C1C;
+    --focus: #2563EB;
+    --shadow: 0 1px 2px rgba(17,24,39,.05), 0 8px 24px -14px rgba(17,24,39,.22);
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0F161E; --surface: #17212B; --surface-2: #1F2B37; --line: #2C3946;
-      --ink: #EEF2F5; --ink-2: #AEBBC7; --ink-3: #7F8D9B;
-      --accent: #F0673F; --accent-ink: #120A06; --accent-soft: #3A1E14;
-      --ok: #5FCB8E; --ok-soft: #14301F; --wait: #E8B04A; --wait-soft: #33250A;
-      --hold: #AEBBC7; --hold-soft: #263240; --focus: #7FB0FF;
-      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+      --bg: #0B0F17; --surface: #151A23; --surface-2: #1B212C; --field: #202734;
+      --line: #2A3240; --line-2: #374151;
+      --ink: #F3F4F6; --ink-2: #C3CAD5; --ink-3: #8B95A5;
+      --accent: #4D87F6; --accent-ink: #FFFFFF; --accent-soft: #16243F; --link: #7AA7FF;
+      --ok: #4ADE80; --ok-soft: #12301F; --wait: #FBBF24; --wait-soft: #33260A;
+      --hold: #C3CAD5; --hold-soft: #262E3B; --bad: #F87171; --focus: #7AA7FF;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.7);
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0F161E; --surface: #17212B; --surface-2: #1F2B37; --line: #2C3946;
-    --ink: #EEF2F5; --ink-2: #AEBBC7; --ink-3: #7F8D9B;
-    --accent: #F0673F; --accent-ink: #120A06; --accent-soft: #3A1E14;
-    --ok: #5FCB8E; --ok-soft: #14301F; --wait: #E8B04A; --wait-soft: #33250A;
-    --hold: #AEBBC7; --hold-soft: #263240; --focus: #7FB0FF;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    --bg: #0B0F17; --surface: #151A23; --surface-2: #1B212C; --field: #202734;
+    --line: #2A3240; --line-2: #374151;
+    --ink: #F3F4F6; --ink-2: #C3CAD5; --ink-3: #8B95A5;
+    --accent: #4D87F6; --accent-ink: #FFFFFF; --accent-soft: #16243F; --link: #7AA7FF;
+    --ok: #4ADE80; --ok-soft: #12301F; --wait: #FBBF24; --wait-soft: #33260A;
+    --hold: #C3CAD5; --hold-soft: #262E3B; --bad: #F87171; --focus: #7AA7FF;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.7);
     color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
-  h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+  html, body { overflow-x: hidden; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); }
+  h1, h2, h3 { margin: 0; text-wrap: balance; }
   button, input, textarea, select { font: inherit; color: inherit; }
+  a { color: var(--link); }
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   code, .mono { font-family: var(--mono); font-size: .86em; }
   [hidden] { display: none !important; }
 
+  /* ---- Top bar: the mark, and the switch between the two halves of the page. ---- */
   .top {
-    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-    padding: 14px 24px; border-bottom: 1px solid var(--line); background: var(--surface);
+    display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap;
+    padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--surface);
   }
-  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
-  .brand svg { width: 22px; height: 22px; }
-  .identity { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--ink-2); font-size: 13px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+  .brand svg { width: 30px; height: 30px; flex: none; }
+  .switch { display: inline-flex; padding: 3px; gap: 3px; background: var(--field); border: 1px solid var(--line); border-radius: 10px; }
+  .switch button { border: 0; background: transparent; padding: 7px 12px; white-space: nowrap; border-radius: 7px; font-weight: 600; font-size: 14px; color: var(--ink-2); cursor: pointer; min-height: 36px; }
+  .switch button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(17,24,39,.12); }
+  .identity { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--ink-2); font-size: 13px; margin-left: auto; }
   .identity .chip { padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); white-space: nowrap; }
   .identity .chip.app { color: var(--ink); font-weight: 600; }
   .identity .chip.missing { border-style: dashed; color: var(--ink-3); }
 
-  .wrap { display: grid; grid-template-columns: minmax(0, 640px) minmax(280px, 380px); gap: 32px; padding: 28px 24px 64px; max-width: 1120px; margin: 0 auto; }
-  @media (max-width: 880px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+  main { padding: 24px 24px 64px; max-width: 1120px; margin: 0 auto; }
+  @media (max-width: 640px) {
+    .top { padding: 10px 16px; }
+    .switch { width: 100%; order: 3; }
+    .switch button { flex: 1; }
+    main { padding: 16px 16px 48px; }
+  }
 
-  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
-  .panel > header { padding: 20px 24px 0; }
-  .panel > header h1 { font-size: 26px; font-weight: 700; letter-spacing: -.015em; }
-  .panel > header p { margin: 6px 0 0; color: var(--ink-2); max-width: 58ch; }
-  form { padding: 20px 24px 24px; display: grid; gap: 22px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); max-width: 680px; margin: 0 auto; }
+  .panel > header { padding: 22px 24px 0; }
+  .panel > header h1 { font-size: 22px; font-weight: 700; }
+  .sub { margin: 6px 0 0; color: var(--ink-3); font-size: 14px; max-width: 60ch; }
+  @media (max-width: 640px) { .panel > header { padding: 18px 16px 0; } form { padding: 18px 16px 20px !important; } }
 
-  .kinds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  @media (max-width: 760px) { .kinds { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 560px) { .kinds { grid-template-columns: 1fr; } }
-  .kind { display: grid; gap: 4px; text-align: left; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); cursor: pointer; }
-  .kind strong { font-family: var(--display); font-size: 15px; }
+  /* ---- The form: the same blocks, words and order as the Mac, iPhone and web sheet. ---- */
+  form { padding: 20px 24px 24px; display: grid; gap: 20px; }
+  .kinds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 560px) { .kinds { grid-template-columns: minmax(0, 1fr); } }
+  .kind { display: grid; gap: 3px; text-align: left; padding: 13px 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface-2); cursor: pointer; }
+  .kind strong { font-size: 15px; }
   .kind span { color: var(--ink-2); font-size: 13px; line-height: 1.35; }
+  .kind:hover { border-color: var(--accent); }
   .kind[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .section { display: grid; gap: 20px; }
 
-  .field { display: grid; gap: 6px; }
-  .field > label, .field > .label { font-weight: 600; font-size: 14px; }
-  .field .hint { color: var(--ink-3); font-size: 13px; margin: -2px 0 0; }
-  select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); min-height: 44px; }
-  textarea, input[type=text] { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); resize: vertical; min-height: 44px; }
-  textarea { min-height: 78px; }
-  .field.invalid textarea, .field.invalid input, .field.invalid .steps { border-color: var(--accent); }
-  .problem { color: var(--accent); font-size: 13.5px; margin: 0; }
+  .field { display: grid; gap: 6px; min-width: 0; }
+  .field > label, .field > .label { font-weight: 600; font-size: 15px; }
+  .field .hint { color: var(--ink-3); font-size: 13px; margin: -2px 0 0; line-height: 1.4; }
+  select, textarea, input[type=text] { width: 100%; padding: 9px 11px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--field); min-height: 42px; }
+  textarea { min-height: 72px; resize: vertical; }
+  .field.invalid textarea, .field.invalid input[type=text], .field.invalid select { border-color: var(--bad); }
+  .problem { color: var(--bad); font-size: 13.5px; margin: 0; }
   .note { color: var(--wait); font-size: 13.5px; margin: 0; }
 
   .steps { display: grid; gap: 8px; }
-  .step { display: grid; grid-template-columns: 28px 1fr 32px; gap: 8px; align-items: center; }
-  .step .n { color: var(--ink-3); font-family: var(--mono); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
-  .step .x { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; border-radius: 6px; height: 32px; }
-  .step .x:hover { background: var(--surface-2); color: var(--ink); }
-  .linkish { border: 0; background: none; color: var(--focus); cursor: pointer; padding: 0; justify-self: start; font-weight: 500; }
+  .step { display: grid; grid-template-columns: 24px minmax(0, 1fr) 32px; gap: 8px; align-items: center; }
+  .step .n { color: var(--ink-3); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+  .x { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; border-radius: 6px; height: 32px; font-size: 18px; line-height: 1; }
+  .x:hover { background: var(--field); color: var(--ink); }
+  .linkish { border: 0; background: none; color: var(--link); cursor: pointer; padding: 0; justify-self: start; font-weight: 600; font-size: 14px; }
 
-  .choices { display: grid; gap: 8px; }
-  .choice { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
-  .choice input { margin: 4px 0 0; accent-color: var(--accent); }
+  .choices { display: grid; gap: 6px; }
+  .choice { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .choice input { margin: 3px 0 0; accent-color: var(--accent); flex: none; }
   .choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
 
-  .send { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid var(--line); }
-  .primary { padding: 11px 20px; border: 0; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-family: var(--display); font-size: 15px; cursor: pointer; }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, 96px); gap: 10px; }
+  .thumbs:empty { display: none; }
+  .thumb { position: relative; width: 96px; height: 96px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--field); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb .x { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 999px; background: var(--ink); color: var(--bg); font-size: 14px; }
+  .thumb .size { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 6px; font: 11px var(--mono); color: #fff; background: rgba(17,24,39,.7); }
+  .attach { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); cursor: pointer; font-weight: 600; font-size: 13px; justify-self: start; }
+  .attach:hover { background: var(--field); }
+
+  .blocking { border: 1px solid var(--line-2); border-radius: 10px; padding: 12px 14px; background: var(--surface-2); font-size: 14px; }
+  .blocking h3 { font-size: 15px; margin-bottom: 4px; }
+  .blocking ul { margin: 0; padding-left: 20px; display: grid; gap: 3px; }
+  .send { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--line); }
+  .primary { padding: 10px 20px; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 14px; cursor: pointer; min-height: 40px; }
   .primary[disabled] { opacity: .55; cursor: default; }
-  .destination { color: var(--ink-2); font-size: 13px; max-width: 46ch; }
+  .destination { color: var(--ink-3); font-size: 13px; max-width: 46ch; }
 
   .receipt { padding: 24px; display: grid; gap: 10px; }
   .receipt h2 { font-size: 22px; }
-  .receipt .ref { font-family: var(--mono); font-size: 20px; color: var(--accent); }
+  .receipt .label { color: var(--ink-3); font-size: 13px; font-weight: 600; }
+  .receipt .ref { font: 700 22px var(--mono); letter-spacing: .05em; user-select: all; }
   .receipt p { margin: 0; color: var(--ink-2); }
 
-  aside h2 { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); margin-bottom: 12px; }
-  .queue { display: grid; gap: 10px; }
-  .item { display: grid; gap: 6px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
-  .item .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
-  .item .title { font-weight: 600; overflow-wrap: anywhere; }
-  .item .meta { color: var(--ink-3); font-size: 12.5px; font-family: var(--mono); }
-  .item .reply { color: var(--ink-2); font-size: 13.5px; border-left: 2px solid var(--line); padding-left: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; }
-  .pill.new { background: var(--accent-soft); color: var(--accent); }
+  /* ---- The dashboard. ---- */
+  .dash { display: grid; gap: 18px; }
+  .dash > header { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; }
+  .dash h1 { font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tab { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: 14px; font-weight: 600; min-height: 38px; max-width: 100%; }
+  .tab .plat { color: var(--ink-3); font-weight: 500; font-size: 12px; }
+  .tab .badge { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--wait-soft); color: var(--wait); font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
+  .tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .tab[aria-selected="true"] .plat { color: inherit; opacity: .8; }
+  .tab[aria-selected="true"] .badge { background: rgba(255,255,255,.22); color: inherit; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { display: grid; gap: 2px; text-align: left; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; box-shadow: var(--shadow); }
+  .stat b { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .stat span { color: var(--ink-3); font-size: 13px; }
+  .stat.decide b { color: var(--wait); }
+  .stat[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .appnote { margin: 0; color: var(--ink-2); font-size: 14px; padding: 10px 14px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .filters select, .filters input { flex: 1 1 150px; width: auto; min-width: 0; min-height: 38px; padding: 6px 10px; background: var(--surface); }
+  .filters .count { color: var(--ink-3); font-size: 13px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .group { display: grid; gap: 8px; }
+  .group > h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+  .group.decide > h2 { color: var(--wait); }
+  .list { display: grid; gap: 8px; }
+  .list details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+  .group.decide details { border-left: 3px solid var(--wait); }
+  .list summary { list-style: none; cursor: pointer; padding: 11px 14px; display: grid; gap: 4px; }
+  .list summary::-webkit-details-marker { display: none; }
+  .list details[open] summary { border-bottom: 1px solid var(--line); }
+  .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  @media (max-width: 560px) { .row { flex-direction: column; gap: 4px; } .pills { justify-content: flex-start; } }
+  .title { font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+  .meta { color: var(--ink-3); font-size: 12.5px; overflow-wrap: anywhere; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; flex: none; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .pill.new { background: var(--accent-soft); color: var(--link); }
   .pill.triaging { background: var(--wait-soft); color: var(--wait); }
   .pill.fixed { background: var(--ok-soft); color: var(--ok); }
   .pill.waiting { background: var(--wait-soft); color: var(--wait); }
   .pill.hold { background: var(--hold-soft); color: var(--hold); }
-  .empty { color: var(--ink-3); font-size: 14px; padding: 14px; border: 1px dashed var(--line); border-radius: 10px; }
-  .offline { color: var(--ink-3); font-size: 13px; margin-top: 12px; }
-  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, 96px); gap: 10px; }
-  .thumb { position: relative; width: 96px; height: 96px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface-2); }
-  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .thumb .x { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border: 0; border-radius: 999px; background: var(--ink); color: var(--bg); cursor: pointer; line-height: 1; }
-  .thumb .size { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 6px; font: 11px var(--mono); color: var(--bg); background: rgba(22,32,43,.7); }
-  .attach { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); cursor: pointer; font-weight: 500; justify-self: start; }
-  .attach:hover { border-color: var(--ink-3); }
-  .board { grid-column: 1 / -1; display: grid; gap: 16px; }
-  .board h1 { font-size: 26px; font-weight: 700; letter-spacing: -.015em; }
-  .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .filters select, .filters input { width: auto; min-width: 150px; min-height: 38px; padding: 6px 10px; }
-  .filters .count { color: var(--ink-3); font-size: 13px; margin-left: auto; font-variant-numeric: tabular-nums; }
-  .board details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
-  .board summary { list-style: none; cursor: pointer; padding: 12px 14px; display: grid; gap: 6px; }
-  .board summary::-webkit-details-marker { display: none; }
-  .board details[open] summary { border-bottom: 1px solid var(--line); }
-  .detail { padding: 14px; display: grid; gap: 14px; }
-  .decide { display: grid; gap: 8px; padding: 12px; border-radius: 9px; background: var(--wait-soft); }
-  .decide textarea { width: 100%; min-height: 56px; box-sizing: border-box; padding: 8px; border-radius: 7px; border: 1px solid var(--hold-soft); background: transparent; }
-  .decide .choices { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 16px; font-size: 13.5px; }
-  .facts div { display: grid; gap: 2px; }
-  .facts dt { color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .pill.you { background: var(--wait); color: var(--surface); }
+  /* Impact: one shape per level, heaviest for "blocked", so colour is never the only cue. */
+  .impact { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 20px; height: 20px; vertical-align: -4px; }
+  .impact svg { width: 20px; height: 20px; display: block; }
+  .impact.blocked { color: var(--bad); }
+  .impact.slowed { color: var(--wait); }
+  .impact.irritating { color: var(--ink-2); }
+  .impact.noticed { color: var(--ink-3); }
+  .titleline { display: flex; gap: 8px; align-items: flex-start; min-width: 0; }
+  .impactfact { display: inline-flex; gap: 6px; align-items: flex-start; }
+  .empty { color: var(--ink-3); font-size: 14px; padding: 14px; border: 1px dashed var(--line-2); border-radius: 10px; }
+  .offline { color: var(--ink-2); font-size: 14px; margin: 0 auto 16px; max-width: 680px; padding: 10px 14px; border-radius: 10px; background: var(--wait-soft); }
+
+  .firstrun { display: grid; gap: 10px; justify-items: start; padding: 22px; background: var(--surface); border: 1px dashed var(--line-2); border-radius: 14px; }
+  .firstrun h2 { font-size: 18px; }
+  .firstrun p { margin: 0; color: var(--ink-2); max-width: 60ch; }
+  .tab.unlisted { border-style: dashed; }
+  .appcard { display: grid; gap: 4px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .appcard .acts { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .appcard.unlisted { border-style: dashed; }
+  .appform { max-width: none; margin: 0; padding: 20px 24px; display: grid; gap: 18px; }
+  .appform h2 { font-size: 18px; }
+  @media (max-width: 640px) { .appform { padding: 18px 16px !important; } }
+  .confirm { display: grid; gap: 8px; padding: 10px 12px; border-radius: 9px; background: var(--wait-soft); font-size: 14px; }
+  .confirm .acts { margin: 0; }
+  .detail { padding: 14px; display: grid; gap: 14px; min-width: 0; }
+  .decide-box { display: grid; gap: 8px; padding: 12px; border-radius: 9px; background: var(--wait-soft); }
+  .decide-box h3 { font-size: 15px; }
+  .decide-box textarea { min-height: 56px; background: var(--surface); }
+  .decide-box .choices { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; font-size: 13.5px; margin: 0; }
+  .facts div { display: grid; gap: 2px; min-width: 0; }
+  .facts dt { color: var(--ink-3); font-size: 12px; font-weight: 600; }
   .facts dd { margin: 0; overflow-wrap: anywhere; }
-  .words { display: grid; gap: 10px; max-width: 72ch; }
-  .words h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-2); }
-  .words p, .words ol { margin: 0; white-space: pre-wrap; }
+  .words { display: grid; gap: 12px; max-width: 72ch; }
+  .words h3 { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+  .words p, .words ol { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
   .words ol { padding-left: 22px; display: grid; gap: 4px; }
   .pictures { display: flex; gap: 10px; flex-wrap: wrap; }
-  .pictures img { max-width: 320px; max-height: 240px; border: 1px solid var(--line); border-radius: 8px; }
+  .pictures img { max-width: min(320px, 100%); max-height: 240px; border: 1px solid var(--line); border-radius: 8px; }
   .pictures .loading { color: var(--ink-3); font-size: 13px; }
-  .pill.waiting { background: var(--wait-soft); color: var(--wait); }
-  @media (prefers-reduced-motion: no-preference) { .kind, .choice, .item { transition: border-color .12s, background .12s; } }
+  @media (prefers-reduced-motion: no-preference) { .kind, .choice, .tab, .stat { transition: border-color .12s, background .12s; } }
 </style>
 
 <header class="top">
-  <div class="brand" aria-label="Beacon">
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2c1 4 4 6 4 10a4 4 0 0 1-8 0c0-2 1-3 1-3s1 3 3 3c0-3-2-5 0-10Z" fill="var(--accent)"/><path d="M6 20h12" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"/></svg>
+  <div class="brand">
+    <!-- Beacon's mark, the same shapes as Brand/beacon-mark.svg. -->
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M16 2H48A14 14 0 0 1 62 16V36A14 14 0 0 1 48 50H52L54 62L40 49H16A14 14 0 0 1 2 36V16A14 14 0 0 1 16 2Z" fill="#2f6fed"/>
+      <g fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M26 13L32 7.5L38 13Z"/><path d="M27 16H37V24H27Z"/><path d="M24.5 27.5H39.5"/>
+        <path d="M29.5 27.5L25.5 44M34.5 27.5L38.5 44M26.2 36.5H37.8M22.5 44H41.5"/>
+        <path d="M24.5 18L20.5 15.5M39.5 18L43.5 15.5M24.5 22.5L20.5 21M39.5 22.5L43.5 21"/>
+      </g>
+      <circle cx="32" cy="20" r="2.4" fill="#fff"/>
+    </svg>
     Beacon
   </div>
-  <div class="identity" id="identity" aria-label="Which app and machine this report is about"></div>
+  <nav class="switch" aria-label="Page">
+    <button type="button" data-view="board" aria-pressed="true">Reports</button>
+    <button type="button" data-view="form" aria-pressed="false">Send a report</button>
+    <button type="button" data-view="apps" aria-pressed="false">Apps</button>
+  </nav>
+  <div class="identity" id="identity" aria-label="Which app and machine this report is about" hidden></div>
 </header>
 
-<main class="wrap">
-  <section class="panel" aria-labelledby="formTitle">
+<main>
+  <p class="offline" id="dbState" hidden>This page can't reach its reports right now. It only works when opened signed in to Claude, as a member of the organization that owns this page.</p>
+
+  <!-- ---- The dashboard: every report from every app. ---- -->
+  <section class="dash" id="board" aria-labelledby="boardTitle">
     <header>
-      <h1 id="formTitle">Tell us what happened</h1>
-      <p>Be specific rather than technical. The version, build and machine come along on their own. Send it and carry on; it is picked up and worked on without waiting for a person.</p>
+      <h1 id="boardTitle">Reports</h1>
+      <span class="sub" id="boardSub">Every report from every app on this page, newest first.</span>
+    </header>
+    <div class="firstrun" id="firstRun" hidden>
+      <h2>No apps yet</h2>
+      <p>Beacon keeps one list of the apps it collects reports for. Add each app once, and its reports show here under its name, with every other app's.</p>
+      <button type="button" class="primary" data-add-app>Add your first app</button>
+    </div>
+    <div class="tabs" id="tabs" role="tablist" aria-label="App"></div>
+    <div class="stats" id="stats"></div>
+    <p class="appnote" id="appNote" hidden></p>
+    <div class="filters">
+      <select id="fStatus" aria-label="Status"><option value="">Every status</option></select>
+      <select id="fKind" aria-label="Kind"><option value="">Every kind</option></select>
+      <select id="fImpact" aria-label="Impact"><option value="">Every impact</option></select>
+      <select id="fSort" aria-label="Order"><option value="newest">Newest first</option><option value="impact">Highest impact first</option></select>
+      <input type="text" id="fSearch" placeholder="Search words" aria-label="Search words">
+      <span class="count" id="fCount"></span>
+    </div>
+    <div class="group decide" id="decideGroup" hidden>
+      <h2>Waiting on your decision</h2>
+      <div class="list" id="decideList"></div>
+    </div>
+    <div class="group" id="restGroup">
+      <h2 id="restTitle">Everything else</h2>
+      <div class="list" id="queue"><div class="empty">No reports yet.</div></div>
+    </div>
+  </section>
+
+  <!-- ---- The app list: what this page collects reports for. ---- -->
+  <section class="dash" id="appsView" aria-labelledby="appsTitle" hidden>
+    <header>
+      <h1 id="appsTitle">Apps</h1>
+      <span class="sub">The apps this page collects reports for. Testers pick from this list, and the dashboard groups reports by it.</span>
+    </header>
+    <p class="appnote" id="appsReadOnly" hidden>Only people who can edit this page can change the app list.</p>
+    <div class="list" id="appList"></div>
+    <p><button type="button" class="primary" id="newApp">Add an app</button></p>
+    <form class="panel appform" id="appForm" novalidate hidden>
+      <h2 id="appFormTitle">Add an app</h2>
+      <div class="field" data-for="app-name">
+        <label for="aName">Name</label>
+        <p class="hint">What testers see in the app picker.</p>
+        <input type="text" id="aName" maxlength="60">
+      </div>
+      <div class="field" data-for="app-id">
+        <label for="aId">Short id</label>
+        <p class="hint">Lowercase letters, numbers and hyphens. Reports carry it, and an app's link can name it. It can't be changed once the app is saved.</p>
+        <input type="text" id="aId" maxlength="40" autocapitalize="off" spellcheck="false">
+      </div>
+      <div class="field" data-for="app-platform">
+        <label for="aPlatform">Platform</label>
+        <select id="aPlatform"><option>macOS</option><option>iOS</option><option>Web</option><option>Other</option></select>
+      </div>
+      <div class="field" data-for="app-tracker">
+        <div class="label">Where reports are worked</div>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="aTracker" value="board" checked><span>On this page. The dashboard is the whole tracker.</span></label>
+          <label class="choice"><input type="radio" name="aTracker" value="github"><span>As GitHub issues in the app's repository.</span></label>
+        </div>
+      </div>
+      <div class="field" data-for="app-repository">
+        <label for="aRepo">Repository (optional for this page)</label>
+        <p class="hint">The app's GitHub repository, as owner/name. Needed when reports are worked as GitHub issues.</p>
+        <input type="text" id="aRepo" placeholder="owner/name" autocapitalize="off" spellcheck="false">
+      </div>
+      <div class="field" data-for="app-folder">
+        <label for="aFolder">Folder (optional)</label>
+        <p class="hint">Where the app's source is, relative to the code folder the pickup works in.</p>
+        <input type="text" id="aFolder" autocapitalize="off" spellcheck="false">
+      </div>
+      <div class="send">
+        <button type="submit" class="primary" id="aSave">Save the app</button>
+        <button type="button" class="linkish" id="aCancel">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ---- The form testers fill in. ---- -->
+  <section class="panel" id="formView" aria-labelledby="formTitle" hidden>
+    <header>
+      <h1 id="formTitle">What would you like to tell us?</h1>
+      <p class="sub">Be specific rather than technical. The version, build and machine come along on their own. Send it and carry on; it is picked up and worked on without waiting for a person.</p>
     </header>
 
     <form id="form" novalidate>
-      <div class="kinds" role="group" aria-label="What kind of report">
-        <button type="button" class="kind" data-kind="bug" aria-pressed="true"><strong>Something's broken</strong><span>The app did something you didn't expect, or stopped working.</span></button>
-        <button type="button" class="kind" data-kind="feature-request" aria-pressed="false"><strong>Something's missing</strong><span>You want the app to do something it doesn't do yet.</span></button>
-        <button type="button" class="kind" data-kind="change-request" aria-pressed="false"><strong>Change request</strong><span>You'd like something to work or look differently.</span></button>
-        <button type="button" class="kind" data-kind="feedback" aria-pressed="false"><strong>Something else</strong><span>Anything else you want to tell us.</span></button>
-      </div>
+      <div class="kinds" id="kinds" role="group" aria-label="What kind of report"></div>
 
       <div class="field" data-for="app">
         <label for="appPick">Which app</label>
         <select id="appPick"><option value="">Choose the app…</option></select>
       </div>
 
-      <div class="field" data-for="reporter">
-        <label for="reporter">Who you are</label>
-        <input type="text" id="reporter" autocomplete="email" placeholder="Your name or email, so we can come back to you">
-        <p class="hint">Reports aren't anonymous. Anyone on the team can read them, and we may write back about this one.</p>
-      </div>
-
-      <div data-section="bug">
+      <div class="section" data-section="bug">
+        <div class="field" data-for="expected">
+          <label for="expected" data-label="expected"></label>
+          <p class="hint" data-hint="expected"></p>
+          <textarea id="expected"></textarea>
+        </div>
         <div class="field" data-for="what-happened">
-          <label for="whatHappened">What actually happened</label>
-          <textarea id="whatHappened" placeholder="What was on the screen. “The window went white and stayed white for about a minute.”"></textarea>
+          <label for="whatHappened" data-label="whatHappened"></label>
+          <p class="hint" data-hint="whatHappened"></p>
+          <textarea id="whatHappened"></textarea>
         </div>
-        <div class="field" data-for="expected" style="margin-top:22px">
-          <label for="expected">What you expected instead</label>
-          <textarea id="expected" placeholder="Say what you thought would happen, even if it turns out you were wrong. That's how we find where the app isn't explaining itself."></textarea>
-        </div>
-        <div class="field" data-for="steps" style="margin-top:22px">
-          <div class="label">The steps you took</div>
-          <p class="hint">Start from where you were. Include the boring ones; the step everybody leaves out is usually the one that matters.</p>
+        <div class="field" data-for="steps">
+          <div class="label" data-label="steps"></div>
+          <p class="hint" data-hint="steps"></p>
           <div class="steps" id="steps"></div>
-          <button type="button" class="linkish" id="addStep">+ Add a step</button>
+          <button type="button" class="linkish" id="addStep">Add a step</button>
         </div>
-        <div class="field" data-for="reproducibility" style="margin-top:22px">
-          <div class="label">Does it happen again?</div>
+        <div class="field" data-for="reproducibility">
+          <div class="label" data-label="reproducibility"></div>
           <div class="choices" id="reproducibility"></div>
         </div>
       </div>
 
-      <div data-section="feature-request" hidden>
+      <div class="section" data-section="feature-request" hidden>
         <div class="field" data-for="what-i-want">
-          <label for="whatIWant">What you want to be able to do</label>
-          <textarea id="whatIWant" placeholder="Describe it as the thing you're trying to get done, not the button."></textarea>
+          <label for="whatIWant" data-label="whatIWant"></label>
+          <p class="hint" data-hint="whatIWant"></p>
+          <textarea id="whatIWant"></textarea>
         </div>
-        <div class="field" data-for="why" style="margin-top:22px">
-          <label for="why">Why (optional, but it helps)</label>
-          <textarea id="why" placeholder="What are you trying to do that the app makes hard right now?"></textarea>
+        <div class="field" data-for="why">
+          <label for="why" data-label="why"></label>
+          <p class="hint" data-hint="why"></p>
+          <textarea id="why"></textarea>
+        </div>
+        <div class="field" data-for="idea">
+          <label for="idea" data-label="idea"></label>
+          <p class="hint" data-hint="idea"></p>
+          <textarea id="idea"></textarea>
         </div>
       </div>
 
-      <div data-section="change-request" hidden>
+      <div class="section" data-section="change-request" hidden>
         <div class="field" data-for="what-to-change">
-          <label for="whatToChange">What would you like changed?</label>
-          <p class="hint">Say what works today that you'd like done differently.</p>
+          <label for="whatToChange" data-label="whatToChange"></label>
+          <p class="hint" data-hint="whatToChange"></p>
           <textarea id="whatToChange"></textarea>
         </div>
-        <div class="field" data-for="instead" style="margin-top:22px">
-          <label for="instead">What would you like instead?</label>
+        <div class="field" data-for="instead">
+          <label for="instead" data-label="instead"></label>
           <textarea id="instead"></textarea>
         </div>
-        <div class="field" data-for="change-why" style="margin-top:22px">
-          <label for="changeWhy">Why does it matter to you? (optional)</label>
+        <div class="field" data-for="change-why">
+          <label for="changeWhy" data-label="changeWhy"></label>
           <textarea id="changeWhy"></textarea>
         </div>
       </div>
 
-      <div data-section="feedback" hidden>
+      <div class="section" data-section="feedback" hidden>
         <div class="field" data-for="message">
-          <label for="message">What's on your mind</label>
-          <textarea id="message" placeholder="A sentence or two is plenty."></textarea>
+          <label for="message" data-label="message"></label>
+          <textarea id="message" rows="5"></textarea>
         </div>
       </div>
 
+      <div class="field" data-for="area">
+        <label for="area" id="areaLabel"></label>
+        <input type="text" id="area" placeholder="The screen or feature, in your own words. “Not sure” is fine.">
+      </div>
+
+      <div class="field" data-for="impact">
+        <div class="label" data-label="impact"></div>
+        <p class="hint" data-hint="impact"></p>
+        <div class="choices" id="impact"></div>
+      </div>
+
       <div class="field" data-for="attachments">
-        <div class="label">Show us</div>
-        <p class="hint">A picture of what you're looking at beats another paragraph. Screenshots or photos of the screen; on a Mac you can also paste one straight in.</p>
+        <div class="label">Anything to show us?</div>
+        <p class="hint">A picture of what you're looking at is usually worth more than another paragraph. Screenshots or photos of the screen; on a Mac you can also paste one straight in.</p>
         <div class="thumbs" id="thumbs"></div>
         <label class="attach" for="files">Add images<input type="file" id="files" accept="image/*" multiple hidden></label>
       </div>
 
-      <div class="field" data-for="area">
-        <label for="area">Which part of the app</label>
-        <input type="text" id="area" placeholder="The screen or feature you were in, in your own words. “Not sure” is fine.">
+      <div class="field" data-for="reporter">
+        <label for="reporter">Who you are</label>
+        <p class="hint">Your name or email, so someone can write back. Reports aren't anonymous: anyone on the team can read them.</p>
+        <input type="text" id="reporter" autocomplete="email">
       </div>
 
-      <div class="field" data-for="impact">
-        <div class="label">How much this affects you</div>
-        <div class="choices" id="impact"></div>
-      </div>
+      <div class="blocking" id="blocking" hidden><h3>Before this can go</h3><ul></ul></div>
 
       <div class="send">
-        <button type="submit" class="primary" id="submit">Send report</button>
-        <div class="destination" id="destination">This goes to the team's inbox, where it is picked up automatically.</div>
+        <button type="submit" class="primary" id="submit">Send</button>
+        <div class="destination">This goes to the team's inbox, where it is picked up automatically.</div>
       </div>
     </form>
 
     <div class="receipt" id="receipt" hidden>
-      <h2>Sent. Thank you.</h2>
+      <h2>Sent — thank you</h2>
+      <p>Your report is in. Nothing more is needed from you; if you spot something else, send that too. If you get in touch about it, quote the reference below.</p>
+      <div class="label">Your reference</div>
       <div class="ref" id="receiptRef"></div>
-      <p id="receiptText"></p>
       <p><button type="button" class="linkish" id="again">Report something else</button></p>
     </div>
   </section>
-
-  <section class="board" id="board" hidden aria-labelledby="boardTitle">
-    <h1 id="boardTitle">Reports</h1>
-    <div class="filters">
-      <select id="fApp" aria-label="App"><option value="">Every app</option></select>
-      <select id="fStatus" aria-label="Status"><option value="">Every status</option></select>
-      <select id="fKind" aria-label="Kind"><option value="">Every kind</option><option value="bug">Bugs</option><option value="feature-request">Requests</option><option value="change-request">Change requests</option><option value="feedback">Feedback</option></select>
-      <input type="text" id="fSearch" placeholder="Search words">
-      <span class="count" id="fCount"></span>
-    </div>
-    <div class="queue" id="queue"><div class="empty">No reports yet.</div></div>
-  </section>
-  <p class="offline" id="dbState" hidden>This page can't reach the inbox right now. It only works when opened signed in to Claude, as a member of the organisation that owns this page.</p>
 </main>
 
 <script>
@@ -316,6 +477,16 @@
   };
   const tooShort = (t) => (t || "").trim().length < MIN_CHARS;
 
+  // ---- The words a reporter reads. Copied from the Mac and iPhone sheet
+  // (Sources/BeaconCore/Report.swift, Sources/BeaconUI/FormSteps.swift),
+  // which Web/src/wording.ts also copies; where the web sheet says "the
+  // page", this page says "the app", as the native sheet does. ----
+  const KIND_WORDS = {
+    bug: { title: "Something's broken", blurb: "The app did something you didn't expect, or stopped working." },
+    "feature-request": { title: "Something's missing", blurb: "You want the app to do something it doesn't do yet — or you have an idea." },
+    "change-request": { title: "Change request", blurb: "You'd like something to work or look differently." },
+    feedback: { title: "Something else", blurb: "Anything else you want to tell us." },
+  };
   const IMPACT = [
     ["blocked", "I can't do what I came to do"],
     ["slowed", "I found a way around it, but it costs me time"],
@@ -328,8 +499,59 @@
     ["once", "It happened once and I haven't seen it since"],
     ["unknown", "I haven't tried to make it happen again"],
   ];
+  const FIELD_LABELS = {
+    expected: "What did you expect to happen?",
+    whatHappened: "What actually happened?",
+    steps: "What did you do to get there?",
+    reproducibility: "Does it happen again?",
+    whatIWant: "What do you want to be able to do?",
+    why: "What makes that hard today?",
+    idea: "Your idea (optional)",
+    whatToChange: "What would you like changed?",
+    instead: "What would you like instead?",
+    changeWhy: "Why does it matter to you? (optional)",
+    message: "What's on your mind?",
+    impact: "How much is this affecting you?",
+  };
+  const FIELD_HINTS = {
+    expected: "This is the one that tells us whether the app is broken or just confusing. Both are worth fixing.",
+    whatHappened: "Say what you saw on screen.",
+    steps: "One action per line, starting from where you were.",
+    whatIWant: "Describe the thing you're trying to get done, rather than the button you think it needs.",
+    why: "Knowing this often turns up a better answer than the one you asked for.",
+    idea: "If you have a thought about how it could work, tell us. You can leave this empty.",
+    whatToChange: "Say what works today that you'd like done differently.",
+    impact: "This is what decides the order things get looked at, so an honest answer helps more than a dramatic one.",
+  };
+  // The area question, per kind, as the native sheet's AreaPicker asks it.
+  const AREA_LABELS = {
+    bug: "Where in the app did you see it?",
+    "feature-request": "Which part of the app is this about?",
+    "change-request": "Where is it?",
+    feedback: "Is this about a particular part of the app?",
+  };
   const IMPACT_LABEL = Object.fromEntries(IMPACT);
+  // Ordering for triage, 0 is worst: Impact.rank in Sources/BeaconCore/Report.swift.
+  const IMPACT_RANK = { blocked: 0, slowed: 1, irritating: 2, noticed: 3 };
+  // One icon per impact level, heaviest first: a filled stop sign, a filled
+  // warning triangle, an outlined circle with a bar, a small open dot.
+  const IMPACT_ICON = {
+    blocked: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6.7 1.5h6.6l5.2 5.2v6.6l-5.2 5.2H6.7l-5.2-5.2V6.7z" fill="currentColor"/><path d="M5.5 10h9" stroke="var(--surface)" stroke-width="2.4" stroke-linecap="round"/></svg>',
+    slowed: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.2 18.4 17H1.6z" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 7.5v4.2" stroke="var(--surface)" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14.3" r="1.1" fill="var(--surface)"/></svg>',
+    irritating: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 6.5v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="10" cy="13.4" r="1" fill="currentColor"/></svg>',
+    noticed: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+  };
+  const impactIcon = (impact) => {
+    if (!IMPACT_ICON[impact]) return null;
+    const label = "Impact: " + IMPACT_LABEL[impact];
+    const n = document.createElement("span");
+    n.className = "impact " + impact; n.setAttribute("role", "img"); n.setAttribute("aria-label", label); n.title = label;
+    n.innerHTML = IMPACT_ICON[impact];
+    return n;
+  };
   const REPRO_LABEL = Object.fromEntries(REPRO);
+
+  // ---- Board words: statuses as docs/how-it-works.md lists them. ----
   const STATUS = {
     new:                   ["new", "Received"],
     filed:                 ["hold", "Filed"],
@@ -345,10 +567,29 @@
     triaged:               ["hold", "Triaged"],
   };
   const KIND = { bug: "Bug", "feature-request": "Request", "change-request": "Change request", feedback: "Feedback" };
+  const KIND_FILTER = { bug: "Bugs", "feature-request": "Requests", "change-request": "Change requests", feedback: "Feedback" };
+  // Reports the owner decides: work the pickup stopped on. Approve and
+  // Decline appear on these until an approval is written.
+  const DECIDABLE = new Set(["needs-human", "triaged", "expectation-mismatch", "cannot-reproduce", "needs-info"]);
+  const IN_PROGRESS = new Set(["filed", "triaging", "approved"]);
+  const waitsOnOwner = (r) => !r.approval && DECIDABLE.has(r.status) && r.kind !== "feedback";
+  // The four counts at the top of the dashboard, and the filter each sets.
+  const GROUPS = [
+    ["decide", "Waiting on you", waitsOnOwner],
+    ["new", "Received", (r) => r.status === "new"],
+    ["open", "In progress", (r) => IN_PROGRESS.has(r.status)],
+    ["fixed", "Fixed", (r) => r.status === "auto-fixed"],
+  ];
 
-  // ---- What the app put in the link. ----
+  // ---- What the link carries, and which half of the page it opens. ----
+  // A link from inside an app carries `app` plus details only the app
+  // knows (BeaconInbox.url in Sources/BeaconCore/InboxLink.swift), so it
+  // opens the form. `view=form` and `view=board` choose outright. Anything
+  // else, the plain page link included, opens the dashboard.
   const q = new URLSearchParams(location.search);
-  const isBoard = q.get("view") === "board";
+  const APP_DETAIL_KEYS = ["version", "build", "bundle", "commit", "repo", "os", "osVersion", "device", "arch"];
+  const fromApp = Boolean(q.get("app")) && APP_DETAIL_KEYS.some((k) => q.get(k));
+  let view = q.get("view") === "form" ? "form" : q.get("view") === "board" ? "board" : fromApp ? "form" : "board";
   const ctx = {
     app: q.get("app") || "", bundle: q.get("bundle") || "", version: q.get("version") || "",
     build: q.get("build") || "", commit: q.get("commit") || "", repository: q.get("repo") || "",
@@ -358,16 +599,35 @@
     appearance: q.get("appearance") || "", textSize: q.get("textSize") || "",
   };
   const $ = (s) => document.querySelector(s);
-  if (isBoard) {
-    document.querySelector("section.panel").hidden = true;
-    document.getElementById("board").hidden = false;
-    document.title = "Beacon reports";
-  }
   const el = (tag, attrs = {}, ...kids) => {
     const n = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs)) k === "text" ? (n.textContent = v) : n.setAttribute(k, v);
-    n.append(...kids); return n;
+    n.append(...kids.filter((k) => k !== null && k !== undefined)); return n;
   };
+  const remembered = (key) => { try { return localStorage.getItem("beacon.page." + key); } catch { return null; } };
+  const remember = (key, value) => { try { localStorage.setItem("beacon.page." + key, value); } catch {} };
+
+  let db = null, artifact = null, apps = [], allReports = [], reportsWatched = false, reached = null;
+  // appsLoaded: the first `apps` snapshot has arrived. canEdit: the viewer
+  // can edit this page (the `user` capability's canEdit), which is who may
+  // change the app list, as with Approve and Decline.
+  let appsLoaded = false, canEdit = true;
+
+  // ---- The switch between the dashboard and the form. In the page, so it
+  // works however the page's link was opened. ----
+  const showView = (next) => {
+    view = next;
+    $("#board").hidden = view !== "board";
+    $("#formView").hidden = view !== "form";
+    $("#appsView").hidden = view !== "apps";
+    $("#identity").hidden = view !== "form";
+    document.querySelectorAll(".switch button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+    document.title = view === "board" ? "Beacon reports" : view === "apps" ? "Beacon apps" : "Beacon";
+    if (view === "board" || view === "apps") watchReports();
+    if (view === "apps") renderApps();
+    if (view === "form" && !appPick.value && selectedApp) { appPick.value = selectedApp; renderIdentity(); }
+  };
+  document.querySelectorAll(".switch button").forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
 
   // ---- Which app. The list lives in the database (`apps`), one home for
   // every app this inbox serves; `?app=<id or name>` preselects it, and a
@@ -375,8 +635,8 @@
   // choice is locked. ----
   const identity = $("#identity");
   const appPick = $("#appPick");
-  let apps = [];
   const chosenApp = () => apps.find((a) => a.id === appPick.value) || null;
+  const matchApp = (wanted) => { const w = (wanted || "").trim().toLowerCase(); return w ? apps.find((a) => a.id === w || (a.name || "").toLowerCase() === w) : null; };
   const renderIdentity = () => {
     const app = chosenApp();
     identity.replaceChildren();
@@ -386,11 +646,12 @@
     if (ctx.device) identity.append(el("span", { class: "chip", text: ctx.device }));
   };
   const fillAppPicker = () => {
-    const wanted = ctx.app.trim().toLowerCase();
+    const keep = appPick.value;
     appPick.replaceChildren(el("option", { value: "", text: "Choose the app…" }),
       ...apps.map((a) => el("option", { value: a.id, text: a.name })));
-    const match = apps.find((a) => a.id === wanted || a.name.toLowerCase() === wanted);
+    const match = matchApp(ctx.app);
     if (match) { appPick.value = match.id; appPick.disabled = Boolean(ctx.version); }
+    else if (keep && apps.some((a) => a.id === keep)) appPick.value = keep;
     renderIdentity();
   };
   appPick.addEventListener("change", renderIdentity);
@@ -398,14 +659,23 @@
   if (q.get("reporter")) $("#reporter").value = q.get("reporter");
   if (q.get("area")) $("#area").value = q.get("area");
 
-  // ---- Form state. ----
+  // ---- Form words and state. ----
+  document.querySelectorAll("[data-label]").forEach((n) => (n.textContent = FIELD_LABELS[n.dataset.label]));
+  document.querySelectorAll("[data-hint]").forEach((n) => (n.textContent = FIELD_HINTS[n.dataset.hint]));
   let kind = "bug";
-  document.querySelectorAll(".kind").forEach((b) => b.addEventListener("click", () => {
-    kind = b.dataset.kind;
-    document.querySelectorAll(".kind").forEach((k) => k.setAttribute("aria-pressed", String(k === b)));
+  const kindsHost = $("#kinds");
+  for (const [value, words] of Object.entries(KIND_WORDS)) {
+    kindsHost.append(el("button", { type: "button", class: "kind", "data-kind": value, "aria-pressed": String(value === kind) },
+      el("strong", { text: words.title }), el("span", { text: words.blurb })));
+  }
+  const setKind = (next) => {
+    kind = next;
+    document.querySelectorAll(".kind").forEach((k) => k.setAttribute("aria-pressed", String(k.dataset.kind === kind)));
     document.querySelectorAll("[data-section]").forEach((s) => (s.hidden = s.dataset.section !== kind));
+    $("#areaLabel").textContent = AREA_LABELS[kind];
     clearProblems();
-  }));
+  };
+  kindsHost.addEventListener("click", (e) => { const b = e.target.closest(".kind"); if (b) setKind(b.dataset.kind); });
 
   const radios = (host, name, options, checked) => {
     for (const [value, label] of options) {
@@ -420,17 +690,18 @@
   const stepsHost = $("#steps");
   const addStep = (value = "") => {
     const row = el("div", { class: "step" });
-    const input = el("input", { type: "text", placeholder: "What you did, as one action" });
+    const input = el("input", { type: "text", "aria-label": "A step" });
     input.value = value;
-    const remove = el("button", { type: "button", class: "x", "aria-label": "Remove this step", text: "×" });
-    remove.addEventListener("click", () => { row.remove(); renumber(); });
+    const remove = el("button", { type: "button", class: "x", "aria-label": "Remove this step", title: "Remove this step", text: "−" });
+    remove.addEventListener("click", () => { row.remove(); if (!stepsHost.children.length) addStep(); renumber(); });
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addStep().focus(); } });
     row.append(el("span", { class: "n" }), input, remove);
     stepsHost.append(row); renumber(); return input;
   };
-  const renumber = () => stepsHost.querySelectorAll(".step .n").forEach((n, i) => (n.textContent = String(i + 1)));
+  const renumber = () => stepsHost.querySelectorAll(".step .n").forEach((n, i) => (n.textContent = `${i + 1}.`));
   const cleanSteps = () => [...stepsHost.querySelectorAll("input")].map((i) => i.value.trim()).filter(Boolean);
-  addStep(); addStep(); addStep();
+  const resetSteps = () => { stepsHost.replaceChildren(); addStep(); addStep(); addStep(); };
+  resetSteps();
   $("#addStep").addEventListener("click", () => addStep().focus());
 
   const checked = (name) => (document.querySelector(`input[name=${name}]:checked`) || {}).value;
@@ -478,6 +749,7 @@
   };
   $("#files").addEventListener("change", (e) => { addImages([...e.target.files]); e.target.value = ""; });
   document.addEventListener("paste", (e) => {
+    if (view !== "form") return;
     const files = [...(e.clipboardData && e.clipboardData.items || [])].filter((i) => i.kind === "file").map((i) => i.getAsFile()).filter(Boolean);
     if (files.length) { e.preventDefault(); addImages(files); }
   });
@@ -486,8 +758,6 @@
   const check = () => {
     const issues = [];
     const add = (field, message, blocking) => issues.push({ field, message, blocking });
-    if (emptyInSubstance($("#reporter").value) || $("#reporter").value.trim().length < 3)
-      add("reporter", "Say who you are, so someone can write back if they need to.", true);
     if (kind === "bug") {
       const happened = $("#whatHappened").value, expected = $("#expected").value, steps = cleanSteps();
       if (emptyInSubstance(happened)) add("what-happened", "Say what actually happened. Even “the window went white and stayed white” is enough to start from.", true);
@@ -510,12 +780,17 @@
       const m = $("#message").value;
       if (emptyInSubstance(m) || tooShort(m)) add("message", "Tell us what's on your mind — a sentence or two is plenty.", true);
     }
+    // The page's own two: it has no account to fall back on, and it serves many apps.
+    if (emptyInSubstance($("#reporter").value) || $("#reporter").value.trim().length < 3)
+      add("reporter", "Say who you are, so someone can write back if they need to.", true);
     if (!chosenApp()) add("app", "Pick which app this is about.", true);
     return issues;
   };
-  const clearProblems = () => document.querySelectorAll(".field").forEach((f) => {
-    f.classList.remove("invalid"); f.querySelectorAll(".problem, .note").forEach((p) => p.remove());
-  });
+  const blockingBox = $("#blocking");
+  const clearProblems = () => {
+    document.querySelectorAll(".field").forEach((f) => { f.classList.remove("invalid"); f.querySelectorAll(".problem, .note").forEach((p) => p.remove()); });
+    blockingBox.hidden = true;
+  };
   const showProblems = (issues) => {
     clearProblems();
     for (const issue of issues) {
@@ -524,6 +799,9 @@
       if (issue.blocking) field.classList.add("invalid");
       field.append(el("p", { class: issue.blocking ? "problem" : "note", text: issue.message }));
     }
+    const blocking = issues.filter((i) => i.blocking);
+    blockingBox.querySelector("ul").replaceChildren(...blocking.map((i) => el("li", { text: i.message })));
+    blockingBox.hidden = !blocking.length;
     const first = document.querySelector(".field.invalid");
     if (first) first.scrollIntoView({ block: "center", behavior: "smooth" });
   };
@@ -543,7 +821,7 @@
     const body = kind === "bug"
       ? { kind, whatHappened: $("#whatHappened").value.trim(), expected: $("#expected").value.trim(), steps: cleanSteps(), reproducibility: checked("reproducibility") }
       : kind === "feature-request"
-        ? { kind, whatIWant: $("#whatIWant").value.trim(), why: $("#why").value.trim() }
+        ? { kind, whatIWant: $("#whatIWant").value.trim(), why: $("#why").value.trim(), idea: $("#idea").value.trim() }
         : kind === "change-request"
           ? { kind, whatToChange: $("#whatToChange").value.trim(), instead: $("#instead").value.trim(), why: $("#changeWhy").value.trim() }
           : { kind, message: $("#message").value.trim() };
@@ -559,7 +837,6 @@
   };
 
   // ---- Where it goes. ----
-  let db = null, artifact = null;
   const submitButton = $("#submit");
   const form = $("#form");
   form.addEventListener("submit", async (e) => {
@@ -567,7 +844,7 @@
     const issues = check();
     showProblems(issues);
     if (issues.some((i) => i.blocking)) return;
-    if (!db) { $("#dbState").hidden = false; return; }
+    if (!db) { $("#dbState").hidden = false; $("#dbState").scrollIntoView({ block: "center" }); return; }
     submitButton.disabled = true; submitButton.textContent = "Sending…";
     const report = buildReport();
     try {
@@ -579,12 +856,14 @@
         await images.doc(String(i + 1)).set({ ...a, reference: report.reference, order: i + 1 });
       }
     } catch (err) {
-      submitButton.disabled = false; submitButton.textContent = "Send report";
+      submitButton.disabled = false; submitButton.textContent = "Send";
       showProblems([{ field: "reporter", blocking: true, message: "The report couldn't be sent: " + (err && err.message || err) + ". Nothing you typed was lost — try again in a moment." }]);
       return;
     }
     // The doorbell: a new version of the artifact is what wakes a watching
-    // Claude session. The report itself is already safe in the store.
+    // Claude session. The report itself is already safe in the store. The
+    // new version reloads every open view, this one too, so the receipt
+    // is kept in sessionStorage across it.
     let rang = false;
     if (artifact) {
       try {
@@ -592,28 +871,30 @@
         rang = true;
       } catch (err) { console.warn("doorbell", err && err.code, err && err.message); }
     }
-    sessionStorage.setItem("beacon.receipt", JSON.stringify({ reference: report.reference, rang }));
-    showReceipt(report.reference, rang);
-    form.reset(); stepsHost.replaceChildren(); addStep(); addStep(); addStep(); clearProblems();
+    try { sessionStorage.setItem("beacon.receipt", JSON.stringify({ reference: report.reference, rang })); } catch {}
+    showReceipt(report.reference);
+    form.reset(); resetSteps(); clearProblems(); setKind(kind);
     attachments.length = 0; renderThumbs();
     if (q.get("reporter")) $("#reporter").value = q.get("reporter");
-    submitButton.disabled = false; submitButton.textContent = "Send report";
+    submitButton.disabled = false; submitButton.textContent = "Send";
   });
-  const showReceipt = (ref, rang) => {
+  const showReceipt = (ref) => {
     form.hidden = true;
     $("#receipt").hidden = false;
     $("#receiptRef").textContent = ref;
-    $("#receiptText").textContent = "Your report is in. Nothing more is needed from you; if you spot something else, send that too.";
   };
   $("#again").addEventListener("click", () => { $("#receipt").hidden = true; form.hidden = false; });
   try {
     const saved = sessionStorage.getItem("beacon.receipt");
-    if (saved) { const r = JSON.parse(saved); sessionStorage.removeItem("beacon.receipt"); showReceipt(r.reference, r.rang); }
+    if (saved) { const r = JSON.parse(saved); sessionStorage.removeItem("beacon.receipt"); showReceipt(r.reference); if (q.get("view") !== "board") view = "form"; }
   } catch {}
 
-  // ---- The board: the founder's view of every report. ----
-  const queue = $("#queue");
-  let allReports = [];
+  // ---- The dashboard: the owner's view of every report from every app. ----
+  // The selected app: `?app=` on a link that is not from inside an app,
+  // else the last one chosen on this browser, else every app.
+  let selectedApp = (!fromApp && q.get("app")) || remembered("app") || "";
+  let group = "";
+  const openRefs = new Set();
   const fmtWhen = (iso) => iso ? new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "";
   const fact = (label, value) => value ? el("div", {}, el("dt", { text: label }), el("dd", { text: value })) : null;
   const words = (label, text) => text ? el("div", {}, el("h3", { text: label }), el("p", { text })) : null;
@@ -626,9 +907,10 @@
   const renderDetail = (r) => {
     const c = r.context || {}, b = r.body || {}, a = r.app || {};
     const facts = el("dl", { class: "facts" }, ...[
-      fact("Impact", IMPACT_LABEL[r.impact]),
+      IMPACT_LABEL[r.impact] ? el("div", {}, el("dt", { text: "Impact" }), el("dd", {}, el("span", { class: "impactfact" }, impactIcon(r.impact), el("span", { text: IMPACT_LABEL[r.impact] })))) : null,
       fact("Reporter", r.reporter),
       fact("App", `${a.name || ""} ${c.version || ""}${c.build ? ` (${c.build})` : ""}`.trim()),
+      fact("Platform", a.platform),
       fact("Commit", c.commit),
       fact("Machine", [c.os, c.osVersion, c.device].filter(Boolean).join(" ")),
       fact("Locale", [c.locale, c.timeZone].filter(Boolean).join(" · ")),
@@ -640,39 +922,40 @@
     ].filter(Boolean));
     const prose = el("div", { class: "words" });
     if (r.kind === "bug") {
-      prose.append(...[words("What they expected", b.expected), words("What actually happened", b.whatHappened)].filter(Boolean));
-      if (b.steps && b.steps.length) prose.append(el("div", {}, el("h3", { text: "Steps to see it" }), el("ol", {}, ...b.steps.map((st) => el("li", { text: st })))));
-      if (b.reproducibility) prose.append(words("Does it happen again?", REPRO_LABEL[b.reproducibility] || b.reproducibility));
+      prose.append(...[words(FIELD_LABELS.expected, b.expected), words(FIELD_LABELS.whatHappened, b.whatHappened)].filter(Boolean));
+      if (b.steps && b.steps.length) prose.append(el("div", {}, el("h3", { text: FIELD_LABELS.steps }), el("ol", {}, ...b.steps.map((st) => el("li", { text: st })))));
+      if (b.reproducibility) prose.append(words(FIELD_LABELS.reproducibility, REPRO_LABEL[b.reproducibility] || b.reproducibility));
     } else if (r.kind === "feature-request") {
-      prose.append(...[words("What they want to be able to do", b.whatIWant), words("Why", b.why)].filter(Boolean));
+      prose.append(...[words(FIELD_LABELS.whatIWant, b.whatIWant), words(FIELD_LABELS.why, b.why), words("Their idea", b.idea)].filter(Boolean));
     } else if (r.kind === "change-request") {
-      prose.append(...[words("What they would like changed", b.whatToChange), words("What they would like instead", b.instead), words("Why it matters to them", b.why)].filter(Boolean));
+      prose.append(...[words(FIELD_LABELS.whatToChange, b.whatToChange), words(FIELD_LABELS.instead, b.instead), words("Why it matters to them", b.why)].filter(Boolean));
     } else {
-      prose.append(...[words("What's on their mind", b.message)].filter(Boolean));
+      prose.append(...[words(FIELD_LABELS.message, b.message)].filter(Boolean));
     }
     if (r.finding) prose.append(words("Finding", [r.finding.verdict, r.finding.intent, ...(r.finding.citations || [])].filter(Boolean).join("\n")));
     if (r.triageNote) prose.append(words("Triage note", r.triageNote));
-    const detail = el("div", { class: "detail" }, facts, prose);
+    const detail = el("div", { class: "detail" });
+    const decision = renderDecision(r);
+    if (decision && !r.approval) detail.append(decision);
+    detail.append(facts, prose);
+    if (decision && r.approval) detail.append(decision);
     if (r.issueURL) {
       const link = el("a", { href: r.issueURL, target: "_blank", rel: "noopener", text: `Issue #${r.issueNumber || ""}`.trim() });
       detail.append(el("p", { style: "margin:0" }, link));
     }
-    const decision = renderDecision(r);
-    if (decision) detail.append(decision);
     if (r.attachmentCount) detail.append(el("div", { class: "pictures", "data-ref": r.reference }, el("span", { class: "loading", text: "Loading images…" })));
     return detail;
   };
   // The owner's approval. Reports that wait on a person (a fix too big
   // for triage to merge alone, or a feature request) get Approve and
   // Decline; the pickup builds approved ones on its next run.
-  const DECIDABLE = new Set(["needs-human", "triaged", "expectation-mismatch", "cannot-reproduce", "needs-info"]);
   const renderDecision = (r) => {
     if (r.approval) {
       const verb = r.approval.decision === "approved" ? "Approved" : "Declined";
       return words("Your decision", `${verb} on ${fmtWhen(r.approval.at)}${r.approval.note ? ": " + r.approval.note : ""}`);
     }
-    if (!db || !DECIDABLE.has(r.status) || r.kind === "feedback") return null;
-    const note = el("textarea", { placeholder: "Anything the fix should do or avoid (optional)" });
+    if (!db || !waitsOnOwner(r)) return null;
+    const note = el("textarea", { placeholder: "Anything the fix should do or avoid (optional)", "aria-label": "Note for the work" });
     const decide = async (decision) => {
       buttons.forEach((b) => { b.disabled = true; });
       try {
@@ -681,7 +964,7 @@
         });
       } catch (err) {
         buttons.forEach((b) => { b.disabled = false; });
-        box.append(el("p", { text: "That didn't save: " + (err && err.message || err) }));
+        box.append(el("p", { class: "problem", text: "That didn't save: " + (err && err.message || err) }));
       }
     };
     const approve = el("button", { type: "button", class: "primary", text: r.kind === "bug" ? "Approve the fix" : "Approve building it" });
@@ -689,7 +972,7 @@
     approve.addEventListener("click", () => decide("approved"));
     decline.addEventListener("click", () => decide("declined"));
     const buttons = [approve, decline];
-    const box = el("div", { class: "decide" }, el("h3", { text: "Your decision", style: "margin:0" }), note, el("div", { class: "choices" }, approve, decline));
+    const box = el("div", { class: "decide-box" }, el("h3", { text: "Your decision" }), note, el("div", { class: "choices" }, approve, decline));
     return box;
   };
   const loadPictures = async (host) => {
@@ -700,52 +983,277 @@
       host.replaceChildren(...snap.docs.map((d) => { const a = d.data(); const img = el("img", { alt: a.filename || "" }); img.src = a.dataURL; return img; }));
     } catch (err) { host.replaceChildren(el("span", { class: "loading", text: "Images couldn't be loaded: " + (err && err.message || err) })); }
   };
+
+  const inApp = (r) => !selectedApp || (r.app && r.app.id === selectedApp);
   const passes = (r) => {
-    const app = $("#fApp").value, status = $("#fStatus").value, kind = $("#fKind").value;
+    const status = $("#fStatus").value, k = $("#fKind").value, impact = $("#fImpact").value;
     const needle = $("#fSearch").value.trim().toLowerCase();
-    if (app && !(r.app && r.app.id === app)) return false;
+    if (!inApp(r)) return false;
+    if (group && !GROUPS.find((g) => g[0] === group)[2](r)) return false;
     if (status && r.status !== status) return false;
-    if (kind && r.kind !== kind) return false;
+    if (k && r.kind !== k) return false;
+    if (impact && r.impact !== impact) return false;
     if (needle && !JSON.stringify([r.title, r.body, r.reporter, r.area, r.reference]).toLowerCase().includes(needle)) return false;
     return true;
   };
-  const renderBoard = () => {
-    const shown = allReports.filter(passes);
-    $("#fCount").textContent = `${shown.length} of ${allReports.length}`;
-    if (!allReports.length) { queue.replaceChildren(el("div", { class: "empty", text: "No reports yet." })); return; }
-    if (!shown.length) { queue.replaceChildren(el("div", { class: "empty", text: "Nothing matches those filters." })); return; }
-    queue.replaceChildren(...shown.map((r) => {
-      const d = el("details", {},
-        el("summary", {}, el("div", { class: "row" }, el("span", { class: "title", text: r.title || r.reference }), pill(r)), el("div", { class: "meta", text: metaLine(r) })),
-        renderDetail(r));
-      d.addEventListener("toggle", () => { if (d.open) d.querySelectorAll(".pictures").forEach(loadPictures); });
-      return d;
+  const row = (r) => {
+    const flag = waitsOnOwner(r) ? el("span", { class: "pill you", text: "Your decision" }) : null;
+    const d = el("details", { "data-ref": r.reference },
+      el("summary", {}, el("div", { class: "row" }, el("span", { class: "titleline" }, impactIcon(r.impact), el("span", { class: "title", text: r.title || r.reference })), el("span", { class: "pills" }, flag, pill(r))), el("div", { class: "meta", text: metaLine(r) })),
+      renderDetail(r));
+    if (openRefs.has(r.reference)) d.open = true;
+    d.addEventListener("toggle", () => {
+      if (d.open) { openRefs.add(r.reference); d.querySelectorAll(".pictures").forEach(loadPictures); }
+      else openRefs.delete(r.reference);
+    });
+    return d;
+  };
+  const renderTabs = () => {
+    const tab = (id, name, platform, waiting) => {
+      const b = el("button", { type: "button", class: "tab", role: "tab", "aria-selected": String(selectedApp === id), "data-app": id },
+        el("span", { text: name }), platform ? el("span", { class: "plat", text: platform }) : null,
+        waiting ? el("span", { class: "badge", title: `${waiting} waiting on your decision`, text: String(waiting) }) : null);
+      return b;
+    };
+    const waitingFor = (id) => allReports.filter((r) => waitsOnOwner(r) && (!id || (r.app && r.app.id === id))).length;
+    $("#tabs").replaceChildren(tab("", "All apps", "", waitingFor("")), ...boardApps().map((a) => {
+      const t = tab(a.id, a.name || a.id, a.platform || "", waitingFor(a.id));
+      if (a.unlisted) { t.classList.add("unlisted"); t.title = "Not in the app list"; }
+      return t;
     }));
   };
-  const fillFilters = () => {
-    const keep = $("#fApp").value;
-    $("#fApp").replaceChildren(el("option", { value: "", text: "Every app" }), ...apps.map((a) => el("option", { value: a.id, text: a.name })));
-    $("#fApp").value = keep;
-    if ($("#fStatus").options.length === 1) {
-      for (const [value, [, label]] of Object.entries(STATUS)) $("#fStatus").append(el("option", { value, text: label }));
+  $("#tabs").addEventListener("click", (e) => {
+    const b = e.target.closest(".tab"); if (!b) return;
+    selectedApp = b.dataset.app; remember("app", selectedApp); renderBoard();
+  });
+  const renderStats = () => {
+    const mine = allReports.filter(inApp);
+    $("#stats").replaceChildren(...GROUPS.map(([id, label, test]) => {
+      const b = el("button", { type: "button", class: "stat" + (id === "decide" ? " decide" : ""), "aria-pressed": String(group === id), "data-group": id },
+        el("b", { text: String(mine.filter(test).length) }), el("span", { text: label }));
+      return b;
+    }));
+    const app = boardApps().find((a) => a.id === selectedApp);
+    const note = $("#appNote");
+    note.hidden = true;
+    if (app && app.unlisted) {
+      note.replaceChildren(document.createTextNode(`${app.name} isn't in the app list, so testers can't pick it and its reports have no settings. `));
+      if (canEdit && db) note.append(el("button", { type: "button", class: "linkish", "data-add-app": app.id, text: "Add this app" }));
+      note.hidden = false;
+    } else if (app && !mine.length && app.tracker === "github" && app.repository) {
+      note.replaceChildren(document.createTextNode(`${app.name}'s reports go straight to GitHub issues in ${app.repository}, so none reach this page. `),
+        el("a", { href: `https://github.com/${app.repository}/issues`, target: "_blank", rel: "noopener", text: "Open its issues" }));
+      note.hidden = false;
     }
   };
-  ["fApp", "fStatus", "fKind"].forEach((id) => $("#" + id).addEventListener("change", renderBoard));
+  $("#stats").addEventListener("click", (e) => {
+    const b = e.target.closest(".stat"); if (!b) return;
+    group = group === b.dataset.group ? "" : b.dataset.group; renderBoard();
+  });
+  const renderBoard = () => {
+    const known = boardApps();
+    if (selectedApp && (appsLoaded || reached) && !known.some((a) => a.id === selectedApp)) {
+      const match = matchApp(selectedApp); selectedApp = match ? match.id : "";
+    }
+    const app = known.find((a) => a.id === selectedApp);
+    $("#firstRun").hidden = !(db && appsLoaded && !apps.length);
+    $("#firstRun").querySelector("button").hidden = !canEdit;
+    // Nothing at all yet: the first-run note stands alone.
+    const bare = !$("#firstRun").hidden && !allReports.length;
+    ["#tabs", "#stats", ".filters"].forEach((sel) => ($(sel).hidden = bare));
+    $("#boardTitle").textContent = app ? `${app.name} reports` : "Reports";
+    $("#boardSub").textContent = app ? `${app.platform ? app.platform + " · " : ""}newest first` : "Every report from every app on this page, newest first.";
+    renderTabs(); renderStats();
+    const shown = allReports.filter(passes);
+    // Reports arrive newest first; the impact order keeps that within a level.
+    if ($("#fSort").value === "impact") shown.sort((a, b) => (IMPACT_RANK[a.impact] ?? 9) - (IMPACT_RANK[b.impact] ?? 9));
+    const decide = shown.filter(waitsOnOwner), rest = shown.filter((r) => !waitsOnOwner(r));
+    $("#fCount").textContent = `${shown.length} of ${allReports.filter(inApp).length}`;
+    $("#decideGroup").hidden = bare || !decide.length;
+    $("#decideList").replaceChildren(...decide.map(row));
+    $("#restTitle").textContent = decide.length ? "Everything else" : "Reports";
+    $("#restGroup").hidden = bare || Boolean(decide.length && !rest.length);
+    const queue = $("#queue");
+    if (reached === false) queue.replaceChildren(el("div", { class: "empty", text: "Reports show here once the page can reach them." }));
+    else if (!allReports.filter(inApp).length) queue.replaceChildren(el("div", { class: "empty", text: reached ? "No reports yet." : "Loading reports…" }));
+    else if (!shown.length) queue.replaceChildren(el("div", { class: "empty", text: "Nothing matches those filters." }));
+    else queue.replaceChildren(...rest.map(row));
+  };
+  for (const [value, [, label]] of Object.entries(STATUS)) $("#fStatus").append(el("option", { value, text: label }));
+  for (const [value, label] of Object.entries(KIND_FILTER)) $("#fKind").append(el("option", { value, text: label }));
+  for (const [value, label] of IMPACT) $("#fImpact").append(el("option", { value, text: label }));
+  ["fStatus", "fKind", "fImpact", "fSort"].forEach((id) => $("#" + id).addEventListener("change", renderBoard));
   $("#fSearch").addEventListener("input", renderBoard);
 
-  (async () => {
-    const [d, a] = await Promise.all([claude.use("db"), claude.use("artifact")]);
-    db = d; artifact = a;
+  // ---- The app list. One document per app in `apps`, with the fields the
+  // pickup reads (Triage/PICKUP.md): name, platform, repository, folder,
+  // tracker. Fields this page doesn't know are kept on save. ----
+  // Apps reports name that the list doesn't have (a removed app, or a
+  // report mirrored from elsewhere) still get their own tab.
+  const boardApps = () => {
+    const extra = new Map();
+    for (const r of allReports) {
+      const a = r.app || {};
+      if (a.id && !apps.some((x) => x.id === a.id) && !extra.has(a.id))
+        extra.set(a.id, { id: a.id, name: a.name || a.id, platform: a.platform || "", repository: a.repository || "", unlisted: true });
+    }
+    return [...apps, ...[...extra.values()].sort((x, y) => x.name.localeCompare(y.name))];
+  };
+  const PLATFORMS = ["macOS", "iOS", "Web", "Other"];
+  const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+  const REPO = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+  const slugOf = (name) => name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  const reportCount = (id) => allReports.filter((r) => r.app && r.app.id === id).length;
+  const appForm = $("#appForm");
+  let editing = null, idTouched = false;
+  const appIssue = (field, message) => {
+    const f = appForm.querySelector(`.field[data-for="${field}"]`);
+    f.classList.add("invalid"); f.append(el("p", { class: "problem", text: message }));
+  };
+  const clearAppIssues = () => {
+    appForm.querySelectorAll(".field").forEach((f) => f.classList.remove("invalid"));
+    appForm.querySelectorAll(".problem").forEach((p) => p.remove());
+  };
+  const openAppForm = (app, isNew) => {
+    editing = isNew ? null : app.id;
+    idTouched = !isNew || Boolean(app && app.id);
+    clearAppIssues();
+    $("#appFormTitle").textContent = isNew ? "Add an app" : `Change ${app.name}`;
+    $("#aName").value = (app && app.name) || "";
+    $("#aId").value = (app && app.id) || "";
+    $("#aId").disabled = !isNew;
+    const platform = (app && app.platform) || "macOS";
+    $("#aPlatform").value = PLATFORMS.find((p) => p.toLowerCase() === platform.toLowerCase()) || "Other";
+    const tracker = (app && app.tracker) || "board";
+    appForm.querySelectorAll("input[name=aTracker]").forEach((i) => (i.checked = i.value === tracker));
+    $("#aRepo").value = (app && app.repository) || "";
+    $("#aFolder").value = (app && app.folder) || "";
+    appForm.hidden = false; $("#newApp").hidden = true;
+    $("#aName").focus();
+  };
+  const closeAppForm = () => { appForm.hidden = true; $("#newApp").hidden = !canEdit || !db; editing = null; };
+  $("#aName").addEventListener("input", () => { if (!idTouched && !editing) $("#aId").value = slugOf($("#aName").value); });
+  $("#aId").addEventListener("input", () => { idTouched = true; });
+  $("#aCancel").addEventListener("click", closeAppForm);
+  $("#newApp").addEventListener("click", () => openAppForm(null, true));
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-add-app]"); if (!b) return;
+    const seen = b.dataset.addApp ? boardApps().find((a) => a.id === b.dataset.addApp) : null;
+    showView("apps");
+    openAppForm(seen ? { id: seen.id, name: seen.name, platform: seen.platform, repository: seen.repository, tracker: seen.repository ? "github" : "board" } : null, true);
+  });
+  appForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearAppIssues();
+    const name = $("#aName").value.trim(), id = editing || $("#aId").value.trim();
+    const repository = $("#aRepo").value.trim(), folder = $("#aFolder").value.trim();
+    const tracker = (appForm.querySelector("input[name=aTracker]:checked") || {}).value || "board";
+    let ok = true;
+    const bad = (f, m) => { appIssue(f, m); ok = false; };
+    if (!name) bad("app-name", "Give the app a name.");
+    if (!editing) {
+      if (!SLUG.test(id) || id.length > 40) bad("app-id", "Use lowercase letters, numbers and single hyphens, such as harbour or harbour-ios.");
+      else if (apps.some((a) => a.id === id)) bad("app-id", "Another app already has this id.");
+    }
+    if (repository && !REPO.test(repository)) bad("app-repository", "Write the repository as owner/name, such as your-org/harbour.");
+    if (!repository && tracker === "github") bad("app-repository", "Reports worked as GitHub issues need the repository they go to.");
+    if (folder && (folder.startsWith("/") || folder.split("/").includes(".."))) bad("app-folder", "Use a folder inside the code folder, such as harbour or apps/harbour.");
+    if (!ok) { const first = appForm.querySelector(".field.invalid"); if (first) first.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
     if (!db) { $("#dbState").hidden = false; return; }
+    const prev = apps.find((a) => a.id === id) || {};
+    const { id: _id, ...kept } = prev;
+    const doc = { ...kept, name, platform: $("#aPlatform").value, tracker };
+    if (repository) doc.repository = repository; else delete doc.repository;
+    if (folder) doc.folder = folder; else delete doc.folder;
+    const save = $("#aSave");
+    save.disabled = true;
+    try {
+      await db.doc("apps/" + id).set(doc);
+    } catch (err) {
+      save.disabled = false;
+      appForm.querySelector(".send").append(el("p", { class: "problem", text: "That didn't save: " + (err && err.message || err) }));
+      return;
+    }
+    save.disabled = false;
+    closeAppForm();
+  });
+  const renderApps = () => {
+    $("#appsReadOnly").hidden = canEdit || !db;
+    if (appForm.hidden) $("#newApp").hidden = !canEdit || !db;
+    const host = $("#appList");
+    const card = (a) => {
+      const n = reportCount(a.id);
+      const facts = [a.platform, a.unlisted ? "not in the list" : a.tracker === "github" ? "GitHub issues" : "worked on this page",
+        a.repository, a.folder ? "folder " + a.folder : "", `${n} report${n === 1 ? "" : "s"} on this page`].filter(Boolean).join(" · ");
+      const c = el("div", { class: "appcard" + (a.unlisted ? " unlisted" : "") },
+        el("div", { class: "title", text: a.name || a.id }), el("div", { class: "meta", text: `${a.id} · ${facts}` }));
+      if (!canEdit || !db) return c;
+      const acts = el("div", { class: "acts" });
+      if (a.unlisted) {
+        acts.append(el("button", { type: "button", class: "linkish", "data-add-app": a.id, text: "Add this app" }));
+      } else {
+        const edit = el("button", { type: "button", class: "linkish", text: "Change" });
+        edit.addEventListener("click", () => openAppForm(a, false));
+        const remove = el("button", { type: "button", class: "linkish", text: "Remove" });
+        remove.addEventListener("click", () => {
+          if (c.querySelector(".confirm")) return;
+          const yes = el("button", { type: "button", class: "primary", text: `Remove ${a.name}` });
+          const no = el("button", { type: "button", class: "linkish", text: "Keep it" });
+          const box = el("div", { class: "confirm" },
+            el("span", { text: n
+              ? `${a.name} has ${n} report${n === 1 ? "" : "s"} on this page. They stay on the dashboard under its name; testers can no longer pick it.`
+              : `Remove ${a.name} from the list? Testers can no longer pick it.` }),
+            el("div", { class: "acts" }, yes, no));
+          no.addEventListener("click", () => box.remove());
+          yes.addEventListener("click", async () => {
+            yes.disabled = no.disabled = true;
+            try { await db.doc("apps/" + a.id).delete(); if (editing === a.id) closeAppForm(); }
+            catch (err) { yes.disabled = no.disabled = false; box.append(el("p", { class: "problem", text: "That didn't save: " + (err && err.message || err) })); }
+          });
+          c.append(box);
+        });
+        acts.append(edit, remove);
+      }
+      c.append(acts);
+      return c;
+    };
+    const list = boardApps();
+    if (!db) host.replaceChildren(el("div", { class: "empty", text: "The app list shows here once the page can reach it." }));
+    else if (!appsLoaded) host.replaceChildren(el("div", { class: "empty", text: "Loading apps…" }));
+    else if (!list.length) host.replaceChildren(el("div", { class: "empty", text: canEdit ? "No apps yet. Add the first one below." : "No apps yet." }));
+    else host.replaceChildren(...list.map(card));
+  };
+
+  const watchReports = () => {
+    if (reportsWatched || !db) { renderBoard(); return; }
+    reportsWatched = true;
+    db.collection("reports").orderBy("filedAt", "desc").limit(500).onSnapshot((snap) => {
+      reached = true;
+      allReports = snap.docs.map((d) => d.data()); renderBoard(); renderApps();
+    }, (err) => { console.warn("board", err); reached = false; $("#dbState").hidden = false; renderBoard(); });
+  };
+
+  setKind("bug");
+  showView(view);
+
+  (async () => {
+    // Opened anywhere but a published Claude page, there is no `claude`:
+    // the page still draws, and says it can't reach the reports.
+    try {
+      if (typeof claude === "undefined" || !claude || typeof claude.use !== "function") throw new Error("no Claude runtime");
+      const [d, a, u] = await Promise.all([claude.use("db"), claude.use("artifact"), claude.use("user").catch(() => null)]);
+      db = d; artifact = a;
+      // Without the user capability the page can't tell, and the store's
+      // own rules decide, as they do for Approve and Decline.
+      if (u) canEdit = Boolean(await u.canEdit());
+    } catch (err) { console.warn("runtime", err && err.message); }
+    if (!db) { reached = false; $("#dbState").hidden = false; renderBoard(); renderApps(); return; }
     db.collection("apps").orderBy("name").onSnapshot((snap) => {
       apps = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      if (isBoard) fillFilters(); else fillAppPicker();
+      appsLoaded = true;
+      fillAppPicker(); renderBoard(); renderApps();
     }, (err) => console.warn("apps", err));
-    if (isBoard) {
-      db.collection("reports").orderBy("filedAt", "desc").limit(500).onSnapshot((snap) => {
-        allReports = snap.docs.map((d) => d.data()); renderBoard();
-      }, (err) => { console.warn("board", err); $("#dbState").hidden = false; });
-    }
+    if (view === "board") watchReports();
   })();
 })();
 </script>

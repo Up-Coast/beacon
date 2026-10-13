@@ -1,6 +1,6 @@
 # Beacon documentation
 
-*Last updated: 2026-10-07*
+*Last updated: 2026-10-13*
 
 Beacon puts a report button in your macOS or iOS app. Testers use it to send bugs, feature requests and feedback, and a Claude session works each report by a written triage policy.
 
@@ -33,7 +33,7 @@ Choose one per app. Every account, token and page involved is yours.
 | **Testers report from** | The Beacon page, opened by the button in your app | The in-app sheet, the Beacon page, or both | The in-app sheet |
 | **Testers need** | Access to your Beacon page | For the sheet, a GitHub account with access to the repository. For the page, access to the page. | Nothing. They never see GitHub |
 | **A report carries** | App and device details from the link, plus what the tester writes and the images they add | From the sheet, also the app's log, settings, folder layout, screenshots, a screen recording and files | The same as the sheet on the GitHub path, and a way to reach the tester if they leave one |
-| **The board** | Included | Optional | Optional |
+| **The dashboard** | Included | Optional | Optional |
 | **Setup** | [Setup: the Claude-only path](setup-claude-only.md) | [Setup: the GitHub path](setup-github.md) | [Setup: the relay](setup-relay.md) |
 
 [Options](options.md#choose-how-reports-reach-you) compares the GitHub path and the relay in more detail.
@@ -45,7 +45,7 @@ On every path a Claude session picks reports up, works them by [the triage polic
 1. Set up a path: [Claude-only](setup-claude-only.md), [GitHub](setup-github.md) or [the relay](setup-relay.md).
 2. Put the button in your app: [Quickstart](quickstart.md).
 3. Send the testers [For testers](for-testers.md).
-4. Watch reports arrive on [the board](the-board.md).
+4. Watch reports arrive on [the dashboard](the-board.md). One dashboard serves every app.
 
 ## Pages
 
@@ -57,7 +57,7 @@ On every path a Claude session picks reports up, works them by [the triage polic
 | [Setup: the relay](setup-relay.md) | You track work in GitHub, and the people reporting have no GitHub account. |
 | [Setup: a website](setup-web.md) | You want the Report a problem button on a website or web app. |
 | [How it works](how-it-works.md) | You want to know what happens after a tester presses send. |
-| [The board](the-board.md) | You want to see every report and its outcome. |
+| [The dashboard](the-board.md) | You want to see every report from every app, and its outcome, or add an app. |
 | [What happens to a report](what-happens-to-a-report.md) | You want to know what Claude does with a report, and what it never does. |
 | [What is collected](what-is-collected.md) | You need to tell testers what a report contains. |
 | [Options](options.md) | You want every configuration field, transport and flag. |

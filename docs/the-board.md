@@ -1,35 +1,119 @@
-# The board
+# The dashboard
 
-*Last updated: 2026-10-06*
+*Last updated: 2026-10-13*
 
-The board lists every report from every app on your Beacon page, and what happened to each. The pickup writes the outcomes. The one thing you write is your decision on work that waits on a person.
+The dashboard is where the owner reads every report from every app on the Beacon page, and what happened to each. One page serves all your apps: each app has its own tab, with its own counts. The pickup writes the outcomes. The one thing you write is your decision on work that waits on a person.
 
 ## Open it
 
-Add `?view=board` to your Beacon page's link:
+Open your Beacon page link. The page opens on the dashboard:
 
 ```text
-https://claude.ai/code/artifact/…?view=board
+https://claude.ai/code/artifact/…
 ```
 
-The same page without `?view=board` is the report form. The board updates live, newest report first, and shows the latest 500.
+The bar at the top of the page switches between three views:
+
+| View | What it is |
+|---|---|
+| **Reports** | The dashboard. |
+| **Send a report** | The report form testers fill in. |
+| **Apps** | The list of apps the page collects reports for. See [Add and change apps](#add-and-change-apps). |
+
+The switch works inside the page, so it works however the link was opened. A link from the Beacon button inside an app opens the form instead, because it carries the app's name and details. To send someone straight to the form from a plain link, add `?view=form`. `?view=board` opens the dashboard, as the plain link does.
+
+The dashboard updates live, newest report first, and shows the latest 500.
+
+![The dashboard showing all apps: a tab per app, four counts, the filters, and the reports that wait on a decision listed first](assets/page-dashboard.png)
+
+The dashboard, the Apps view and the form in these pictures show made-up sample apps and reports.
+
+## Set up the dashboard from scratch
+
+1. **Publish the page.** In Claude Code, in your Beacon checkout, ask Claude to publish `Inbox/index.html` as an artifact with the `db` and `artifact` capabilities. Keep the link. [Setup: the Claude-only path](setup-claude-only.md) step 2 has the exact request.
+2. **Open the link.** The page opens on the dashboard. With no apps yet, it shows **No apps yet**.
+3. **Add your first app.** Click **Add your first app**, fill in the name, platform and where its reports are worked, and click **Save the app**. The fields are under [Add and change apps](#add-and-change-apps).
+4. **Share the page** with each tester, with edit access, from the page's share menu.
+5. **Point the app at the page.** Put the Beacon button in the app with the page link ([Quickstart](quickstart.md) steps 1 to 3). The button opens the page's form with the app chosen and its version, build and device filled in.
+6. **Send a test report** from the app, then click **Reports**. The report is on the dashboard under the app's tab.
+
+Where each way of reporting sends people:
+
+| How the tester reports | Where they go | Where the report lands |
+|---|---|---|
+| The Beacon button in a Mac or iPhone app (`BeaconInboxButton`) | This page's form, with the app chosen | This page. The pickup works it here, or files it as a GitHub issue when the app's reports are worked as GitHub issues. Either way it stays on the dashboard with its outcome. |
+| The in-app report sheet (`BeaconSheet`) | A sheet inside the app | A GitHub issue in the app's repository, directly or through the [relay](setup-relay.md). It does not reach this page. |
+| The web sheet on a website | A sheet on the site | A GitHub issue through the relay ([Setup: a website](setup-web.md)). It does not reach this page. |
+| The page link, opened plainly | The dashboard. **Send a report** opens the form, where the tester picks the app. | This page. |
+
+## Run several projects on one dashboard
+
+One page serves every app. There is no page per project.
+
+1. Add each app in the **Apps** view: one entry per app, each with its own short id. A Mac app and its iPhone version can be one app or two; two gives each its own tab.
+2. Use the same page link in every app's Beacon button. The link from each app names the app, so its reports land under its own tab.
+3. Choose, per app, where its reports are worked:
+    - **On this page.** The pickup works the report on the page. The dashboard is the whole record.
+    - **As GitHub issues.** The pickup files each page report as an issue in the app's repository, then writes the outcome back onto the report, so it shows on the dashboard like any other. Reports that the in-app or web sheet files straight to GitHub stay in GitHub; the app's tab says so and links to its issues.
+4. Read everything under **All apps**, or one app at a time with its tab. Each tab's number counts that app's reports waiting on your decision, and the four counts follow the tab you choose.
+
+The pickup reads the same app list, so it knows each app's repository, folder and where its reports are worked. Adding an app needs no republish and no change to the pickup.
+
+## Choose an app
+
+The tabs under the heading are **All apps**, then one tab per app in the app list, with its platform: macOS, iOS, Web or Other. A number on a tab counts that app's reports waiting on your decision. The page remembers the tab you chose on this browser. A link with `?app=<id or name>` and nothing else opens on that app's tab.
+
+A report whose app is not in the app list still shows, under a tab with a dashed border named after the app on the report. This happens when an app is removed from the list, or when a report names an app the list never had. That tab offers **Add this app**, which opens the Apps view with the name, id, platform and repository filled in from the report.
+
+An app whose reports are worked as GitHub issues sends nothing to this page from its in-app sheet or website. Its tab says so and links to its issues.
+
+## Read the counts
+
+Four counts sit under the tabs, for the selected app or for all apps:
+
+| Count | Reports counted |
+|---|---|
+| **Waiting on you** | Reports that wait on your decision: the pickup stopped on them and nobody has approved or declined them. Feedback is never counted here. |
+| **Received** | Sent, not yet picked up. |
+| **In progress** | Filed, being looked at, or approved and waiting for the next run. |
+| **Fixed** | Fixed, proven and merged. |
+
+Click a count to show only those reports. Click it again to show everything.
 
 ## Read a row
 
-Each row shows the report's title, its status, and one line with the reference, kind, app and version, who sent it, when, and how many images it has.
+Reports that wait on your decision come first, under **Waiting on your decision**, each marked **Your decision**. Everything else follows.
+
+Each row shows an impact icon, the report's title, its status, and one line with the reference, kind, app and version, who sent it, when, and how many images it has.
 
 Open a row to see the whole report:
 
+![A report that waits on a decision, opened: the Your decision box with Approve the fix and Decline, then the facts and the tester's words](assets/page-decision.png)
+
 | Part | What it shows |
 |---|---|
-| **Facts** | Impact, reporter, app with version and build, commit, operating system and device, language and time zone, appearance and text size, area, when it was filed, repository, and the fixing commit. |
-| **The tester's words** | For a bug: what they expected, what happened, the steps, and whether it happens again. For a request: what they want and why. For anything else: their message. |
+| **Your decision** | Approve and Decline, on a report that waits on you. Your decision, once made. |
+| **Facts** | Impact, reporter, app with version and build, platform, commit, operating system and device, language and time zone, appearance and text size, area, when it was filed, repository, and the fixing commit. |
+| **The tester's words** | For a bug: what they expected, what happened, the steps, and whether it happens again. For a request: what they want, what makes it hard, and their idea. For a change request: what to change, what instead, and why. For anything else: their message. |
 | **Finding** | The verdict, what the product is supposed to do, and where in the source that is written down. |
 | **Triage note** | Two to four sentences from the pickup, written for you: what it found and what happens next. |
 | **Issue** | A link to the GitHub issue, once the report is filed. |
 | **Images** | Loaded when you open the row. |
 
 A part with nothing in it is left out. What each status means is in [How it works](how-it-works.md#statuses).
+
+## Impact
+
+Every report carries the tester's answer to "How much is this affecting you?". The dashboard shows it as an icon before the title, and again with its wording under **Impact** when the row is open. Each level has its own shape, so the icons differ without colour. Hover over an icon to read its wording.
+
+| Icon | Impact | The tester's answer |
+|---|---|---|
+| A red stop sign | `blocked` | I can't do what I came to do |
+| An amber warning triangle | `slowed` | I found a way around it, but it costs me time |
+| An outlined circle with an exclamation mark | `irritating` | It bothers me, but I can keep working |
+| A small open circle | `noticed` | I noticed it — it doesn't really affect me |
+
+To see the worst first, choose **Highest impact first** in the order menu. To see one level only, choose it in the impact menu.
 
 ## Approve or decline
 
@@ -44,17 +128,45 @@ Anyone who can edit the page can click these, so share edit access only with peo
 
 | Filter | Choices |
 |---|---|
-| App | Every app, or one app from the page's app list. |
+| App | The tabs. |
 | Status | Every status, or one status. |
-| Kind | Every kind, Bugs, Requests or Feedback. |
+| Kind | Every kind, Bugs, Requests, Change requests or Feedback. |
+| Impact | Every impact, or one level. |
+| Order | Newest first, or Highest impact first. Within a level, newest first. |
 | Search words | Matches the title, the tester's words, the reporter, the area and the reference. |
 
-The count shows how many reports match, out of the total.
+The count beside the search box shows how many reports match, out of the selected app's total.
+
+## Add and change apps
+
+The **Apps** view lists every app the page collects reports for, and how many reports each has on the page. No database editing and no republish is needed.
+
+![The Apps view: one card per app with Change and Remove, a dashed card for an app that is not in the list with Add this app, and the Add an app button](assets/page-apps.png)
+
+1. Click **Apps** in the bar at the top, then **Add an app**.
+2. Fill in the fields and click **Save the app**.
+
+| Field | What it is |
+|---|---|
+| **Name** | What testers see in the app picker. Required. |
+| **Short id** | Lowercase letters, numbers and single hyphens, such as `harbour`. Filled in from the name. Reports carry it, and the link's `app` key can name it. It cannot be changed once the app is saved. |
+| **Platform** | macOS, iOS, Web or Other. |
+| **Where reports are worked** | **On this page**: the pickup works each report on the page, and the dashboard is the whole tracker. **As GitHub issues**: the pickup files each report as an issue in the repository. |
+| **Repository** | `owner/name`. Required when reports are worked as GitHub issues. |
+| **Folder** | Where the app's source is, relative to the code folder the pickup works in. Optional. |
+
+**Change** opens the same fields for an app. **Remove** asks first, and says how many reports the app has. Removing an app never deletes its reports: they stay on the dashboard under the app's name, and testers can no longer pick it.
+
+When the page has no apps yet, the dashboard says so and offers **Add your first app**.
+
+![The dashboard before any app is added: No apps yet, and the Add your first app button](assets/page-first-run.png)
+
+Only people who can edit the page can add, change or remove apps. Anyone else sees the list without the buttons.
 
 ## Who can see it
 
-Anyone who can open your Beacon page can add `?view=board` and see every report. The form alone never shows other people's reports.
+Anyone who can open your Beacon page can open the dashboard and see every report. The form never shows other people's reports.
 
-## Apps tracked on the board only
+## Apps tracked on the dashboard only
 
-An app whose `tracker` is `board` has no GitHub repository. Its reports are never filed anywhere else. The pickup works each one on the page and writes the outcome here, so the board is the whole tracker. [Options](options.md) describes the app list.
+An app whose reports are worked on this page has no GitHub repository behind it. Its reports are never filed anywhere else. The pickup works each one on the page and writes the outcome here, so the dashboard is the whole tracker. In the app list this is `tracker: "board"`. [Options](options.md#the-app-list-on-the-page) describes every field.

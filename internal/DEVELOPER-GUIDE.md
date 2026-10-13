@@ -1,6 +1,6 @@
 # Developer guide
 
-*Last updated: 2026-10-07*
+*Last updated: 2026-10-13*
 
 The technical reference for changing Beacon itself: the Swift package, the page, the pickup and the workflows. To add Beacon to an app, read [the options reference](../docs/options.md) and [GitHub setup](../docs/setup-github.md) instead. What Beacon collects is in [What is collected](../docs/what-is-collected.md), and testers have [their own page](../docs/for-testers.md). What is proven and what is not is in [STATUS.md](STATUS.md).
 
@@ -147,8 +147,19 @@ The sheet sweeps attachments first, then the rendered issue body. The done scree
 
 ### Views
 
-- **Tester view** (default): the form, then a receipt with the reference. It never shows other reports.
-- **Board** (`?view=board`): every report, newest first, with filters for app, status and kind, and a text search. Each report expands to the full record. Images load the first time a report is opened. The board sets the document title to "Beacon reports".
+The page has three views, switched in the page by the bar at the top (`showView`), with no reliance on the outer URL:
+
+- **Dashboard** (`board`, the default): every report, newest first. One tab per app in `apps`, plus a dashed tab for each `app.id` that reports carry and `apps` does not (`boardApps()`), each with the count of reports waiting on the owner. Four counts for the selected tab (`GROUPS`: waiting on the owner, received, in progress, fixed), each a filter when clicked. Filters for status, kind and impact, an order (newest or highest impact first), and a text search. Reports where `waitsOnOwner(r)` is true (status in `DECIDABLE`, no `approval`, not feedback) are listed first. Each report expands to the full record; open rows stay open across live updates. Images load the first time a report is opened. The document title is "Beacon reports". The selected tab is kept in `localStorage` under `beacon.page.app`.
+- **Form** (`form`): the form, then a receipt with the reference. It never shows other reports. The document title is "Beacon".
+- **Apps** (`apps`): the app list, with add, change and remove. The document title is "Beacon apps".
+
+Which view a link opens: `view=form` or `view=board` decide outright. Otherwise a link with `app` plus any of `version`, `build`, `bundle`, `commit`, `repo`, `os`, `osVersion`, `device` or `arch` (`APP_DETAIL_KEYS`) opens the form, because `BeaconInbox.url` always adds some of those. Every other link opens the dashboard; `app` alone selects that app's tab. A receipt kept in `sessionStorage` across the doorbell's reload reopens the form unless the link says `view=board`.
+
+The reports subscription starts the first time the dashboard or Apps view is shown, so a tester who only uses the form never loads every report.
+
+**The app list.** Saving writes `apps/<id>` with `set`, keeping any field the page does not know from the existing document, and leaves out an empty `repository` or `folder`. The id is checked against `^[a-z0-9]+(?:-[a-z0-9]+)*$` (at most 40 characters) and must be unused; it cannot change after the first save. `repository` must look like `owner/name` and is required when `tracker` is `github`; `folder` may not start with `/` or contain `..`. Removing deletes `apps/<id>` only, after an inline confirmation that counts the app's reports; the reports are never touched. The add, change and remove controls show only when `claude.use("user")` resolves and `canEdit()` is true; when the namespace is `null`, the page leaves the decision to the store's own rules, as it does for Approve and Decline.
+
+**Impact.** Each row and the opened report show an inline SVG per impact level (`IMPACT_ICON`): a filled stop sign for `blocked`, a filled triangle for `slowed`, an outlined circle with a bar for `irritating`, a small open circle for `noticed`. Each is a `role="img"` span whose `aria-label` and `title` are the impact wording.
 
 ### Query keys
 
@@ -156,9 +167,19 @@ The page reads these keys from the link, and `BeaconInbox.Key` in `InboxLink.swi
 
 `app` `bundle` `version` `build` `commit` `repo` `os` `osVersion` `device` `arch` `locale` `tz` `appearance` `textSize` `reporter` `area`
 
-They fill the page's `ctx` object, except `app`, which picks the app, and `reporter` and `area`, which fill form fields. A missing `locale` falls back to the browser language and a missing `tz` to the browser time zone. `view=board` is read only by the page. `BeaconInbox.url` leaves out empty values and keeps any query the page URL already had. `InboxLinkTests.everyKeyIsOneThePageReads` compares `BeaconInbox.Key` against a list copied from the page, so add a new key to the page, the enum and that list together.
+They fill the page's `ctx` object, except `app`, which picks the app, and `reporter` and `area`, which fill form fields. A missing `locale` falls back to the browser language and a missing `tz` to the browser time zone. `view` is read only by the page. `BeaconInbox.url` leaves out empty values and keeps any query the page URL already had. `InboxLinkTests.everyKeyIsOneThePageReads` compares `BeaconInbox.Key` against a list copied from the page, so add a new key to the page, the enum and that list together.
 
 `app` matches an app by id or by name, case-insensitively. When the link also carries `version`, the app picker is locked.
+
+### Screenshots of the page
+
+The pictures of the page in the documentation (`docs/assets/page-*.png`) are taken from `Inbox/index.html` with made-up sample data. To retake them after a visible change:
+
+```bash
+Scripts/page-screenshots/take.sh
+```
+
+It needs Google Chrome in `/Applications` and `python3`. It copies the page into a temporary folder behind `Scripts/page-screenshots/stand-in.js`, serves it on `127.0.0.1:8737`, and saves each view with headless Chrome in light mode. `stand-in.js` answers `claude.use("db")`, `use("artifact")` and `use("user")` from memory, with sample apps and reports whose names and words are invented. Its `?shot=` parameter picks the state: `dashboard`, `decision` (a report waiting on a decision, opened), `apps`, `first-run` and `form`. The stand-in is never part of the published page. Sample data stays made up: no real people, apps or report text.
 
 ### Storage
 
@@ -186,7 +207,7 @@ reports/<BN-reference>/attachments/<n>    one document per image, n from 1
   originalByteCount, reference, order
 ```
 
-The page reads `name`, `repository` and `platform` from `apps`. Only the pickup reads `folder` and `tracker`. The page's reference is `BN-` plus 3 random bytes in uppercase hex, so it has the same form as the sheet's reference.
+The page reads `name`, `repository`, `platform` and `tracker` from `apps`, and writes all five fields from its Apps view. The pickup reads `folder` and `tracker`. The page's reference is `BN-` plus 3 random bytes in uppercase hex, so it has the same form as the sheet's reference.
 
 The page knows these status values (its `STATUS` map): `new`, `filed`, `triaging`, `auto-fixed`, `needs-human`, `needs-info`, `cannot-reproduce`, `working-as-intended`, `expectation-mismatch`, `triaged`. Any other value renders as a grey pill showing the raw value. The board wording for each is in [How it works](../docs/how-it-works.md).
 
@@ -210,7 +231,8 @@ If the publish is refused (`not_writer`, `capability_disabled` or another code),
 - An artifact that declares `db` is organization-internal. Every reader and writer is a signed-in member of the owner's Claude organization, and it cannot be shared publicly.
 - By default only viewers with "Can interact" or higher write shared documents. A view-only viewer cannot send a report.
 - Publishing a version needs "Can edit". A tester with "Can interact" can send, but the doorbell is refused with `not_writer`.
-- The board subscribes with `onSnapshot` to `reports`, ordered by `filedAt` descending, limit 500. Both views subscribe to `apps`, ordered by `name`.
+- The dashboard subscribes with `onSnapshot` to `reports`, ordered by `filedAt` descending, limit 500. The page subscribes to `apps`, ordered by `name`, in every view.
+- `claude.use("user")` is asked for `canEdit()` only; nothing is declared for it.
 
 ## The pickup
 
@@ -394,8 +416,8 @@ How it builds the map:
 ## Operating the page
 
 - **Republish** after any change to `Inbox/index.html`: call the Artifact tool with `file_path` set to the file and `url` set to the artifact. Omit `capabilities` so `db` and `artifact` carry forward, and omit `favicon` so it keeps its icon.
-- **Add an app**: one `write_db` set on `apps/<id>` with `name`, `platform`, `repository`, `folder` and `tracker`. No republish is needed; both views read `apps` live.
-- **Move an app off GitHub**: `write_db` update `apps/<id>` with `tracker: "board"`.
+- **Add an app**: the page's **Apps** view. From a Claude session, the same write is one `write_db` set on `apps/<id>` with `name`, `platform`, `repository`, `folder` and `tracker`. No republish is needed; the page reads `apps` live.
+- **Move an app off GitHub**: **Change** in the Apps view, then **On this page**. From a Claude session, `write_db` update `apps/<id>` with `tracker: "board"`.
 - **Create labels** on a repository: `Scripts/beacon-labels.sh <owner/repo>`, with `gh` signed in.
 - **Give a tester access**: share the artifact with "Can edit" so the doorbell publishes. "Can interact" can send, and a scheduled pickup finds the report.
 - **Inspect the store** from a session: `read_db` list `reports`, get `reports/<ref>`, or list `reports/<ref>/attachments` with an `out_dir`.

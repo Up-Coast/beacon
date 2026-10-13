@@ -1,6 +1,6 @@
 # FAQ
 
-*Last updated: 2026-10-06*
+*Last updated: 2026-10-13*
 
 **Do my testers need an account?**
 
@@ -8,11 +8,11 @@ For the Beacon page, yes: a Claude account in the organization that owns the pag
 
 **Can one page serve several apps?**
 
-Yes. Every app is a row in the page's app list, the link from each app selects it, and the board filters by app. See [Options](options.md).
+Yes. Every app is an entry in the page's app list, which you change in the page's **Apps** view. The link from each app selects it, and the dashboard has a tab per app. See [The dashboard](the-board.md#run-several-projects-on-one-dashboard).
 
 **Does the tester hear back?**
 
-No. Triage never writes to a tester. The tester gets a reference and is done, and every outcome is written onto the report on your [board](the-board.md) and onto the issue. If a report leaves a question open, triage records the question there for you to ask, or not.
+No. Triage never writes to a tester. The tester gets a reference and is done, and every outcome is written onto the report on your [dashboard](the-board.md) and onto the issue. If a report leaves a question open, triage records the question there for you to ask, or not.
 
 **What if the same thing is reported twice?**
 
@@ -44,8 +44,8 @@ Yes. The same package and the same call work on macOS and iOS. [What is collecte
 
 **Can a tester see other testers' reports?**
 
-Not on the form. Anyone who can open the page can open the board by adding `?view=board`. See [The board](the-board.md).
+Not on the form. But the page opens on the dashboard, so anyone who can open the page can see every report. See [The dashboard](the-board.md#who-can-see-it).
 
 **What does the reference look like?**
 
-`BN-` followed by six characters, such as `BN-8EA6C3`, made when the report is sent. It is on the tester's receipt, on the board, and in the page's record of the report.
+`BN-` followed by six characters, such as `BN-8EA6C3`, made when the report is sent. It is on the tester's receipt, on the dashboard, and in the page's record of the report.

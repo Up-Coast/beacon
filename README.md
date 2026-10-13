@@ -2,7 +2,7 @@
 
 # Beacon
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-13*
 
 Beacon is bug, feature-request and feedback reporting for macOS 26 and iOS 26 apps, and for websites. A tester presses a button in your app, and the report arrives with the app version, build, device and, from the in-app sheet, the app's log, screenshots and a screen recording. A Claude session then works each report by a written triage policy: it reproduces it, fixes what is small, and explains the rest.
 
@@ -53,7 +53,7 @@ The [Quickstart](docs/quickstart.md) has the full steps. The two setup paths, Cl
 |---|---|
 | `Sources/` | The Swift package: `BeaconCore`, `BeaconDiagnostics`, `BeaconIntelligence`, `BeaconCapture`, `BeaconGitHub`, `BeaconUI`, the `Beacon` library your app imports, and the `beacon-index` command-line tool. |
 | `Tests/` | The package's tests. |
-| `Inbox/` | The Beacon page: a Claude artifact testers report through, with the board. See [Inbox/README.md](Inbox/README.md). |
+| `Inbox/` | The Beacon page: a Claude artifact with the owner's dashboard for every app, the report form testers use, and the app list. See [Inbox/README.md](Inbox/README.md). |
 | `Web/` | Beacon for websites: the Report a problem button and sheet, with its tests and built files. See [Web/README.md](Web/README.md). |
 | `Triage/` | The triage policy and the pickup prompt. |
 | `Scripts/` | `beacon-adopt-github.sh`, which puts the GitHub pieces into an app's repository, and `beacon-labels.sh`, which creates the labels. |
@@ -72,7 +72,7 @@ The [Quickstart](docs/quickstart.md) has the full steps. The two setup paths, Cl
 | [Setup: the Claude-only path](docs/setup-claude-only.md) | You have a Claude organization and do not use GitHub. |
 | [Setup: the GitHub path](docs/setup-github.md) | You track work in GitHub and want issues and the in-app sheet. |
 | [How it works](docs/how-it-works.md) | You want to know what happens after a tester presses send. |
-| [The board](docs/the-board.md) | You want to see every report and its outcome. |
+| [The dashboard](docs/the-board.md) | You want to see every report from every app, and its outcome. |
 | [What happens to a report](docs/what-happens-to-a-report.md) | You want to know what Claude does with a report, and what it never does. |
 | [What is collected](docs/what-is-collected.md) | You need to tell testers what a report contains. |
 | [Setup: a website](docs/setup-web.md) | You want the button on a website or web app. |

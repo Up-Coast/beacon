@@ -34,7 +34,7 @@ they win wherever the two seem to differ.
 Ask, in one message, unless the answer is already clear from what they said:
 
 - **Do they track work in GitHub?** No GitHub → the **Claude-only path**
-  (`docs/setup-claude-only.md`): reports go to a page they own, and the board
+  (`docs/setup-claude-only.md`): reports go to a page they own, and its dashboard
   is the whole tracker. Yes → ask who reports. Developers or a team with
   GitHub accounts → the **GitHub path** (`docs/setup-github.md`): reporters
   sign in with GitHub, reports become labelled issues, and the page is
@@ -56,8 +56,11 @@ Follow the numbered steps of the chosen setup page exactly. In outline:
    the `db` and `artifact` capabilities and the favicon 🎇. Load the
    `artifact-capabilities` skill first if it is available. The link it gives
    back is their Beacon page; tell them to keep it.
-2. Seed the `apps` collection with one document per app: `id`, `name`,
-   `platform`, `folder`, `tracker: "board"`.
+2. Have them open the page link and add each app in the page's **Apps**
+   view (**Add your first app** on an empty page): name, platform, folder,
+   and **On this page** for where reports are worked. If they would rather
+   you did it, write one `apps/<id>` document per app with `name`,
+   `platform`, `folder` and `tracker: "board"`.
 3. Put the button in the app (`docs/quickstart.md`, steps 1 to 3).
 4. Set up the pickup (below).
 
@@ -93,7 +96,7 @@ App and one secret — both theirs to add; say so and point at the setup page.
 ## 3. Prove it
 
 Build the app, press the button, send a test report, and show them where it
-landed: the board at their page link plus `?view=board`, or the issue in
+landed: the dashboard at their page link (it opens there), or the issue in
 their repository. A setup that has not filed one report is not finished.
 
 ## Never

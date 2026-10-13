@@ -1,6 +1,6 @@
 # Reporting something, if you're testing an app
 
-*Last updated: 2026-10-07*
+*Last updated: 2026-10-13*
 
 Use the report button inside the app. It fills in your app version, your device and more, so you only write the part only you know. You don't need to be technical, just specific.
 
@@ -9,10 +9,14 @@ The button opens one of two things, depending on the app.
 ## If it opens a web page
 
 1. Sign in to Claude if the page asks. You need to be a member of the team's Claude organization.
-2. Check **Who you are**. It is your name or email, so your report is not anonymous and the team can reach you if they choose to.
-3. Choose **Something's broken**, **Something's missing** or **Something else**, and fill in the form.
-4. Add images if you have them. You can add up to 6. On a Mac you can also paste an image straight into the page.
-5. Press **Send report**.
+2. Choose **Something's broken**, **Something's missing**, **Change request** or **Something else**, and fill in the form. The app is already chosen.
+3. Under **Anything to show us?**, add images if you have them. You can add up to 6. On a Mac you can also paste an image straight into the page.
+4. Fill in **Who you are**: your name or email. Your report is not anonymous, and the team can reach you if they choose to.
+5. Press **Send**. The page shows your reference.
+
+![The Beacon page's report form on a phone, opened from an app: the app's version and device at the top, then the four kinds of report](assets/page-form-phone.png)
+
+If someone sends you the page link itself, it opens on the team's dashboard of reports. Click **Send a report** at the top to get the form, and choose the app.
 
 ## If it opens a form inside the app
 

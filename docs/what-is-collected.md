@@ -1,6 +1,6 @@
 # What is collected
 
-*Last updated: 2026-10-07*
+*Last updated: 2026-10-13*
 
 A report reaches your team one of two ways: the Beacon page, a web page the app opens with a link, or the in-app sheet that the GitHub and relay setups add. This page lists what each one carries, what neither collects, and where a report goes. Use it to tell your testers what a report contains.
 
@@ -54,7 +54,7 @@ The page adds the browser's user agent to every report. When the link has no lan
 2. The page publishes a new version of its `data/doorbell.json` file holding the reference and the time. This wakes a Claude session that is watching the page.
 3. The pickup (`Triage/PICKUP.md`) reads new reports. For an app whose `tracker` is `github`, it files a GitHub issue and commits the images to the repository's `beacon-attachments` branch under `.beacon/attachments/<reference>/`. For an app whose `tracker` is `board`, the report is worked on the page and stays there.
 
-The page only works for someone signed in to Claude as a member of the organization that owns it. Anyone who can open the page can open its board (`?view=board`), which lists every report with its words and images.
+The page only works for someone signed in to Claude as a member of the organization that owns it. Anyone who can open the page sees its dashboard, which lists every report with its words and images.
 
 ## The in-app sheet
 

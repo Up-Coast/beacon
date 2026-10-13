@@ -1,6 +1,6 @@
 # Options
 
-*Last updated: 2026-10-07*
+*Last updated: 2026-10-13*
 
 Every setting Beacon reads, and where it is set.
 
@@ -327,20 +327,20 @@ The page reads these keys. A value that is empty is left out of the link.
 | `reporter` | `Name <accountID>`, or `accountID` alone when there is no display name |
 | `area` | The `area` argument |
 
-Add `view=board` to your page link to open the board instead of the form.
+A link that carries `app` and any of `version`, `build`, `bundle`, `commit`, `repo`, `os`, `osVersion`, `device` or `arch` opens the form; every link `BeaconInbox.url` builds does. Any other link opens the dashboard. Add `view=form` to open the form from a plain link, or `view=board` to open the dashboard from any link.
 
 ## The app list on the page
 
-The Beacon page reads its apps from the `apps` collection in the page's database. Each app is one document. Ask the Claude session that published the page to add or change a document. The page needs no republish.
+The Beacon page keeps its apps in the `apps` collection in the page's database, one document per app. Add, change and remove apps in the page's **Apps** view ([The dashboard](the-board.md#add-and-change-apps)). The page needs no republish. Removing an app leaves its reports on the dashboard.
 
 | Field | Read by | What it is |
 |---|---|---|
-| Document id | Page, pickup | The app's short id, such as `harbour`. The link's `app` key can match it. Reports carry it as `app.id`. |
-| `name` | Page | The name testers see in the app picker. The picker lists apps in `name` order. |
-| `platform` | Page | `macOS` or `iOS`. Copied onto each report. |
-| `repository` | Page, pickup | `owner/name` of the repository where issues are filed and fixes are made. |
+| Document id | Page, pickup | The app's short id, such as `harbour`: lowercase letters, numbers and single hyphens. The link's `app` key can match it. Reports carry it as `app.id`. It cannot be changed after the app is saved. |
+| `name` | Page | The name testers see in the app picker, and the app's tab on the dashboard. Apps are listed in `name` order. |
+| `platform` | Page | `macOS`, `iOS`, `Web` or `Other`. Shown on the app's tab and copied onto each report. |
+| `repository` | Page, pickup | `owner/name` of the repository where issues are filed and fixes are made. Required when `tracker` is `github`. |
 | `folder` | Pickup | Where the app's source is, relative to the `CODE_ROOT` value in the pickup prompt. |
-| `tracker` | Pickup | `github`: the pickup files each report as an issue and works the issue. `board`: the pickup works the report on the page, and the board is the whole tracker. |
+| `tracker` | Pickup | `github`: the pickup files each report as an issue and works the issue. `board`: the pickup works the report on the page, and the dashboard is the whole tracker. In the Apps view these are **As GitHub issues** and **On this page**. |
 
 The page itself needs the `db` and `artifact` capabilities when it is published. See [Setup: the Claude-only path](setup-claude-only.md) step 2.
 

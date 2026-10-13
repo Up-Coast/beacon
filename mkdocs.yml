@@ -71,7 +71,7 @@ nav:
       - For testers: docs/for-testers.md
   - Using Beacon:
       - How it works: docs/how-it-works.md
-      - The board: docs/the-board.md
+      - The dashboard: docs/the-board.md
       - What happens to a report: docs/what-happens-to-a-report.md
       - What is collected: docs/what-is-collected.md
       - Options: docs/options.md

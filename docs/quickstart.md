@@ -1,6 +1,6 @@
 # Quickstart
 
-*Last updated: 2026-10-07*
+*Last updated: 2026-10-13*
 
 Put a Beacon report button in your app and send a test report.
 
@@ -83,7 +83,7 @@ The button opens your Beacon page in the browser. The link already carries the a
 
 1. Build and run the app.
 2. Press **Report a problem** and send a report.
-3. Open [the board](the-board.md) and find the report.
+3. Open your page link. The report is on [the dashboard](the-board.md), under the app's tab.
 
 ## Next
 

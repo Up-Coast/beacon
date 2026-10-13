@@ -1,8 +1,8 @@
 # Setup: the GitHub path
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-13*
 
-Reports become labelled issues in your app's GitHub repository. The app files them itself through Beacon's in-app report sheet, under each tester's own GitHub account. A Claude session or a GitHub Actions workflow works the issues. The Beacon page and board are optional.
+Reports become labelled issues in your app's GitHub repository. The app files them itself through Beacon's in-app report sheet, under each tester's own GitHub account. A Claude session or a GitHub Actions workflow works the issues. The Beacon page and its dashboard are optional.
 
 You need admin access to the repository and the GitHub CLI, `gh`, signed in.
 
@@ -151,12 +151,12 @@ The sheet works the same on macOS and iOS. To sign testers in yourself instead, 
 
 ## 5. Optional: publish the Beacon page
 
-Publish the page if some testers have no GitHub account, or if you want one board with every report.
+Publish the page if some testers have no GitHub account, or if you want one dashboard with every app's page reports.
 
-1. Follow [Setup: the Claude-only path](setup-claude-only.md) step 2. Set each app's `tracker` to `github`, and set `repository` to its `owner/name`.
+1. Follow [Setup: the Claude-only path](setup-claude-only.md) step 2. In the page's **Apps** view, set each app to **As GitHub issues** and give its repository as `owner/name`.
 2. Put the Beacon button in the app as well ([Quickstart](quickstart.md) step 3).
 
-The pickup files page reports as issues in the same repository and format, and writes each outcome back to the board. Without the page, the whole queue lives in GitHub.
+The pickup files page reports as issues in the same repository and format, and writes each outcome back to the dashboard. Without the page, the whole queue lives in GitHub.
 
 ## 6. Tell your testers
 
@@ -167,5 +167,5 @@ Testers who use the Beacon page need to be signed-in members of your Claude orga
 
 ## Later
 
-- **Add an app.** Run the adoption script against its repository. The same OAuth App serves it.
+- **Add an app.** Run the adoption script against its repository. The same OAuth App serves it. If you use the Beacon page, add the app in its **Apps** view too.
 - **Update Beacon.** Run `git pull` in `~/beacon`, re-run the adoption script, and raise the package version in your app.

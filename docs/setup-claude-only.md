@@ -1,15 +1,15 @@
 # Setup: the Claude-only path
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-13*
 
-Reports go to a Beacon page that your Claude organization owns. A Claude session works them, and the board on the page is your whole tracker. No GitHub is needed.
+Reports go to a Beacon page that your Claude organization owns. A Claude session works them, and the dashboard on the page is your whole tracker, for every app you add. No GitHub is needed.
 
 You end up with:
 
 | Piece | What it is |
 |---|---|
-| Your Beacon page | A Claude artifact published from `Inbox/index.html`. Testers use its form. You use its board. |
-| Your app list | One entry per app, stored in the page's database. |
+| Your Beacon page | A Claude artifact published from `Inbox/index.html`. Testers use its form. You use its dashboard. |
+| Your app list | One entry per app, added in the page's **Apps** view. |
 | The Beacon button | In each app. It opens the page with the app's details filled in. |
 | The pickup | A Claude session or scheduled task that reads new reports and works them. |
 
@@ -29,14 +29,11 @@ To have Claude run this page for you instead, install the plugin. See [Getting B
     > Publish `Inbox/index.html` as an artifact with the `db` and `artifact` capabilities and the favicon 🎇.
 
 3. Keep the artifact link Claude gives you. It is your Beacon page link.
-4. Ask Claude to add one document per app to the page's `apps` collection, with `tracker` set to `board`. The example below shows one app.
-5. Share the page with each tester from the page's share menu, with edit access.
+4. Open the link. The page opens on the dashboard and says **No apps yet**.
+5. Click **Add your first app**. Fill in the app's name and platform, choose **On this page** under **Where reports are worked**, and give the folder its source lives in, relative to the code folder you give the pickup in step 4. Click **Save the app**. Add each other app the same way from **Apps**, **Add an app**.
+6. Share the page with each tester from the page's share menu, with edit access.
 
-| Document id | `name` | `platform` | `folder` | `tracker` |
-|---|---|---|---|---|
-| `harbour` | Harbour | `macOS` | `harbour` | `board` |
-
-`folder` is where the app's source lives, relative to the code folder you give the pickup in step 4. Every field is described in [Options](options.md#the-app-list-on-the-page).
+[The dashboard](the-board.md#add-and-change-apps) describes every field, and [Options](options.md#the-app-list-on-the-page) how the pickup reads them.
 
 A page with a database is internal to your Claude organization and cannot be shared publicly. Every tester must be a signed-in member of the organization. Testers need edit access because sending a report publishes a new version of the page, and that new version is what tells a watching Claude session a report arrived.
 
@@ -44,7 +41,7 @@ A page with a database is internal to your Claude organization and cannot be sha
 
 1. Follow [Quickstart](quickstart.md) steps 1 to 3, using your page link.
 2. Build the app, press the button and send a test report.
-3. Open your page link with `?view=board` added. The report is on the board.
+3. Open your page link. The report is on the dashboard, under the app's tab.
 
 ## 4. Set up the pickup
 
@@ -62,6 +59,6 @@ Send them [For testers](for-testers.md), and tell them where the button is in yo
 
 ## Later
 
-- **Add an app.** Ask Claude to add a document to the `apps` collection. The page needs no republish.
+- **Add an app.** Open the page, click **Apps**, then **Add an app**. The page needs no republish.
 - **Update Beacon.** Run `git pull` in `~/beacon`, then ask Claude to republish `Inbox/index.html` to the same artifact. Reports and the app list stay.
-- **Move an app to GitHub.** Follow [Setup: the GitHub path](setup-github.md), then change that app's `tracker` to `github`. The board keeps working.
+- **Move an app to GitHub.** Follow [Setup: the GitHub path](setup-github.md), then in **Apps**, click **Change** on the app, choose **As GitHub issues** and give its repository. The dashboard keeps working.
