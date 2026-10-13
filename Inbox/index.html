@@ -238,6 +238,8 @@
   .card .move select { flex: 1; width: auto; min-width: 0; min-height: 32px; padding: 4px 8px; font-size: 13px; background: var(--surface); }
   .grip { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-2); color: var(--ink-3); cursor: grab; touch-action: none; user-select: none; }
   .grip svg { width: 14px; height: 14px; }
+  .card.movable { cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  .card.movable .open { user-select: none; -webkit-user-select: none; }
   .card.dragging { opacity: .35; }
   .ghost { position: fixed; z-index: 1000; pointer-events: none; opacity: .95; transform: rotate(1.5deg); box-shadow: 0 16px 40px -12px rgba(17,24,39,.45); }
   .closed { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-top: 12px; }
@@ -1172,7 +1174,7 @@
   const card = (r) => {
     const moves = canMove() ? movesFor(r) : [];
     const title = el("button", { type: "button", class: "open", text: r.title || r.reference });
-    title.addEventListener("click", () => openReport(r.reference));
+    title.addEventListener("click", () => { if (suppressClick) { suppressClick = false; return; } openReport(r.reference); });
     const flag = waitsOnOwner(r) ? el("span", { class: "pill you", text: "Your decision" }) : null;
     const c = el("article", { class: "card" + (waitsOnOwner(r) ? " decide" : ""), "data-ref": r.reference },
       el("div", { class: "titleline" }, impactIcon(r.impact), title),
@@ -1181,6 +1183,13 @@
     if (moves.length) {
       const grip = el("span", { class: "grip", title: "Drag to move", "aria-hidden": "true" });
       grip.innerHTML = GRIP;
+      c.classList.add("movable");
+      // A mouse or pen drags the whole card. A finger drags by the grip, so
+      // a swipe anywhere else on a card still scrolls the page.
+      c.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "touch" || e.target.closest(".grip, select, a, textarea, input")) return;
+        startDrag(e, r, c, moves);
+      });
       grip.addEventListener("pointerdown", (e) => startDrag(e, r, c, moves));
       const menu = el("select", { "aria-label": `Move ${r.title || r.reference} to` },
         el("option", { value: "", text: "Move to…" }), ...moves.map((m) => el("option", { value: m.to, text: m.label })));
@@ -1207,20 +1216,21 @@
 
   // ---- Dragging a card: pointer events, so a mouse, a finger and a pen
   // all work. Only the grip starts a drag, so a finger elsewhere scrolls. ----
-  let drag = null;
+  let drag = null, suppressClick = false;
+  // Listening on the window, not capturing the pointer, so a press that
+  // never moves stays a plain click (a card's title still opens it).
   const startDrag = (e, r, cardEl, moves) => {
-    if (e.button > 0) return;
-    e.preventDefault();
-    const grip = e.currentTarget;
-    grip.setPointerCapture(e.pointerId);
-    drag = { r, cardEl, moves, x: e.clientX, y: e.clientY, ghost: null, over: null, grip, id: e.pointerId };
-    grip.addEventListener("pointermove", moveDrag);
-    grip.addEventListener("pointerup", endDrag);
-    grip.addEventListener("pointercancel", cancelDrag);
+    if (e.button > 0 || drag) return;
+    if (e.pointerType !== "touch") e.preventDefault(); // no text selection while dragging
+    drag = { r, cardEl, moves, x: e.clientX, y: e.clientY, ghost: null, over: null, id: e.pointerId };
+    window.addEventListener("pointermove", moveDrag);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", cancelDrag);
   };
   const columnAt = (x, y) => { const hit = document.elementFromPoint(x, y); return hit && hit.closest(".kcol"); };
   const moveDrag = (e) => {
     if (!drag) return;
+    if (e.pointerId !== drag.id) return;
     if (!drag.ghost) {
       if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
       const box = drag.cardEl.getBoundingClientRect();
@@ -1239,17 +1249,17 @@
   };
   const finishDrag = () => {
     if (!drag) return null;
-    const { grip, ghost, cardEl, over } = drag;
-    grip.removeEventListener("pointermove", moveDrag);
-    grip.removeEventListener("pointerup", endDrag);
-    grip.removeEventListener("pointercancel", cancelDrag);
+    const { ghost, cardEl, over } = drag;
+    window.removeEventListener("pointermove", moveDrag);
+    window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("pointercancel", cancelDrag);
     if (ghost) ghost.remove();
     cardEl.classList.remove("dragging");
     document.querySelectorAll(".kcol").forEach((col) => col.classList.remove("target", "over"));
     const done = drag; drag = null;
     return over ? done : null;
   };
-  const endDrag = () => { const d = finishDrag(); if (d) { const m = d.moves.find((x) => x.to === d.over.dataset.col); if (m) applyMove(d.r, m); } };
+  const endDrag = () => { if (drag && drag.ghost) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); } const d = finishDrag(); if (d) { const m = d.moves.find((x) => x.to === d.over.dataset.col); if (m) applyMove(d.r, m); } };
   const cancelDrag = () => { finishDrag(); };
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && drag) { drag.over = null; finishDrag(); } });
 

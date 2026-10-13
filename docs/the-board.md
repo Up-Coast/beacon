@@ -84,7 +84,7 @@ Click a card's title to open the whole report, the same detail a list row shows,
 
 ### Move a card
 
-Drag a card by its grip, the dotted square at its foot, with a mouse or a finger. Or choose a column from its **Move to** menu, which works from the keyboard. Only people who can edit the page see the grip and the menu, and a card offers only the moves below.
+With a mouse, drag the card itself. With a finger, drag it by its grip, the dotted square at its foot, so a swipe anywhere else still scrolls. Or choose a column from its **Move to** menu, which works from the keyboard. Only people who can edit the page see the grip and the menu, and a card offers only the moves below.
 
 | Move | What it does |
 |---|---|
