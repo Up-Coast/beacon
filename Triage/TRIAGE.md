@@ -169,6 +169,6 @@ Create them once per repository with `Scripts/beacon-labels.sh`.
 - Implement a feature request or a change request, or act on feedback, without the owner authorizing it.
 - Close an issue as "working as intended" when the reporter expected something different, without first filing the expectation-mismatch issue.
 - Write to a tester. Triage writes on the issue and on the dashboard, and never contacts the person who reported.
-- Move a report out of `todo`, or undo a move the owner made. Approving is the owner's.
+- Move a report the owner placed, or undo a move the owner made. Approving is the owner's.
 - Touch anything on the blast-radius list.
 - Merge without having run the app through the reporter's own steps.

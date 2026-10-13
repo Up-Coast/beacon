@@ -84,15 +84,14 @@ Click a card's title to open the whole report, the same detail a list row shows,
 
 ### Move a card
 
-With a mouse, drag the card itself. With a finger, drag it by its grip, the dotted square at its foot, so a swipe anywhere else still scrolls. Or choose a column from its **Move to** menu, which works from the keyboard. Only people who can edit the page see the grip and the menu, and a card offers only the moves below.
+With a mouse, drag the card itself. With a finger, drag it by its grip, the dotted square at its foot, so a swipe anywhere else still scrolls. Or choose a column from its **Move to** menu, which works from the keyboard. Only people who can edit the page see the grip and the menu. Every card moves to every column, closed cards included.
 
-| Move | What it does |
+| Where it lands | What it does |
 |---|---|
-| Todo to Up next | Approves it, exactly as **Approve the fix** or **Approve building it** does. The next pickup builds it. Feedback moves too: dragging it to Up next asks the pickup to act on it. |
-| Up next back to Todo | Withdraws your approval and puts back the status it had, as long as work on it has not started. A bug the pickup queued itself goes back to Todo and waits for you. Once a card shows **Being looked at**, it stays until the pickup finishes. |
-| Done to Deployed | Says the fix is live. Move it back if it was not. |
-
-Cards in Reported, and cards being worked, move only when the pickup moves them.
+| Up next | Approves it, exactly as **Approve the fix** or **Approve building it** does, unless it is already approved or being worked. The next pickup works it. Feedback can go here too: the pickup acts on it. |
+| Out of Up next, before work starts | Withdraws your approval and puts back the status it had. |
+| Any other column | Moves the card and nothing else. The pickup leaves a card where you put it. |
+| Back from Closed | Reopens it as triaged, in the column you chose. |
 
 ## Choose an app
 

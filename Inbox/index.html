@@ -648,15 +648,15 @@
   ];
   const COLUMN_IDS = new Set(COLUMNS.map((c) => c[0]));
   const CLOSED_STATUSES = new Set(["declined", "working-as-intended"]);
+  // Where a card stands. The stored `column` wins: the owner can put any card
+  // anywhere, and the pickup writes a column whenever it changes a status.
+  // Only a report with no column falls back to its status.
   const columnOf = (r) => {
     if (CLOSED_STATUSES.has(r.status)) return "closed";
-    const c = COLUMN_IDS.has(r.column) ? r.column : "";
-    // Fixed and merged: Done, until someone says it is live.
-    if (r.status === "auto-fixed" || (r.status === "triaged" && r.fixCommit)) return c === "deployed" ? "deployed" : "done";
-    // Approved, or being worked: Up next, whatever an older column says.
-    if (r.status === "approved" || r.status === "triaging") return c === "done" || c === "deployed" ? c : "upnext";
+    if (COLUMN_IDS.has(r.column)) return r.column;
+    if (r.status === "auto-fixed" || (r.status === "triaged" && r.fixCommit)) return "done";
+    if (r.status === "approved" || r.status === "triaging") return "upnext";
     if (waitsOnOwner(r)) return "todo";
-    if (c) return c;
     if (r.status === "new" || r.status === "filed") return "reported";
     return "todo";
   };
@@ -1039,23 +1039,26 @@
   });
   const declineFields = (r, note) => ({ status: "declined", approval: { decision: "declined", note, at: stamp() } });
   // Where the owner may move a card from where it is, and what each move writes.
+  // Every card moves to every other column. What a move writes depends only
+  // on where it lands: Up next approves (unless it already is), leaving Up
+  // next withdraws an approval nobody has started on, and every other move
+  // writes the column alone. A closed card dragged back onto the board is
+  // reopened as triaged.
+  const COLUMN_NAME = Object.fromEntries(COLUMNS.map(([id, name]) => [id, name]));
   const movesFor = (r) => {
-    const at = stamp(), from = columnOf(r);
-    if (from === "todo" && waitsOnOwner(r))
-      return [{ to: "upnext", label: r.kind === "bug" ? "Up next: approve the fix" : "Up next: approve building it", fields: approveFields(r, "") }];
-    // Feedback waits on no one, but the owner may still want something done
-    // about it: dragging it to Up next is the same approval.
-    if (from === "todo" && r.kind === "feedback" && !r.approval)
-      return [{ to: "upnext", label: "Up next: act on it", fields: approveFields(r, "") }];
-    if (from === "todo" && r.column === "todo" && (r.status === "new" || r.status === "filed"))
-      return [{ to: "upnext", label: "Up next: back in the queue", fields: { column: "upnext", columnAt: at } }];
-    if (from === "upnext" && r.status === "approved")
-      return [{ to: "todo", label: "Todo: withdraw the approval", fields: { status: r.statusBeforeApproval || "triaged", approval: null, statusBeforeApproval: null, column: "todo", columnAt: at } }];
-    if (from === "upnext" && !r.approval && r.status !== "triaging")
-      return [{ to: "todo", label: "Todo: hold it back", fields: { column: "todo", columnAt: at } }];
-    if (from === "done") return [{ to: "deployed", label: "Deployed: it is live", fields: { column: "deployed", columnAt: at } }];
-    if (from === "deployed") return [{ to: "done", label: "Done: not live yet", fields: { column: "done", columnAt: at } }];
-    return [];
+    const from = columnOf(r);
+    return COLUMNS.map(([to]) => to).filter((to) => to !== from).map((to) => {
+      const at = stamp();
+      let fields = { column: to, columnAt: at };
+      if (to === "upnext" && r.status !== "approved" && r.status !== "triaging" && !(r.status === "auto-fixed")) {
+        fields = r.approval && r.approval.decision === "approved" ? fields : approveFields(r, "");
+      } else if (from === "upnext" && r.status === "approved") {
+        fields = { status: r.statusBeforeApproval || "triaged", approval: null, statusBeforeApproval: null, column: to, columnAt: at };
+      } else if (from === "closed") {
+        fields = { status: "triaged", approval: null, column: to, columnAt: at };
+      }
+      return { to, label: COLUMN_NAME[to], fields };
+    });
   };
   const canMove = () => Boolean(db && canEdit);
   const showBoardMsg = (text) => { const m = $("#boardMsg"); m.textContent = text; m.hidden = !text; };
