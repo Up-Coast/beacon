@@ -1043,6 +1043,10 @@
     const at = stamp(), from = columnOf(r);
     if (from === "todo" && waitsOnOwner(r))
       return [{ to: "upnext", label: r.kind === "bug" ? "Up next: approve the fix" : "Up next: approve building it", fields: approveFields(r, "") }];
+    // Feedback waits on no one, but the owner may still want something done
+    // about it: dragging it to Up next is the same approval.
+    if (from === "todo" && r.kind === "feedback" && !r.approval)
+      return [{ to: "upnext", label: "Up next: act on it", fields: approveFields(r, "") }];
     if (from === "todo" && r.column === "todo" && (r.status === "new" || r.status === "filed"))
       return [{ to: "upnext", label: "Up next: back in the queue", fields: { column: "upnext", columnAt: at } }];
     if (from === "upnext" && r.status === "approved")

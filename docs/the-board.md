@@ -88,7 +88,7 @@ With a mouse, drag the card itself. With a finger, drag it by its grip, the dott
 
 | Move | What it does |
 |---|---|
-| Todo to Up next | Approves it, exactly as **Approve the fix** or **Approve building it** does. The next pickup builds it. Feedback cannot be approved, so it has no move. |
+| Todo to Up next | Approves it, exactly as **Approve the fix** or **Approve building it** does. The next pickup builds it. Feedback moves too: dragging it to Up next asks the pickup to act on it. |
 | Up next back to Todo | Withdraws your approval and puts back the status it had, as long as work on it has not started. A bug the pickup queued itself goes back to Todo and waits for you. Once a card shows **Being looked at**, it stays until the pickup finishes. |
 | Done to Deployed | Says the fix is live. Move it back if it was not. |
 
