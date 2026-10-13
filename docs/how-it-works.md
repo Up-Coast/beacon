@@ -33,7 +33,22 @@ The dashboard shows a status on every report. The page stores it as a value. Eve
 | Fixed | `auto-fixed` | Fixed, proven by running the app, and merged. |
 | Triaged | `triaged` | Read, labelled and routed. Waiting on a person. |
 
-A status value the page does not know shows as the value itself.
+A status value the page does not know shows as the value itself. Two more values come from you on the dashboard: `approved` (Approved, waiting for the next run) and `declined`.
+
+## Columns
+
+The dashboard's board layout puts each report in a column. The report stores it as `column`, with the time it last moved as `columnAt`. The pickup sets it as it works, and you move cards on [the dashboard](the-board.md#move-a-card).
+
+| Column | Value | Set by |
+|---|---|---|
+| Reported | `reported` | Every new report starts here. |
+| Todo | `todo` | The pickup, for everything that waits on you. You, by withdrawing an approval. |
+| Up next | `upnext` | The pickup, for a bug it will fix on its own. You, by approving. |
+| Done | `done` | The pickup, when the fix is merged to the main branch. |
+| Deployed | `deployed` | You, when the fix is live. The pickup, when it can tell. |
+
+A report with no `column`, such as one sent before columns existed, is placed by its status: received and filed in Reported, anything waiting on your decision in Todo, approved and being looked at in Up next, fixed in Done. The status also wins when it and the column disagree: a fixed report is never shown before Done, an approved or worked one never before Up next, and one waiting on your decision is always in Todo. Declined reports and reports that work as designed are shown under Closed, not in a column.
+
 
 ## What Beacon needs to run
 

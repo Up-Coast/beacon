@@ -59,6 +59,41 @@ One page serves every app. There is no page per project.
 
 The pickup reads the same app list, so it knows each app's repository, folder and where its reports are worked. Adding an app needs no republish and no change to the pickup.
 
+## List or board
+
+The **List** and **Board** switch beside the filters changes how the dashboard lays out the reports. The page remembers the choice on this browser. The tabs, counts and filters work the same in both.
+
+- **List**: reports waiting on your decision first, then everything else, newest first or highest impact first.
+- **Board**: one column per stage, left to right. Within a column, the highest impact comes first, then the oldest.
+
+![The dashboard's board layout: the Reported, Todo, Up next, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
+
+| Column | What is in it |
+|---|---|
+| **Reported** | Received, not triaged yet. |
+| **Todo** | Triaged, and waiting on you: needs a person, couldn't reproduce, needs more from the tester, the app isn't explaining itself, feature and change requests, and feedback. |
+| **Up next** | What the pickup works on next: bugs it will fix on its own, and anything you approved. |
+| **Done** | Fixed and merged to the main branch. |
+| **Deployed** | The fix is live for the people using the app. |
+
+Declined reports and reports that work as designed are not in a column. They are under **Closed**, below the board, folded away until you open it.
+
+Click a card's title to open the whole report, the same detail a list row shows, Approve and Decline included.
+
+![A card opened from the board: the report's detail in a panel over the board, with Approve the fix and Decline](assets/page-kanban-card.png)
+
+### Move a card
+
+Drag a card by its grip, the dotted square at its foot, with a mouse or a finger. Or choose a column from its **Move to** menu, which works from the keyboard. Only people who can edit the page see the grip and the menu, and a card offers only the moves below.
+
+| Move | What it does |
+|---|---|
+| Todo to Up next | Approves it, exactly as **Approve the fix** or **Approve building it** does. The next pickup builds it. Feedback cannot be approved, so it has no move. |
+| Up next back to Todo | Withdraws your approval and puts back the status it had, as long as work on it has not started. A bug the pickup queued itself goes back to Todo and waits for you. Once a card shows **Being looked at**, it stays until the pickup finishes. |
+| Done to Deployed | Says the fix is live. Move it back if it was not. |
+
+Cards in Reported, and cards being worked, move only when the pickup moves them.
+
 ## Choose an app
 
 The tabs under the heading are **All apps**, then one tab per app in the app list, with its platform: macOS, iOS, Web or Other. A number on a tab counts that app's reports waiting on your decision. The page remembers the tab you chose on this browser. A link with `?app=<id or name>` and nothing else opens on that app's tab.
@@ -117,7 +152,7 @@ To see the worst first, choose **Highest impact first** in the order menu. To se
 
 ## Approve or decline
 
-A report the pickup could not finish on its own, such as a fix too big to merge without a person or a feature request, shows **Your decision** when you open it. Add a note if the work should do or avoid something, then click **Approve the fix** (or **Approve building it**) or **Decline**.
+A report the pickup could not finish on its own, such as a fix too big to merge without a person or a feature request, shows **Your decision** when you open it, in the list or from a card on the board. On the board, dragging the card from Todo to Up next is the same approval, with no note. Add a note if the work should do or avoid something, then click **Approve the fix** (or **Approve building it**) or **Decline**.
 
 - **Approve:** the report shows "Approved, waiting for the next run". The next pickup builds it, merges it and writes the commit onto the report.
 - **Decline:** the pickup closes the issue with your note.
@@ -132,7 +167,7 @@ Anyone who can edit the page can click these, so share edit access only with peo
 | Status | Every status, or one status. |
 | Kind | Every kind, Bugs, Requests, Change requests or Feedback. |
 | Impact | Every impact, or one level. |
-| Order | Newest first, or Highest impact first. Within a level, newest first. |
+| Order | In the list: newest first, or highest impact first, newest first within a level. On the board, each column is always highest impact first, then oldest. |
 | Search words | Matches the title, the tester's words, the reporter, the area and the reference. |
 
 The count beside the search box shows how many reports match, out of the selected app's total.

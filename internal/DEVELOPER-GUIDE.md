@@ -150,6 +150,7 @@ The sheet sweeps attachments first, then the rendered issue body. The done scree
 The page has three views, switched in the page by the bar at the top (`showView`), with no reliance on the outer URL:
 
 - **Dashboard** (`board`, the default): every report, newest first. One tab per app in `apps`, plus a dashed tab for each `app.id` that reports carry and `apps` does not (`boardApps()`), each with the count of reports waiting on the owner. Four counts for the selected tab (`GROUPS`: waiting on the owner, received, in progress, fixed), each a filter when clicked. Filters for status, kind and impact, an order (newest or highest impact first), and a text search. Reports where `waitsOnOwner(r)` is true (status in `DECIDABLE`, no `approval`, not feedback) are listed first. Each report expands to the full record; open rows stay open across live updates. Images load the first time a report is opened. The document title is "Beacon reports". The selected tab is kept in `localStorage` under `beacon.page.app`.
+  The dashboard has two layouts, **List** and **Board**, kept in `localStorage` under `beacon.page.layout`. The board layout (`renderKanban`) has one column per entry in `COLUMNS`: `reported`, `todo`, `upnext`, `done`, `deployed`. `columnOf(r)` places a report: `declined` and `working-as-intended` go to the folded Closed area; `auto-fixed` (or `triaged` with a `fixCommit`) is `done` unless `column` is `deployed`; `approved` and `triaging` are `upnext` unless `column` is `done` or `deployed`; a report waiting on the owner is `todo`; otherwise the stored `column`, else `reported` for `new` and `filed`, else `todo`. Within a column cards sort by `IMPACT_RANK`, then `filedAt` ascending. A card's title opens the same `renderDetail` in a `<dialog>`, re-rendered when that report changes. `movesFor(r)` lists the moves a card offers, and both the drag and the card's **Move to** `<select>` apply them: Todo to Up next writes `approveFields` (the Approve button's write); Up next to Todo, while the status is `approved`, writes `approval: null`, the status from `statusBeforeApproval` (else `triaged`), `statusBeforeApproval: null` and `column: "todo"`; an unapproved Up next card not yet `triaging` moves to Todo with `column` alone, and back; Done and Deployed swap `column`. Every move writes `columnAt`. Dragging uses pointer events on the card's grip only (`touch-action: none` there), so mouse, touch and pen all drag and a finger elsewhere still scrolls; Escape cancels. The grip and the menu show only when `canMove()`: `db` and `canEdit`.
 - **Form** (`form`): the form, then a receipt with the reference. It never shows other reports. The document title is "Beacon".
 - **Apps** (`apps`): the app list, with add, change and remove. The document title is "Beacon apps".
 
@@ -179,7 +180,7 @@ The pictures of the page in the documentation (`docs/assets/page-*.png`) are tak
 Scripts/page-screenshots/take.sh
 ```
 
-It needs Google Chrome in `/Applications` and `python3`. It copies the page into a temporary folder behind `Scripts/page-screenshots/stand-in.js`, serves it on `127.0.0.1:8737`, and saves each view with headless Chrome in light mode. `stand-in.js` answers `claude.use("db")`, `use("artifact")` and `use("user")` from memory, with sample apps and reports whose names and words are invented. Its `?shot=` parameter picks the state: `dashboard`, `decision` (a report waiting on a decision, opened), `apps`, `first-run` and `form`. The stand-in is never part of the published page. Sample data stays made up: no real people, apps or report text.
+It needs Google Chrome in `/Applications` and `python3`. It copies the page into a temporary folder behind `Scripts/page-screenshots/stand-in.js`, serves it on `127.0.0.1:8737`, and saves each view with headless Chrome in light mode. `stand-in.js` answers `claude.use("db")`, `use("artifact")` and `use("user")` from memory, with sample apps and reports whose names and words are invented. Its `?shot=` parameter picks the state: `dashboard`, `decision` (a report waiting on a decision, opened), `kanban` (the board layout), `card` (a card opened from the board), `apps`, `first-run` and `form`. The stand-in is never part of the published page. Sample data stays made up: no real people, apps or report text.
 
 ### Storage
 
@@ -194,13 +195,22 @@ reports/<BN-reference>             written by the page on send
   impact, area, attachmentCount, userAgent, source ("beacon-inbox"),
   app {id, name, repository, platform},
   body   bug: {kind, whatHappened, expected, steps[], reproducibility}
-         feature-request: {kind, whatIWant, why}
+         feature-request: {kind, whatIWant, why, idea}
+         change-request: {kind, whatToChange, instead, why}
          feedback: {kind, message}
   context {app, bundle, version, build, commit, repository, os, osVersion, device,
            architecture, locale, timeZone, appearance, textSize}   strings, "" when unknown
   written by the pickup:
   status, issueNumber, issueURL, issueFiledAt, finding {intent, citations[], verdict},
-  triageNote, fixCommit, triagedAt, duplicateOf
+  triageNote, fixCommit, triagedAt, duplicateOf, column, columnAt
+  written by the page for the owner:
+  Approve, or dragging Todo to Up next: status "approved",
+    approval {decision "approved", note, at}, statusBeforeApproval, column "upnext", columnAt
+  Decline: status "declined", approval {decision "declined", note, at}
+  Withdrawing (Up next to Todo): status <statusBeforeApproval or "triaged">, approval null,
+    statusBeforeApproval null, column "todo", columnAt
+  Done to Deployed and back: column, columnAt
+  column is one of "reported", "todo", "upnext", "done", "deployed"
 
 reports/<BN-reference>/attachments/<n>    one document per image, n from 1
   filename, contentType ("image/jpeg"), dataURL, byteCount, width, height,
@@ -209,7 +219,7 @@ reports/<BN-reference>/attachments/<n>    one document per image, n from 1
 
 The page reads `name`, `repository`, `platform` and `tracker` from `apps`, and writes all five fields from its Apps view. The pickup reads `folder` and `tracker`. The page's reference is `BN-` plus 3 random bytes in uppercase hex, so it has the same form as the sheet's reference.
 
-The page knows these status values (its `STATUS` map): `new`, `filed`, `triaging`, `auto-fixed`, `needs-human`, `needs-info`, `cannot-reproduce`, `working-as-intended`, `expectation-mismatch`, `triaged`. Any other value renders as a grey pill showing the raw value. The board wording for each is in [How it works](../docs/how-it-works.md).
+The page knows these status values (its `STATUS` map): `new`, `filed`, `triaging`, `auto-fixed`, `needs-human`, `approved`, `declined`, `needs-info`, `cannot-reproduce`, `working-as-intended`, `expectation-mismatch`, `triaged`. Any other value renders as a grey pill showing the raw value. The board wording for each is in [How it works](../docs/how-it-works.md).
 
 **Images.** The browser shrinks each image with `createImageBitmap` and a canvas to at most 1600 px on the long edge (`IMAGE_MAX_EDGE`). It encodes JPEG at quality 0.85, 0.75, 0.65, 0.55 then 0.45 until the result is at most 180 KiB (`IMAGE_TARGET_BYTES`), and refuses the image if it is still larger. A report holds at most six images (`IMAGE_MAX_COUNT`). Images come from the file picker (`accept="image/*"`) or a paste. Each image is its own document so the board can list reports without loading pictures.
 

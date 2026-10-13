@@ -213,6 +213,40 @@
   @media (max-width: 640px) { .appform { padding: 18px 16px !important; } }
   .confirm { display: grid; gap: 8px; padding: 10px 12px; border-radius: 9px; background: var(--wait-soft); font-size: 14px; }
   .confirm .acts { margin: 0; }
+  /* ---- The board layout: one column per stage. ---- */
+  main.wide { max-width: 1440px; }
+  .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--field); border: 1px solid var(--line); border-radius: 9px; flex: none; }
+  .seg button { border: 0; background: transparent; padding: 5px 12px; border-radius: 6px; font-weight: 600; font-size: 13px; color: var(--ink-2); cursor: pointer; min-height: 30px; }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(17,24,39,.12); }
+  .kanban { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: start; }
+  @media (max-width: 1000px) { .kanban { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .kanban { grid-template-columns: minmax(0, 1fr); } }
+  .kcol { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; min-height: 140px; min-width: 0; padding: 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; }
+  .kcol > header { display: grid; gap: 1px; }
+  .kcol h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; }
+  .kcol h2 span { font-variant-numeric: tabular-nums; color: var(--ink-3); }
+  .kcol > header p { margin: 0; color: var(--ink-3); font-size: 12px; }
+  .kcol.target { border-style: dashed; border-color: var(--accent); }
+  .kcol.over { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .kcol .empty { padding: 10px; font-size: 13px; }
+  .card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; padding: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); }
+  .card.decide { border-left: 3px solid var(--wait); }
+  .card .open { border: 0; background: none; padding: 0; text-align: left; font-weight: 600; cursor: pointer; overflow-wrap: anywhere; min-width: 0; }
+  .card .open:hover { text-decoration: underline; }
+  .card .pills { justify-content: flex-start; }
+  .card .move { display: flex; gap: 6px; align-items: center; }
+  .card .move select { flex: 1; width: auto; min-width: 0; min-height: 32px; padding: 4px 8px; font-size: 13px; background: var(--surface); }
+  .grip { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-2); color: var(--ink-3); cursor: grab; touch-action: none; user-select: none; }
+  .grip svg { width: 14px; height: 14px; }
+  .card.dragging { opacity: .35; }
+  .ghost { position: fixed; z-index: 1000; pointer-events: none; opacity: .95; transform: rotate(1.5deg); box-shadow: 0 16px 40px -12px rgba(17,24,39,.45); }
+  .closed { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-top: 12px; }
+  .closed summary { cursor: pointer; padding: 10px 14px; font-weight: 600; color: var(--ink-2); }
+  .closedlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 8px; padding: 0 12px 12px; }
+  dialog.sheet { width: min(780px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px -20px rgba(0,0,0,.5); }
+  dialog.sheet::backdrop { background: rgba(17,24,39,.5); }
+  dialog.sheet > header { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 14px 14px 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  dialog.sheet > header .titleline { flex-wrap: wrap; font-weight: 700; font-size: 16px; }
   .detail { padding: 14px; display: grid; gap: 14px; min-width: 0; }
   .decide-box { display: grid; gap: 8px; padding: 12px; border-radius: 9px; background: var(--wait-soft); }
   .decide-box h3 { font-size: 15px; }
@@ -272,6 +306,10 @@
     <div class="stats" id="stats"></div>
     <p class="appnote" id="appNote" hidden></p>
     <div class="filters">
+      <div class="seg" role="group" aria-label="Layout">
+        <button type="button" data-layout="list" aria-pressed="true">List</button>
+        <button type="button" data-layout="board" aria-pressed="false">Board</button>
+      </div>
       <select id="fStatus" aria-label="Status"><option value="">Every status</option></select>
       <select id="fKind" aria-label="Kind"><option value="">Every kind</option></select>
       <select id="fImpact" aria-label="Impact"><option value="">Every impact</option></select>
@@ -287,7 +325,22 @@
       <h2 id="restTitle">Everything else</h2>
       <div class="list" id="queue"><div class="empty">No reports yet.</div></div>
     </div>
+    <div id="kanbanView" hidden>
+      <p class="problem" id="boardMsg" role="alert" hidden></p>
+      <div class="kanban" id="kanban"></div>
+      <details class="closed" id="closedArea" hidden>
+        <summary id="closedTitle">Closed</summary>
+        <div class="closedlist" id="closedList"></div>
+      </details>
+    </div>
   </section>
+  <dialog class="sheet" id="reportDialog" aria-labelledby="dialogTitle">
+    <header>
+      <div class="titleline" id="dialogHead"></div>
+      <button type="button" class="x" id="dialogClose" aria-label="Close">×</button>
+    </header>
+    <div id="dialogBody"></div>
+  </dialog>
 
   <!-- ---- The app list: what this page collects reports for. ---- -->
   <section class="dash" id="appsView" aria-labelledby="appsTitle" hidden>
@@ -581,6 +634,31 @@
     ["fixed", "Fixed", (r) => r.status === "auto-fixed"],
   ];
 
+  // ---- The board layout's columns. A report's `column` says where it
+  // stands; without one, its status decides (see columnOf). Declined and
+  // working-as-intended reports are closed, under the board, not a column. ----
+  const COLUMNS = [
+    ["reported", "Reported", "Received, not triaged yet."],
+    ["todo", "Todo", "Waiting on you."],
+    ["upnext", "Up next", "What the pickup works on next."],
+    ["done", "Done", "Fixed and merged."],
+    ["deployed", "Deployed", "Live for the people using it."],
+  ];
+  const COLUMN_IDS = new Set(COLUMNS.map((c) => c[0]));
+  const CLOSED_STATUSES = new Set(["declined", "working-as-intended"]);
+  const columnOf = (r) => {
+    if (CLOSED_STATUSES.has(r.status)) return "closed";
+    const c = COLUMN_IDS.has(r.column) ? r.column : "";
+    // Fixed and merged: Done, until someone says it is live.
+    if (r.status === "auto-fixed" || (r.status === "triaged" && r.fixCommit)) return c === "deployed" ? "deployed" : "done";
+    // Approved, or being worked: Up next, whatever an older column says.
+    if (r.status === "approved" || r.status === "triaging") return c === "done" || c === "deployed" ? c : "upnext";
+    if (waitsOnOwner(r)) return "todo";
+    if (c) return c;
+    if (r.status === "new" || r.status === "filed") return "reported";
+    return "todo";
+  };
+
   // ---- What the link carries, and which half of the page it opens. ----
   // A link from inside an app carries `app` plus details only the app
   // knows (BeaconInbox.url in Sources/BeaconCore/InboxLink.swift), so it
@@ -620,6 +698,7 @@
     $("#board").hidden = view !== "board";
     $("#formView").hidden = view !== "form";
     $("#appsView").hidden = view !== "apps";
+    $("main").classList.toggle("wide", view === "board" && layout === "board");
     $("#identity").hidden = view !== "form";
     document.querySelectorAll(".switch button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
     document.title = view === "board" ? "Beacon reports" : view === "apps" ? "Beacon apps" : "Beacon";
@@ -946,6 +1025,40 @@
     if (r.attachmentCount) detail.append(el("div", { class: "pictures", "data-ref": r.reference }, el("span", { class: "loading", text: "Loading images…" })));
     return detail;
   };
+  // ---- Writes the owner makes to a report. One shape each, used by the
+  // Approve and Decline buttons, the board's drag and its Move to menu. ----
+  const stamp = () => new Date().toISOString();
+  const writeReport = (r, fields) => db.doc("reports/" + r.reference).update(fields);
+  // Approving is what the pickup acts on: status "approved" and `approval`.
+  // The status it replaced is kept, so withdrawing can put it back.
+  const approveFields = (r, note) => ({
+    status: "approved", approval: { decision: "approved", note, at: stamp() },
+    statusBeforeApproval: r.status, column: "upnext", columnAt: stamp(),
+  });
+  const declineFields = (r, note) => ({ status: "declined", approval: { decision: "declined", note, at: stamp() } });
+  // Where the owner may move a card from where it is, and what each move writes.
+  const movesFor = (r) => {
+    const at = stamp(), from = columnOf(r);
+    if (from === "todo" && waitsOnOwner(r))
+      return [{ to: "upnext", label: r.kind === "bug" ? "Up next: approve the fix" : "Up next: approve building it", fields: approveFields(r, "") }];
+    if (from === "todo" && r.column === "todo" && (r.status === "new" || r.status === "filed"))
+      return [{ to: "upnext", label: "Up next: back in the queue", fields: { column: "upnext", columnAt: at } }];
+    if (from === "upnext" && r.status === "approved")
+      return [{ to: "todo", label: "Todo: withdraw the approval", fields: { status: r.statusBeforeApproval || "triaged", approval: null, statusBeforeApproval: null, column: "todo", columnAt: at } }];
+    if (from === "upnext" && !r.approval && r.status !== "triaging")
+      return [{ to: "todo", label: "Todo: hold it back", fields: { column: "todo", columnAt: at } }];
+    if (from === "done") return [{ to: "deployed", label: "Deployed: it is live", fields: { column: "deployed", columnAt: at } }];
+    if (from === "deployed") return [{ to: "done", label: "Done: not live yet", fields: { column: "done", columnAt: at } }];
+    return [];
+  };
+  const canMove = () => Boolean(db && canEdit);
+  const showBoardMsg = (text) => { const m = $("#boardMsg"); m.textContent = text; m.hidden = !text; };
+  const applyMove = async (r, move) => {
+    showBoardMsg("");
+    try { await writeReport(r, move.fields); }
+    catch (err) { showBoardMsg("That didn't save: " + (err && err.message || err)); }
+  };
+
   // The owner's approval. Reports that wait on a person (a fix too big
   // for triage to merge alone, or a feature request) get Approve and
   // Decline; the pickup builds approved ones on its next run.
@@ -959,9 +1072,8 @@
     const decide = async (decision) => {
       buttons.forEach((b) => { b.disabled = true; });
       try {
-        await db.doc("reports/" + r.reference).update({
-          status: decision, approval: { decision, note: note.value.trim(), at: new Date().toISOString() },
-        });
+        const text = note.value.trim();
+        await writeReport(r, decision === "approved" ? approveFields(r, text) : declineFields(r, text));
       } catch (err) {
         buttons.forEach((b) => { b.disabled = false; });
         box.append(el("p", { class: "problem", text: "That didn't save: " + (err && err.message || err) }));
@@ -1050,6 +1162,118 @@
     const b = e.target.closest(".stat"); if (!b) return;
     group = group === b.dataset.group ? "" : b.dataset.group; renderBoard();
   });
+  // ---- List or board, remembered on this browser. ----
+  let layout = remembered("layout") === "board" ? "board" : "list";
+  document.querySelectorAll(".seg [data-layout]").forEach((b) => b.addEventListener("click", () => {
+    layout = b.dataset.layout; remember("layout", layout); renderBoard();
+  }));
+  const byImpactThenAge = (a, b) => ((IMPACT_RANK[a.impact] ?? 9) - (IMPACT_RANK[b.impact] ?? 9)) || String(a.filedAt || "").localeCompare(String(b.filedAt || ""));
+  const GRIP = '<svg viewBox="0 0 14 14" aria-hidden="true"><g fill="currentColor"><circle cx="4.5" cy="3" r="1.3"/><circle cx="9.5" cy="3" r="1.3"/><circle cx="4.5" cy="7" r="1.3"/><circle cx="9.5" cy="7" r="1.3"/><circle cx="4.5" cy="11" r="1.3"/><circle cx="9.5" cy="11" r="1.3"/></g></svg>';
+  const card = (r) => {
+    const moves = canMove() ? movesFor(r) : [];
+    const title = el("button", { type: "button", class: "open", text: r.title || r.reference });
+    title.addEventListener("click", () => openReport(r.reference));
+    const flag = waitsOnOwner(r) ? el("span", { class: "pill you", text: "Your decision" }) : null;
+    const c = el("article", { class: "card" + (waitsOnOwner(r) ? " decide" : ""), "data-ref": r.reference },
+      el("div", { class: "titleline" }, impactIcon(r.impact), title),
+      el("div", { class: "meta", text: [r.reference, KIND[r.kind] || r.kind, r.app && r.app.name].filter(Boolean).join(" · ") }),
+      el("div", { class: "pills" }, flag, pill(r)));
+    if (moves.length) {
+      const grip = el("span", { class: "grip", title: "Drag to move", "aria-hidden": "true" });
+      grip.innerHTML = GRIP;
+      grip.addEventListener("pointerdown", (e) => startDrag(e, r, c, moves));
+      const menu = el("select", { "aria-label": `Move ${r.title || r.reference} to` },
+        el("option", { value: "", text: "Move to…" }), ...moves.map((m) => el("option", { value: m.to, text: m.label })));
+      menu.addEventListener("change", () => { const m = moves.find((x) => x.to === menu.value); if (m) applyMove(r, m); });
+      c.append(el("div", { class: "move" }, grip, menu));
+    }
+    return c;
+  };
+  const renderKanban = (shown) => {
+    const cols = new Map(COLUMNS.map(([id]) => [id, []]));
+    const closed = [];
+    for (const r of shown) { const c = columnOf(r); (c === "closed" ? closed : cols.get(c)).push(r); }
+    $("#kanban").replaceChildren(...COLUMNS.map(([id, name, blurb]) => {
+      const list = cols.get(id).sort(byImpactThenAge);
+      return el("section", { class: "kcol", "data-col": id, "aria-label": name },
+        el("header", {}, el("h2", {}, document.createTextNode(name), el("span", { text: String(list.length) })), el("p", { text: blurb })),
+        ...(list.length ? list.map(card) : [el("div", { class: "empty", text: "Nothing here." })]));
+    }));
+    closed.sort(byImpactThenAge);
+    $("#closedArea").hidden = !closed.length;
+    $("#closedTitle").textContent = `Closed: declined or working as designed (${closed.length})`;
+    $("#closedList").replaceChildren(...closed.map(card));
+  };
+
+  // ---- Dragging a card: pointer events, so a mouse, a finger and a pen
+  // all work. Only the grip starts a drag, so a finger elsewhere scrolls. ----
+  let drag = null;
+  const startDrag = (e, r, cardEl, moves) => {
+    if (e.button > 0) return;
+    e.preventDefault();
+    const grip = e.currentTarget;
+    grip.setPointerCapture(e.pointerId);
+    drag = { r, cardEl, moves, x: e.clientX, y: e.clientY, ghost: null, over: null, grip, id: e.pointerId };
+    grip.addEventListener("pointermove", moveDrag);
+    grip.addEventListener("pointerup", endDrag);
+    grip.addEventListener("pointercancel", cancelDrag);
+  };
+  const columnAt = (x, y) => { const hit = document.elementFromPoint(x, y); return hit && hit.closest(".kcol"); };
+  const moveDrag = (e) => {
+    if (!drag) return;
+    if (!drag.ghost) {
+      if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
+      const box = drag.cardEl.getBoundingClientRect();
+      drag.dx = drag.x - box.left; drag.dy = drag.y - box.top;
+      drag.ghost = drag.cardEl.cloneNode(true);
+      drag.ghost.classList.add("ghost"); drag.ghost.style.width = box.width + "px";
+      document.body.append(drag.ghost);
+      drag.cardEl.classList.add("dragging");
+      document.querySelectorAll(".kcol").forEach((col) => col.classList.toggle("target", drag.moves.some((m) => m.to === col.dataset.col)));
+    }
+    drag.ghost.style.left = (e.clientX - drag.dx) + "px";
+    drag.ghost.style.top = (e.clientY - drag.dy) + "px";
+    const col = columnAt(e.clientX, e.clientY);
+    const ok = col && drag.moves.some((m) => m.to === col.dataset.col) ? col : null;
+    if (ok !== drag.over) { if (drag.over) drag.over.classList.remove("over"); if (ok) ok.classList.add("over"); drag.over = ok; }
+  };
+  const finishDrag = () => {
+    if (!drag) return null;
+    const { grip, ghost, cardEl, over } = drag;
+    grip.removeEventListener("pointermove", moveDrag);
+    grip.removeEventListener("pointerup", endDrag);
+    grip.removeEventListener("pointercancel", cancelDrag);
+    if (ghost) ghost.remove();
+    cardEl.classList.remove("dragging");
+    document.querySelectorAll(".kcol").forEach((col) => col.classList.remove("target", "over"));
+    const done = drag; drag = null;
+    return over ? done : null;
+  };
+  const endDrag = () => { const d = finishDrag(); if (d) { const m = d.moves.find((x) => x.to === d.over.dataset.col); if (m) applyMove(d.r, m); } };
+  const cancelDrag = () => { finishDrag(); };
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && drag) { drag.over = null; finishDrag(); } });
+
+  // ---- An opened card: the same detail as a list row, in a dialog. ----
+  const dialog = $("#reportDialog");
+  let dialogRef = "", dialogShown = "";
+  const renderDialog = () => {
+    const r = allReports.find((x) => x.reference === dialogRef);
+    if (!r) { if (dialog.open) dialog.close(); return; }
+    const seen = JSON.stringify(r);
+    if (seen === dialogShown) return;
+    dialogShown = seen;
+    const flag = waitsOnOwner(r) ? el("span", { class: "pill you", text: "Your decision" }) : null;
+    $("#dialogHead").replaceChildren(impactIcon(r.impact), el("span", { id: "dialogTitle", text: r.title || r.reference }), flag, pill(r));
+    const detail = renderDetail(r);
+    detail.prepend(el("div", { class: "meta", text: metaLine(r) }));
+    $("#dialogBody").replaceChildren(detail);
+    detail.querySelectorAll(".pictures").forEach(loadPictures);
+  };
+  const openReport = (ref) => { dialogRef = ref; dialogShown = ""; renderDialog(); if (!dialog.open) dialog.showModal(); };
+  $("#dialogClose").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+  dialog.addEventListener("close", () => { dialogRef = ""; dialogShown = ""; });
+
   const renderBoard = () => {
     const known = boardApps();
     if (selectedApp && (appsLoaded || reached) && !known.some((a) => a.id === selectedApp)) {
@@ -1067,8 +1291,19 @@
     const shown = allReports.filter(passes);
     // Reports arrive newest first; the impact order keeps that within a level.
     if ($("#fSort").value === "impact") shown.sort((a, b) => (IMPACT_RANK[a.impact] ?? 9) - (IMPACT_RANK[b.impact] ?? 9));
-    const decide = shown.filter(waitsOnOwner), rest = shown.filter((r) => !waitsOnOwner(r));
     $("#fCount").textContent = `${shown.length} of ${allReports.filter(inApp).length}`;
+    const onBoard = layout === "board";
+    document.querySelectorAll(".seg [data-layout]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.layout === layout)));
+    $("main").classList.toggle("wide", onBoard && view === "board");
+    $("#fSort").hidden = onBoard;
+    $("#kanbanView").hidden = bare || !onBoard;
+    if (dialogRef) renderDialog();
+    if (onBoard) {
+      $("#decideGroup").hidden = true; $("#restGroup").hidden = true;
+      if (!bare) renderKanban(shown);
+      return;
+    }
+    const decide = shown.filter(waitsOnOwner), rest = shown.filter((r) => !waitsOnOwner(r));
     $("#decideGroup").hidden = bare || !decide.length;
     $("#decideList").replaceChildren(...decide.map(row));
     $("#restTitle").textContent = decide.length ? "Everything else" : "Reports";

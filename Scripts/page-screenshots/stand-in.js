@@ -10,8 +10,12 @@
 //   apps        the Apps view
 //   first-run   the dashboard with no apps yet
 //   form        the report form, opened as the Beacon button in an app opens it
+//   kanban      the dashboard in its board layout
+//   card        the board layout with a card opened
 (() => {
   const shot = new URLSearchParams(location.search).get("shot") || "dashboard";
+  // The page remembers its layout on the browser; the board shots ask for the board.
+  try { localStorage.setItem("beacon.page.layout", shot === "kanban" || shot === "card" ? "board" : "list"); } catch {}
   const store = new Map();
   const put = (path, doc) => store.set(path, JSON.parse(JSON.stringify(doc)));
   // A fixed clock, so every run draws the same dates.
@@ -57,7 +61,13 @@
       { filedAt: day(8, 12), impact: "noticed", reporter: "Tester Three <tester.three@example.com>" });
     report("BN-60D3B1", notes, "feature-request", "approved", "Pin a note to the top of a folder",
       { whatIWant: "Keep one note at the top of a folder, whatever the sort order.", why: "Each folder has a note of links I open every day." },
-      { filedAt: day(7, 15), approval: { decision: "approved", note: "", at: day(8, 9) } });
+      { filedAt: day(7, 15), approval: { decision: "approved", note: "", at: day(8, 9) }, statusBeforeApproval: "triaged", column: "upnext", columnAt: day(8, 9) });
+    report("BN-2C84AA", weather, "bug", "auto-fixed", "Hourly chart labels overlap in landscape",
+      { expected: "Each hour's label is readable.", whatHappened: "Labels draw on top of each other when the phone is turned sideways.", steps: ["Open the hourly chart", "Turn the phone sideways"], reproducibility: "every-time" },
+      { filedAt: day(5, 11), context: phone, reporter: "Tester Two <tester.two@example.com>", impact: "irritating", fixCommit: "91a0d3e", column: "deployed", columnAt: day(9, 16), issueNumber: 38, issueURL: "https://github.com/example-org/sample-weather/issues/38" });
+    report("BN-8F1E02", site, "bug", "working-as-intended", "The contact form asks for a phone number",
+      { expected: "The phone number is optional.", whatHappened: "The form shows a phone field.", steps: ["Open the contact page"], reproducibility: "every-time" },
+      { filedAt: day(6, 13), impact: "noticed", context: { version: "", os: "", locale: "en_CA", timeZone: "America/Toronto" }, triageNote: "The phone field is already optional; the form marks only the email as required." });
   }
 
   const listeners = [];
@@ -95,5 +105,6 @@
       if (row) row.open = true;
     }
     if (shot === "apps") click('.switch [data-view="apps"]');
+    if (shot === "card") click('.kcol[data-col="todo"] .card .open');
   }, 300));
 })();

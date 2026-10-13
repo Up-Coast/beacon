@@ -1,6 +1,6 @@
 # The pickup — a task prompt you give to Claude
 
-*Last updated: 2026-09-17*
+*Last updated: 2026-10-13*
 
 The pickup is the prompt for a Claude session, scheduled task or routine that collects reports from your Beacon page and works them. Nothing in it belongs to any particular account, so it works for anyone's setup.
 
@@ -43,6 +43,8 @@ Each app document in the page's apps collection carries: name, platform, reposit
 - "github": reports become issues. Parts 1 and 2 apply.
 - "board": no GitHub. The report is worked in place from its record, and the whole outcome is written onto it: status, finding, triageNote, fixCommit, triagedAt.
 
+Every report also carries a column on the owner's dashboard: column is one of "reported", "todo", "upnext", "done" or "deployed", and columnAt is the ISO time it last moved. Whenever you write a report's column, write columnAt with it. A report without a column is in "reported". The owner moves reports too: dragging Todo to Up next writes the same approval the Approve button writes ({"status":"approved","approval":{"decision":"approved","note","at"},"statusBeforeApproval","column":"upnext"}); moving Up next back to Todo removes the approval (approval null, status back to statusBeforeApproval, column "todo"); and Done to Deployed sets column "deployed". Never move a report out of "todo" yourself, and never undo the owner's move.
+
 Part 1: file the page's reports (tracker "github")
 1. Artifact tool, read_db, db_op query, collection "reports", where [["status","==","new"]]. None → skip to Part 2.
 2. For each report, oldest first:
@@ -50,9 +52,11 @@ Part 1: file the page's reports (tracker "github")
    b. Read the board first: read_db query reports where [["app.id","==",<id>]]. Compare area, title and words against reports that already carry a finding. On a match: write_db update this report with duplicateOf: <reference> plus that report's status, finding and triageNote; comment on the existing issue ("Also reported by <reporter> on <app> <version> (<build>)"); move on.
    c. Otherwise search the repository: gh issue list --repo <repository> --label beacon --state all --limit 100 --json number,title,labels,body, and compare. On a match: gh issue comment with the full rendered report, reopen the issue if closed, and add the new impact label if higher. No match → gh issue create with the rendered title, body and labels.
    d. Images: commit them to the repository's beacon-attachments branch under .beacon/attachments/<reference>/. Create the branch from the default branch if it is missing. Never commit to a branch anyone builds from. Link the images in the issue under "What they attached".
-   e. write_db update reports/<reference> with {"status":"filed","issueNumber":N,"issueURL":"...","issueFiledAt":"<ISO>"}.
+   e. write_db update reports/<reference> with {"status":"filed","issueNumber":N,"issueURL":"...","issueFiledAt":"<ISO>"}. The column stays "reported" until the report is triaged.
 
 Part 2: work the queue
+Up next first: before new work, read_db query reports where [["column","==","upnext"]], and also reports where [["status","==","approved"]] (an approval made before columns existed has no column). These are the owner's approvals and the bugs you queued. Work each one, highest impact first, then oldest: an approved report is built as the owner's note says, following the same branch, suite, proof and merge rules as a fix. Skip one whose column is no longer "upnext" when you reach it: the owner withdrew it.
+
 3. For every app with tracker "github": gh issue list --repo <repository> --label beacon --state open --search "-label:triaged -label:needs-info". Work impact:blocked first, then oldest. Work each issue by the skill:
    - Reproduce against the commit in the metadata block.
    - Fix on beacon/<issue>-<slug>.
@@ -60,10 +64,16 @@ Part 2: work the queue
    - Prove the fix by running the app through the steps where feasible.
    - Merge to the default branch (ask the repo which branch that is, never assume) and push.
    - Label and close with a comment naming the commit.
-   Feature requests: never build one. Label, route, note what already exists, and leave open for the owner.
-   Feedback: label triaged, leave open.
+   Feature and change requests: never build one the owner has not approved. Label, route, note what already exists, set column "todo", and leave open for the owner. One the owner approved is in Up next and is built there.
+   Feedback: label triaged, set column "todo", leave open.
 4. Every outcome also goes onto the page report (find it by issueNumber). write_db update with:
    - status: triaging while the report is being worked, then one of auto-fixed, needs-human, needs-info, cannot-reproduce, working-as-intended, expectation-mismatch or triaged
+   - column and columnAt, as the report moves:
+     - "upnext" when triage finds a real bug that passes every gate and you will fix it yourself (set it before you start the fix, with status triaging)
+     - "todo" for everything that waits on the owner: needs-human, needs-info, cannot-reproduce, expectation-mismatch, feature and change requests, design or wording changes, and triaged feedback
+     - "done" when the fix or the approved build is merged to the default branch (status auto-fixed, fixCommit set)
+     - "deployed" only when you can tell the fix is live, such as a release or deployment that contains fixCommit; otherwise leave it in "done" for the owner
+     - working-as-intended and declined reports keep their column; the dashboard shows them as closed
    - finding: {intent, citations, verdict}
    - triageNote: two to four plain sentences for the owner saying what was found and what happens next
    - fixCommit, when there is one
@@ -73,5 +83,5 @@ Part 2: work the queue
 Part 3: tell the owner, only if something happened
 6. If at least one report was filed or one issue worked, send ONE message to NOTIFY: what was filed (links), what was fixed (commits), what waits on a person, and any pattern across reports. Otherwise send nothing.
 
-Never: work on a bug that would not reproduce; change infrastructure, secrets, CI or deployments; write anything to the page except the fields above; post anywhere except the app repositories' issues and NOTIFY.
+Never: work on a bug that would not reproduce; change infrastructure, secrets, CI or deployments; write anything to the page except the fields above; write approval or statusBeforeApproval (those are the owner's); post anywhere except the app repositories' issues and NOTIFY.
 ```

@@ -51,6 +51,8 @@ app_link="app=sample-notes&version=2.3.0&build=141&repo=example-org%2Fsample-not
 
 shoot page-dashboard.png        1280 900  1 "shot=dashboard"
 shoot page-decision.png         1280 1180 1 "shot=decision"
+shoot page-kanban.png          1400 1000 1 "shot=kanban"
+shoot page-kanban-card.png     1400 1000 1 "shot=card"
 shoot page-apps.png             1280 900  1 "shot=apps"
 shoot page-first-run.png        1280 560  1 "shot=first-run"
 shoot page-form.png             1280 1400 1 "shot=form&$app_link"
