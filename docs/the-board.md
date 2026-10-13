@@ -66,12 +66,12 @@ The **List** and **Board** switch beside the filters changes how the dashboard l
 - **List**: reports waiting on your decision first, then everything else, newest first or highest impact first.
 - **Board**: one column per stage, left to right. Within a column, the highest impact comes first, then the oldest.
 
-![The dashboard's board layout: the Reported, Todo, Up next, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
+![The dashboard's board layout: the Reported, Triaged, Up next, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
 
 | Column | What is in it |
 |---|---|
 | **Reported** | Received, not triaged yet. |
-| **Todo** | Triaged, and waiting on you: needs a person, couldn't reproduce, needs more from the tester, the app isn't explaining itself, feature and change requests, and feedback. |
+| **Triaged** | Triaged, and waiting on you: needs a person, couldn't reproduce, needs more from the tester, the app isn't explaining itself, feature and change requests, and feedback. |
 | **Up next** | What the pickup works on next: bugs it will fix on its own, and anything you approved. |
 | **Done** | Fixed and merged to the main branch. |
 | **Deployed** | The fix is live for the people using the app. |
@@ -90,7 +90,7 @@ With a mouse, drag the card itself. With a finger, drag it by its grip, the dott
 |---|---|
 | Up next | Approves it, exactly as **Approve the fix** or **Approve building it** does, unless it is already approved or being worked. The next pickup works it. Feedback can go here too: the pickup acts on it. |
 | Out of Up next, before work starts | Withdraws your approval and puts back the status it had. |
-| Any other column | Moves the card and nothing else. The pickup leaves a card where you put it. |
+| Any other column | Moves the card and nothing else. The pickup leaves a card where you put it; the only cards it moves are the ones it triages out of Reported (into Triaged for you, or Up next for bugs it fixes) and the ones it finishes (into Done). |
 | Back from Closed | Reopens it as triaged, in the column you chose. |
 
 ## Choose an app
@@ -151,7 +151,7 @@ To see the worst first, choose **Highest impact first** in the order menu. To se
 
 ## Approve or decline
 
-A report the pickup could not finish on its own, such as a fix too big to merge without a person or a feature request, shows **Your decision** when you open it, in the list or from a card on the board. On the board, dragging the card from Todo to Up next is the same approval, with no note. Add a note if the work should do or avoid something, then click **Approve the fix** (or **Approve building it**) or **Decline**.
+A report the pickup could not finish on its own, such as a fix too big to merge without a person or a feature request, shows **Your decision** when you open it, in the list or from a card on the board. On the board, dragging the card from Triaged to Up next is the same approval, with no note. Add a note if the work should do or avoid something, then click **Approve the fix** (or **Approve building it**) or **Decline**.
 
 - **Approve:** the report shows "Approved, waiting for the next run". The next pickup builds it, merges it and writes the commit onto the report.
 - **Decline:** the pickup closes the issue with your note.
