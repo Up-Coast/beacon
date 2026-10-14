@@ -241,7 +241,7 @@ If the publish is refused (`not_writer`, `capability_disabled` or another code),
 - An artifact that declares `db` is organization-internal. Every reader and writer is a signed-in member of the owner's Claude organization, and it cannot be shared publicly.
 - By default only viewers with "Can interact" or higher write shared documents. A view-only viewer cannot send a report.
 - Publishing a version needs "Can edit". A tester with "Can interact" can send, but the doorbell is refused with `not_writer`.
-- The dashboard subscribes with `onSnapshot` to `reports`, ordered by `filedAt` descending, limit 500. The page subscribes to `apps`, ordered by `name`, in every view.
+- The dashboard subscribes with `onSnapshot` to `reports`, ordered by `filedAt` descending, limit `REPORT_LIMIT` (1000). Each column and list shows a page at a time through `capped()`, and `safely()` turns a report the page cannot draw into a plain line instead of a blank board. `Scripts/mirror-board.py` keeps the board in step with the GitHub issues (Triage/PICKUP.md, Part 0). The page subscribes to `apps`, ordered by `name`, in every view.
 - `claude.use("user")` is asked for `canEdit()` only; nothing is declared for it.
 
 ## The pickup

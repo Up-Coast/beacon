@@ -45,6 +45,13 @@ Each app document in the page's apps collection carries: name, platform, reposit
 
 Every report also carries a column on the owner's dashboard: column is one of "reported", "todo", "upnext", "done" or "deployed", and columnAt is the ISO time it last moved. Whenever you write a report's column, write columnAt with it. A report without a column is in "reported". The owner moves reports too: dragging Triaged to Up next writes the same approval the Approve button writes ({"status":"approved","approval":{"decision":"approved","note","at"},"statusBeforeApproval","column":"upnext"}); moving Up next back to Triaged removes the approval (approval null, status back to statusBeforeApproval, column "todo"); and any other move sets the column alone (a closed report dragged back becomes status "triaged"). The owner can put any report in any column. Work only what is in "upnext"; never move a report the owner placed, and never undo the owner's move.
 
+Part 0: mirror the issues onto the board (a script, not a model)
+The board is a view of the GitHub issues labelled beacon. Do the mirroring with the script, never by writing report after report by hand: a repository can hold hundreds of issues and a model writing them one at a time stops part way, leaving the board and the labels disagreeing.
+1. read_db list collection "reports" with out_dir <dir>/reports, and read_db list collection "apps" with out_dir <dir>/apps (the files cost no context).
+2. python3 Scripts/mirror-board.py --reports <dir>/reports --apps <dir>/apps --out <dir>/out. It reads each tracker "github" app's issues with gh and prints one line of counts: create, update, same, untriaged, held. It writes <dir>/out/batch-NN.json, each {"writes": [...]} of at most 50.
+3. For each batch file, in order: write_db batch with exactly that file's writes. A refused write names the document's current version: put that version in a JSON map {reference: version} and run the script again with --versions <file>. Documents the script or the page has written since the listing are past version 1.
+4. The script decides from labels and state alone (open and labelled triaged or needs-human becomes triaged or needs-human in Triaged, closed becomes Done and Fixed, closed as not planned becomes declined) and never touches a report the owner has decided on or the pickup is working. Open issues with no triage label are the "untriaged" count: those are the work of Part 2.
+
 Part 1: file the page's reports (tracker "github")
 1. Artifact tool, read_db, db_op query, collection "reports", where [["status","==","new"]]. None → skip to Part 2.
 2. For each report, oldest first:

@@ -22,7 +22,7 @@ The bar at the top of the page switches between three views:
 
 The switch works inside the page, so it works however the link was opened. A link from the Beacon button inside an app opens the form instead, because it carries the app's name and details. To send someone straight to the form from a plain link, add `?view=form`. `?view=board` opens the dashboard, as the plain link does.
 
-The dashboard updates live, newest report first, and shows the latest 500.
+The dashboard updates live, newest report first, and loads the latest 1,000. A long list or column shows 25 cards (50 rows in the list layout) and a **Show more** button for the next page; changing the app, a filter or the search starts over.
 
 ![The dashboard showing all apps: a tab per app, four counts, the filters, and the reports that wait on a decision listed first](assets/page-dashboard.png)
 

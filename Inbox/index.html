@@ -687,6 +687,8 @@
   const remembered = (key) => { try { return localStorage.getItem("beacon.page." + key); } catch { return null; } };
   const remember = (key, value) => { try { localStorage.setItem("beacon.page." + key, value); } catch {} };
 
+  // The most reports the dashboard loads, newest first.
+  const REPORT_LIMIT = 1000;
   let db = null, artifact = null, apps = [], allReports = [], reportsWatched = false, reached = null;
   // appsLoaded: the first `apps` snapshot has arrived. canEdit: the viewer
   // can edit this page (the `user` capability's canEdit), which is who may
@@ -1004,7 +1006,10 @@
     const prose = el("div", { class: "words" });
     if (r.kind === "bug") {
       prose.append(...[words(FIELD_LABELS.expected, b.expected), words(FIELD_LABELS.whatHappened, b.whatHappened)].filter(Boolean));
-      if (b.steps && b.steps.length) prose.append(el("div", {}, el("h3", { text: FIELD_LABELS.steps }), el("ol", {}, ...b.steps.map((st) => el("li", { text: st })))));
+      // Steps are a list when the form wrote them, and one block of text when
+      // they came from a GitHub issue.
+      const steps = Array.isArray(b.steps) ? b.steps : String(b.steps || "").split(/\r?\n+/).map((x) => x.replace(/^\s*(?:\d+[.)]|[-*])\s*/, "").trim()).filter(Boolean);
+      if (steps.length) prose.append(el("div", {}, el("h3", { text: FIELD_LABELS.steps }), el("ol", {}, ...steps.map((st) => el("li", { text: String(st) })))));
       if (b.reproducibility) prose.append(words(FIELD_LABELS.reproducibility, REPRO_LABEL[b.reproducibility] || b.reproducibility));
     } else if (r.kind === "feature-request") {
       prose.append(...[words(FIELD_LABELS.whatIWant, b.whatIWant), words(FIELD_LABELS.why, b.why), words("Their idea", b.idea)].filter(Boolean));
@@ -1117,7 +1122,30 @@
     if (needle && !JSON.stringify([r.title, r.body, r.reporter, r.area, r.reference]).toLowerCase().includes(needle)) return false;
     return true;
   };
-  const row = (r) => {
+  // A report the page cannot draw shows as a plain line, never a blank board.
+  const safely = (make) => (r) => {
+    try { return make(r); }
+    catch (err) {
+      console.warn("report", r && r.reference, err);
+      return el("div", { class: "empty", text: `${(r && (r.title || r.reference)) || "A report"} could not be shown (${err && err.message || err}).` });
+    }
+  };
+  // Long lists show a page at a time: each list or column keeps how many it
+  // shows, and "Show more" adds another page. Filters and tabs start over.
+  let caps = {};
+  const PAGE = 25;
+  const capped = (key, items, make, page = PAGE) => {
+    const shownCount = caps[key] || page;
+    const nodes = items.slice(0, shownCount).map(make);
+    if (items.length > shownCount) {
+      const more = el("button", { type: "button", class: "linkish more", text: `Show ${Math.min(page, items.length - shownCount)} more of ${items.length - shownCount}` });
+      more.addEventListener("click", () => { caps[key] = shownCount + page; renderBoard(); });
+      nodes.push(more);
+    }
+    return nodes;
+  };
+  const resetCaps = () => { caps = {}; };
+  const row = safely((r) => {
     const flag = waitsOnOwner(r) ? el("span", { class: "pill you", text: "Your decision" }) : null;
     const d = el("details", { "data-ref": r.reference },
       el("summary", {}, el("div", { class: "row" }, el("span", { class: "titleline" }, impactIcon(r.impact), el("span", { class: "title", text: r.title || r.reference })), el("span", { class: "pills" }, flag, pill(r))), el("div", { class: "meta", text: metaLine(r) })),
@@ -1128,7 +1156,7 @@
       else openRefs.delete(r.reference);
     });
     return d;
-  };
+  });
   const renderTabs = () => {
     const tab = (id, name, platform, waiting) => {
       const b = el("button", { type: "button", class: "tab", role: "tab", "aria-selected": String(selectedApp === id), "data-app": id },
@@ -1145,7 +1173,7 @@
   };
   $("#tabs").addEventListener("click", (e) => {
     const b = e.target.closest(".tab"); if (!b) return;
-    selectedApp = b.dataset.app; remember("app", selectedApp); renderBoard();
+    selectedApp = b.dataset.app; remember("app", selectedApp); resetCaps(); renderBoard();
   });
   const renderStats = () => {
     const mine = allReports.filter(inApp);
@@ -1169,7 +1197,7 @@
   };
   $("#stats").addEventListener("click", (e) => {
     const b = e.target.closest(".stat"); if (!b) return;
-    group = group === b.dataset.group ? "" : b.dataset.group; renderBoard();
+    group = group === b.dataset.group ? "" : b.dataset.group; resetCaps(); renderBoard();
   });
   // ---- List or board, remembered on this browser. ----
   let layout = remembered("layout") === "board" ? "board" : "list";
@@ -1178,7 +1206,7 @@
   }));
   const byImpactThenAge = (a, b) => ((IMPACT_RANK[a.impact] ?? 9) - (IMPACT_RANK[b.impact] ?? 9)) || String(a.filedAt || "").localeCompare(String(b.filedAt || ""));
   const GRIP = '<svg viewBox="0 0 14 14" aria-hidden="true"><g fill="currentColor"><circle cx="4.5" cy="3" r="1.3"/><circle cx="9.5" cy="3" r="1.3"/><circle cx="4.5" cy="7" r="1.3"/><circle cx="9.5" cy="7" r="1.3"/><circle cx="4.5" cy="11" r="1.3"/><circle cx="9.5" cy="11" r="1.3"/></g></svg>';
-  const card = (r) => {
+  const card = safely((r) => {
     const moves = canMove() ? movesFor(r) : [];
     const title = el("button", { type: "button", class: "open", text: r.title || r.reference });
     title.addEventListener("click", () => { if (suppressClick) { suppressClick = false; return; } openReport(r.reference); });
@@ -1204,7 +1232,7 @@
       c.append(el("div", { class: "move" }, grip, menu));
     }
     return c;
-  };
+  });
   const renderKanban = (shown) => {
     const cols = new Map(COLUMNS.map(([id]) => [id, []]));
     const closed = [];
@@ -1213,12 +1241,12 @@
       const list = cols.get(id).sort(byImpactThenAge);
       return el("section", { class: "kcol", "data-col": id, "aria-label": name },
         el("header", {}, el("h2", {}, document.createTextNode(name), el("span", { text: String(list.length) })), el("p", { text: blurb })),
-        ...(list.length ? list.map(card) : [el("div", { class: "empty", text: "Nothing here." })]));
+        ...(list.length ? capped("col:" + id, list, card) : [el("div", { class: "empty", text: "Nothing here." })]));
     }));
     closed.sort(byImpactThenAge);
     $("#closedArea").hidden = !closed.length;
     $("#closedTitle").textContent = `Closed: declined or working as designed (${closed.length})`;
-    $("#closedList").replaceChildren(...closed.map(card));
+    $("#closedList").replaceChildren(...capped("closed", closed, card));
   };
 
   // ---- Dragging a card: pointer events, so a mouse, a finger and a pen
@@ -1280,7 +1308,7 @@
     if (seen === dialogShown) return;
     dialogShown = seen;
     const flag = waitsOnOwner(r) ? el("span", { class: "pill you", text: "Your decision" }) : null;
-    $("#dialogHead").replaceChildren(impactIcon(r.impact), el("span", { id: "dialogTitle", text: r.title || r.reference }), flag, pill(r));
+    $("#dialogHead").replaceChildren(...[impactIcon(r.impact), el("span", { id: "dialogTitle", text: r.title || r.reference }), flag, pill(r)].filter(Boolean));
     const detail = renderDetail(r);
     detail.prepend(el("div", { class: "meta", text: metaLine(r) }));
     $("#dialogBody").replaceChildren(detail);
@@ -1322,20 +1350,20 @@
     }
     const decide = shown.filter(waitsOnOwner), rest = shown.filter((r) => !waitsOnOwner(r));
     $("#decideGroup").hidden = bare || !decide.length;
-    $("#decideList").replaceChildren(...decide.map(row));
+    $("#decideList").replaceChildren(...capped("list:decide", decide, row, 50));
     $("#restTitle").textContent = decide.length ? "Everything else" : "Reports";
     $("#restGroup").hidden = bare || Boolean(decide.length && !rest.length);
     const queue = $("#queue");
     if (reached === false) queue.replaceChildren(el("div", { class: "empty", text: "Reports show here once the page can reach them." }));
     else if (!allReports.filter(inApp).length) queue.replaceChildren(el("div", { class: "empty", text: reached ? "No reports yet." : "Loading reports…" }));
     else if (!shown.length) queue.replaceChildren(el("div", { class: "empty", text: "Nothing matches those filters." }));
-    else queue.replaceChildren(...rest.map(row));
+    else queue.replaceChildren(...capped("list:rest", rest, row, 50));
   };
   for (const [value, [, label]] of Object.entries(STATUS)) $("#fStatus").append(el("option", { value, text: label }));
   for (const [value, label] of Object.entries(KIND_FILTER)) $("#fKind").append(el("option", { value, text: label }));
   for (const [value, label] of IMPACT) $("#fImpact").append(el("option", { value, text: label }));
-  ["fStatus", "fKind", "fImpact", "fSort"].forEach((id) => $("#" + id).addEventListener("change", renderBoard));
-  $("#fSearch").addEventListener("input", renderBoard);
+  ["fStatus", "fKind", "fImpact", "fSort"].forEach((id) => $("#" + id).addEventListener("change", () => { resetCaps(); renderBoard(); }));
+  $("#fSearch").addEventListener("input", () => { resetCaps(); renderBoard(); });
 
   // ---- The app list. One document per app in `apps`, with the fields the
   // pickup reads (Triage/PICKUP.md): name, platform, repository, folder,
@@ -1479,7 +1507,7 @@
   const watchReports = () => {
     if (reportsWatched || !db) { renderBoard(); return; }
     reportsWatched = true;
-    db.collection("reports").orderBy("filedAt", "desc").limit(500).onSnapshot((snap) => {
+    db.collection("reports").orderBy("filedAt", "desc").limit(REPORT_LIMIT).onSnapshot((snap) => {
       reached = true;
       allReports = snap.docs.map((d) => d.data()); renderBoard(); renderApps();
     }, (err) => { console.warn("board", err); reached = false; $("#dbState").hidden = false; renderBoard(); });
