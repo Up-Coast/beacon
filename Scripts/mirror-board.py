@@ -27,7 +27,8 @@ What it decides, from the issue's state and labels alone (no judgement):
   open, triaged                                      status triaged, column todo
   open, none of those                                left alone: it still has
                                                      to be triaged
-  closed as not planned, or wontfix / declined       status declined
+  closed with wontfix or declined                    status declined
+  closed as not planned                              status closed
   closed, working-as-intended                        status working-as-intended
   closed, anything else                              status auto-fixed, column done
 
@@ -87,8 +88,12 @@ def desired(issue):
     """(status, column) the issue's state asks for; None where it asks nothing."""
     labels = {l["name"] for l in issue["labels"]}
     if issue["state"].upper() == "CLOSED":
-        if labels & {"wontfix", "declined"} or (issue.get("stateReason") or "").upper() == "NOT_PLANNED":
+        if labels & {"wontfix", "declined"}:
             return ("declined", None)
+        if (issue.get("stateReason") or "").upper() == "NOT_PLANNED":
+            # Closed without being done, by a session that checked it (no
+            # longer applies, a duplicate, an idea with nothing to do yet).
+            return ("closed", None)
         if "working-as-intended" in labels:
             return ("working-as-intended", None)
         # Closed is finished: by Beacon (auto-fixed) or by a session that

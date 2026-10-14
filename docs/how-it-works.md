@@ -33,7 +33,7 @@ The dashboard shows a status on every report. The page stores it as a value. Eve
 | Fixed | `auto-fixed` | Fixed, proven by running the app, and merged. |
 | Triaged | `triaged` | Read, labelled and routed. Waiting on a person. |
 
-A status value the page does not know shows as the value itself. Two more values come from you on the dashboard: `approved` (Approved, waiting for the next run) and `declined`.
+A status value the page does not know shows as the value itself. Two more values come from you on the dashboard: `approved` (Approved, waiting for the next run) and `declined`. One more comes from the issue: `closed` (Closed, not planned) is a report whose issue was closed as not planned, which the mirror script sets (Triage/PICKUP.md, Part 0).
 
 ## Columns
 
@@ -47,7 +47,7 @@ The dashboard's board layout puts each report in a column. The report stores it 
 | Done | `done` | The pickup, when the fix is merged to the main branch. |
 | Deployed | `deployed` | You, when the fix is live. The pickup, when it can tell. |
 
-A report with no `column`, such as one sent before columns existed, is placed by its status: received and filed in Reported, anything waiting on your decision in Triaged, approved and being looked at in Up next, fixed in Done. The status also wins when it and the column disagree: a fixed report is never shown before Done, an approved or worked one never before Up next, and one waiting on your decision is always in Triaged. Declined reports and reports that work as designed are shown under Closed, not in a column.
+A report with no `column`, such as one sent before columns existed, is placed by its status: received and filed in Reported, anything waiting on your decision in Triaged, approved and being looked at in Up next, fixed in Done. The status also wins when it and the column disagree: a fixed report is never shown before Done, an approved or worked one never before Up next, and one waiting on your decision is always in Triaged. Declined reports, reports closed as not planned, and reports that work as designed are shown under Closed, not in a column.
 
 
 ## What Beacon needs to run

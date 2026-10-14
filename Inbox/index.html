@@ -615,6 +615,7 @@
     "needs-human":         ["waiting", "Needs a person"],
     approved:              ["triaging", "Approved, waiting for the next run"],
     declined:              ["hold", "Declined"],
+    closed:                ["hold", "Closed, not planned"],
     "needs-info":          ["waiting", "Needs more from the tester"],
     "cannot-reproduce":    ["waiting", "Couldn't reproduce"],
     "working-as-intended": ["hold", "Working as designed"],
@@ -647,7 +648,7 @@
     ["deployed", "Deployed", "Live for the people using it."],
   ];
   const COLUMN_IDS = new Set(COLUMNS.map((c) => c[0]));
-  const CLOSED_STATUSES = new Set(["declined", "working-as-intended"]);
+  const CLOSED_STATUSES = new Set(["declined", "working-as-intended", "closed"]);
   // Where a card stands. The stored `column` wins: the owner can put any card
   // anywhere, and the pickup writes a column whenever it changes a status.
   // Only a report with no column falls back to its status.
@@ -1245,7 +1246,7 @@
     }));
     closed.sort(byImpactThenAge);
     $("#closedArea").hidden = !closed.length;
-    $("#closedTitle").textContent = `Closed: declined or working as designed (${closed.length})`;
+    $("#closedTitle").textContent = `Closed: declined, not planned or working as designed (${closed.length})`;
     $("#closedList").replaceChildren(...capped("closed", closed, card));
   };
 
