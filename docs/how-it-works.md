@@ -36,6 +36,7 @@ A status is a step in a report's life. A column and its status share a name, so 
 | Works as designed | `working-as-intended` | The app behaves as designed. The explanation is on the issue, which is closed. |
 | Canceled | `declined`, `closed` | Not doing it. `declined` is you canceling it; `closed` is an issue closed as not planned. |
 | Duplicate | `duplicate` | A copy of another report. A report that names another with `duplicateOf` shows as Duplicate too. |
+| Closed: feedback | `feedback-closed` | Feedback you read and closed without work. The issue is closed as completed and labelled `feedback-closed`. |
 
 ### Flags
 
@@ -47,8 +48,9 @@ A flag says more about a report than its status does. A report has one status an
 | Needs more info | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
 | Can't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
 | Confusing to users | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |
+| Waiting for human | `flags` list only | Yours to set in Your changes. The report can sit in To do, but the pickup leaves it completely alone until you clear the flag, for example while it needs design work. It is the one thing that holds an approved report back. |
 
-A status value the page does not know shows as the value itself. You set To do, Backlog, Canceled and Duplicate on the dashboard (the Approve and Cancel buttons, or Move to). The mirror script sets Canceled and Duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
+A status value the page does not know shows as the value itself. You set To do, Backlog, Canceled, Duplicate and Closed: feedback on the dashboard (the Approve and Cancel buttons, the Status menu, or Move to). The mirror script sets Canceled and Duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
 
 ## Columns
 

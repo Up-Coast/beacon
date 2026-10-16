@@ -189,6 +189,6 @@ Beacon makes network calls only to send through the transport and, for the GitHu
 
 Beacon deletes nothing.
 
-- **Page reports** stay in the page's store, and the images committed for GitHub apps stay on the `beacon-attachments` branch.
+- **Page reports** stay in the page's store, and the images committed for GitHub apps stay on the `beacon-attachments` branch, and the owner's own images added in Your changes stay in the page's store (`ownerAttachments`).
 - **Sheet reports** stay in the saved copy on the tester's device until someone deletes it. The issue and the `beacon-attachments` branch follow the repository's own rules.
 - **Consent records** stay in the app's `UserDefaults`, or in the app's `consentStore`.

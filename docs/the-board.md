@@ -59,12 +59,13 @@ One page serves every app. There is no page per project.
 
 The pickup reads the same app list, so it knows each app's repository, folder and where its reports are worked. Adding an app needs no republish and no change to the pickup.
 
-## List or board
+## List, board or triage
 
-The **List** and **Board** switch beside the filters changes how the dashboard lays out the reports. The page remembers the choice on this browser. The tabs, counts and filters work the same in both.
+The **List**, **Board** and **Triage** switch beside the filters changes how the dashboard lays out the reports. The page remembers the choice on this browser. The tabs, counts and filters work the same in both.
 
 - **List**: reports waiting on your decision first, then everything else, newest first or highest impact first.
-- **Board**: one column per stage, left to right. Within a column, the highest impact comes first, then the oldest.
+- **Board**: one column per stage, left to right: Backlog, To Triage, To do, In progress, Done and Deployed. The board has no Inbox column; Inbox reports show in the List. Within a column, the highest impact comes first, then the oldest.
+- **Triage**: for working through what Claude has triaged. [The Triage view](#the-triage-view) says how.
 
 ![The dashboard's board layout: the Backlog, To Triage, To do, In progress, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
 
@@ -78,7 +79,7 @@ The **List** and **Board** switch beside the filters changes how the dashboard l
 | **Done** | Fixed and merged to the main branch. |
 | **Deployed** | The fix is live for the people using the app. |
 
-Canceled and duplicate reports, and reports that work as designed, are not in a column. They are under **Closed**, below the board, folded away until you open it.
+Canceled and duplicate reports, reports closed as feedback, and reports that work as designed are not in a column. They are under **Closed**, below the board, folded away until you open it.
 
 Click a card's title to open the whole report, the same detail a list row shows, Approve and Cancel included.
 
@@ -92,7 +93,7 @@ With a mouse, drag the card itself. With a finger, drag it by its grip, the dott
 |---|---|
 | To do | Approves it, exactly as **Approve the fix** or **Approve building it** does, unless it is already approved or being worked. The next pickup works it. Feedback can go here too: the pickup acts on it. |
 | Out of To do, before work starts | Withdraws your approval and puts back the status it had. |
-| Canceled: not doing, or Canceled: duplicate | Cancels it, with the reason. The next run closes the issue and says why. These are in the **Move to** menu and as the **Cancel** buttons on an opened report; they are not columns. |
+| Canceled: not doing, Canceled: duplicate, or Closed: feedback | Closes it, with the reason. The next run closes the issue and says why. These are in the **Move to** menu and, for the two cancels, as the **Cancel** buttons on an opened report; they are not columns. |
 | Any other column | Moves the card and nothing else. The pickup leaves a card where you put it; the only cards it moves are the ones it triages out of Inbox (into To Triage for you, or To do for bugs it fixes) and the ones it finishes (into Done). |
 | Back from Closed | Reopens it as triaged, in the column you chose. |
 
@@ -117,23 +118,29 @@ Four counts sit under the tabs, for the selected app or for all apps:
 
 Click a count to show only those reports. Click it again to show everything.
 
-The board has no Inbox column; Inbox reports show in the list.
+## The Triage view
+
+The third layout, **Triage**, is for working through what Claude has triaged: read a ticket, then drag it to where it goes.
+
+- **To Triage, on the left.** The To Triage column takes the left 60% of the page. One ticket is open at a time, shown with its whole report and triage's recommendation, outlined in blue. The top ticket is open when the page loads. Click another ticket's title to open it; the first closes, and the page scrolls the new one to the top. The rest are collapsed to a title, its status and the recommendation.
+- **Your changes, on the right.** The editor sits under the last status bar and always applies to the open ticket. A note you are typing is kept while other reports arrive, and starts again when you open a different ticket. This view leaves out the Approve and Cancel links: the Status menu does both.
+- **Status bars, on the right.** Every other status is a bar that shows its count: Backlog and To do on a row each, then In progress, Done and Deployed together, then Canceled: not doing, Canceled: duplicate and Closed: feedback together. The board's Inbox column is not here.
+- **Drag a ticket onto a bar** to move it. A small tag with the ticket's title follows the pointer and says where it would land ("Move to Done"), and the bar under the pointer turns blue. Drop it and the bar's count goes up; the next ticket opens. The ticket's **Move to** menu does the same from the keyboard.
+- **Look inside a status.** Click a bar to open it: it shows its five most recently moved tickets, newest first, and **Show 10 more** adds ten at a time. An opened bar takes the whole row. Each ticket is a list row, so opening one shows Your changes inline, Approve and Cancel included, as in the List. Several bars can be open at once.
+
+The drop targets and counts follow the app tab you chose; the counts on the bars ignore the filters.
 
 ## Closed: feedback
 
-**Closed: feedback** is a third way to close a report, next to Canceled: not doing and Canceled: duplicate. Use it for feedback you have read and need nothing more from. It is a Status choice, a Move to option and a drop zone in the Triage view. The pickup closes the issue as completed, labelled `feedback-closed`, without doing any work.
+**Closed: feedback** is a third way to close a report, next to Canceled: not doing and Canceled: duplicate. Use it for feedback you have read and need nothing more from. It is a Status choice, a **Move to** option and a bar in the Triage view. The pickup closes the issue as completed, labelled `feedback-closed`, and does no work.
 
 ## Attach images to a report
 
-Under your note in Your changes, **Add images** attaches screenshots or mockups of your own. They show as thumbnails under the note, save as soon as you add them, and have an × to remove one. Click any thumbnail, yours or the reporter's, to see it full size; click again or press Escape to close. They are kept apart from the reporter's images, in the report's `ownerAttachments`, and the pickup reads them with your note.
+Under your note in Your changes, **Add images** attaches screenshots or mockups of your own. They show as thumbnails under the note, save as soon as you add them, and have an × to remove one. Up to six per report, each shrunk to fit. Click any thumbnail, yours or the reporter's, to see it full size; click again or press Escape to close. They are kept apart from the reporter's images, in the report's `ownerAttachments`, and the pickup reads them with your note.
 
 ## Waiting for human
 
-Tick **Waiting for human** in Your changes to keep a report in To do without the pickup working on it, for example when it needs design work first. The pickup skips it until you untick the box. The flag shows as a chip on the card and in the Any flag filter.
-
-## The Triage view
-
-The third layout, **Triage**, is for working through what Claude has triaged. The To Triage column takes the left 60% of the page, one ticket open at a time (the top one when the page loads; opening another closes it) and the rest collapsed to a title and recommendation. **Your changes** sits under the last drop zone and always applies to the open ticket. The other statuses stack on the right as drop zones that show only their count: drag a card onto one to move it, and the count goes up. Click a zone's bar to open it: it shows its five most recently moved tickets, and **Show 10 more** adds ten at a time. Each is a list row, so opening one shows Your changes inline, as in the list. There are two Canceled zones, one for not doing it and one for a duplicate.
+Tick **Waiting for human** in Your changes to keep a report in To do without the pickup working on it, for example when it needs design work first. The pickup skips it until you untick the box. The flag shows as a chip on the card and in the Any flag filter, and also as the label `flag:waiting-for-human` on the issue.
 
 ## Read a row
 
@@ -199,7 +206,7 @@ Every opened report has **Your changes** (for people who can edit the page): the
 | Flag | Any flag, or one: Needs your decision, Needs more info, Can't reproduce, Confusing to users. |
 | Kind | Every kind, Bugs, Requests, Change requests or Feedback. |
 | Impact | Every impact, or one level. |
-| Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey), or one reporter, with how many reports each has sent in the selected app. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |
+| Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey), or one reporter, with how many reports each has sent in the selected app. The numbers follow your other filters, including Hide done, so each is what picking that person would show. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |
 | Order | Newest first, oldest first, or highest impact first (oldest first within a level). The list starts on newest first and the board on highest impact first; each remembers the choice on this browser. |
 | Hide done | A switch beside the search box. On, it hides everything finished: the Done and Deployed columns, and everything under Closed (canceled, duplicate, works as designed). The page remembers it on this browser. |
 | Search words | Matches the title, the tester's words, the reporter, the area and the reference. |
