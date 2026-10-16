@@ -100,6 +100,7 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
    e. If the fix does not make the reproduction pass, try again with what you learned, up to three fixes. Then stop on it with reason "still-happening".
 
 5. Finish it
+   If the only thing you cannot do is prove the fix on screen, for example a bug that shows only in a browser this Mac cannot drive, do not block. Build the best fix from the code, run the suite, push the branch and open a pull request (not a draft) that says what could not be verified and where. The report moves to In progress by itself, and the owner merges it after checking.
    Rebase on the latest default branch, run the suite again, merge to the default branch and push. Never merge with a failing check. Never force-push the default branch.
    - Issue: one comment naming the commit, what changed, and the proof (gh issue comment). Then gh issue edit --add-label auto-fixed --remove-label in-progress, and gh issue close.
    - If a pull request exists for the branch, close it with a comment naming the commit, and write pullRequest.state "merged".
