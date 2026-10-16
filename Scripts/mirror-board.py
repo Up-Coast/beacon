@@ -22,6 +22,11 @@ the caller sends each batch file's `writes` with the tool's `batch` action.
 
 What it decides, from the issue's state and labels alone (no judgement):
 
+  a beacon/<n>-* branch, or an open pull request naming the issue
+                                                     In progress, with the pull request link
+  a merged pull request naming the issue             Done, with the merge commit
+                                                     (a report flagged Blocked or Waiting for human only gets the link)
+
   open, needs-human / needs-info / cannot-reproduce /
         expectation-mismatch / working-as-intended   status of that name
   open, triaged                                      status triaged, column todo
@@ -71,6 +76,68 @@ def gh_issues(repo):
          "--limit", "2000", "--json", "number,title,state,stateReason,labels,body,url,createdAt,author"],
         check=True, capture_output=True, text=True).stdout
     return json.loads(out)
+
+
+def gh_work(repo):
+    """Per issue number: the beacon/<n>-* branches and the pull requests that name it.
+
+    A pull request names an issue by its branch (beacon/<n>-slug) or by a
+    "#<n>" in its title or body (Closes #n). One call each for branches and
+    pull requests, however many issues the repository has.
+    """
+    work = {}
+    refs = subprocess.run(
+        ["gh", "api", "repos/%s/git/matching-refs/heads/beacon/" % repo, "--paginate", "--jq", ".[].ref"],
+        capture_output=True, text=True).stdout.split()
+    for ref in refs:
+        m = re.match(r"refs/heads/beacon/(\d+)-", ref)
+        if m:
+            work.setdefault(int(m.group(1)), {"branch": ref[len("refs/heads/"):], "prs": []})
+    prs = json.loads(subprocess.run(
+        ["gh", "pr", "list", "--repo", repo, "--state", "all", "--limit", "300", "--json",
+         "number,url,state,isDraft,headRefName,title,body,mergeCommit"],
+        capture_output=True, text=True).stdout or "[]")
+    for pr in prs:
+        numbers = set()
+        m = re.match(r"beacon/(\d+)-", pr.get("headRefName") or "")
+        if m:
+            numbers.add(int(m.group(1)))
+        for n in re.findall(r"(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)", (pr.get("title") or "") + " " + (pr.get("body") or ""), re.I):
+            numbers.add(int(n))
+        for n in numbers:
+            work.setdefault(n, {"branch": None, "prs": []})["prs"].append(pr)
+    return work
+
+
+def link_change(d, issue, work):
+    """What a branch or pull request says about a report, with no judgement.
+
+    A merged pull request: Done, with the merge commit. An open one, or a
+    branch with no pull request: In progress. A report the owner flagged
+    Blocked or Waiting for human keeps its status; only the link is recorded.
+    """
+    if not work or d.get("status") in ("declined", "duplicate", "closed", "feedback-closed", "working-as-intended", "deployed"):
+        return {}
+    prs = sorted(work["prs"], key=lambda p: (p["state"] != "MERGED", p["state"] != "OPEN", -p["number"]))
+    pr = prs[0] if prs else None
+    change = {}
+    if pr and pr["state"] in ("MERGED", "OPEN"):
+        state = "merged" if pr["state"] == "MERGED" else ("draft" if pr.get("isDraft") else "open")
+        link = {"number": pr["number"], "url": pr["url"], "state": state}
+        if d.get("pullRequest") != link:
+            change["pullRequest"] = link
+    paused = {"Blocked", "Waiting for human"} & set(d.get("flags") or [])
+    if pr and pr["state"] == "MERGED":
+        commit = (pr.get("mergeCommit") or {}).get("oid")
+        if commit and d.get("fixCommit") != commit:
+            change["fixCommit"] = commit
+        if d.get("status") != "auto-fixed" or d.get("column") != "done":
+            change.update(status="auto-fixed", column="done")
+    elif not paused and d.get("status") != "auto-fixed" and issue["state"].upper() == "OPEN":
+        if (pr and pr["state"] == "OPEN") or work.get("branch"):
+            if d.get("status") != "triaging" or d.get("column") != "inprogress":
+                change.update(status="triaging", column="inprogress")
+    return change
 
 
 def load_dir(path):
@@ -251,10 +318,11 @@ def main():
         if d.get("issueNumber") and d.get("app", {}).get("id"):
             by_issue[(d["app"]["id"], d["issueNumber"])] = (ref, d)
 
-    writes, counts = [], {"create": 0, "update": 0, "same": 0, "untriaged": 0, "held": 0}
+    writes, counts = [], {"create": 0, "update": 0, "same": 0, "untriaged": 0, "held": 0, "linked": 0}
     for app in apps:
         if app.get("tracker", "github") != "github" or not app.get("repository"):
             continue
+        work = gh_work(app["repository"])
         for issue in gh_issues(app["repository"]):
             # A test submission, labelled test: never on the board.
             if any(l["name"] == "test" for l in issue["labels"]):
@@ -270,6 +338,15 @@ def main():
                 continue
             ref, d = found
             cur = d.get("status")
+            # A branch or pull request moves the report, whoever decided on it.
+            linked = link_change(d, issue, work.get(issue["number"]))
+            if linked:
+                if "status" in linked or "column" in linked:
+                    linked["columnAt"] = now
+                writes.append({"op": "update", "collection": "reports", "doc_id": ref, "data": linked,
+                               "if_version": int(versions.get(ref, 1))})
+                counts["linked"] += 1
+                continue
             # Held: the owner decided on it, the pickup is working it, or the
             # owner set its status and flags by hand (editedAt).
             if d.get("approval") or d.get("editedAt") or cur in HELD:

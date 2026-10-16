@@ -25,6 +25,8 @@ The task runs only while the Claude app is open and the Mac is awake. A missed r
 | Finishes it | Status Done, column Done, the commit in Fix | A comment naming the commit and the proof, label `auto-fixed`, closed |
 | Stops on it | Back in To do, flag **Blocked**, the reason under "Why the work stopped" | A comment saying why and what it needs, label `flag:blocked` |
 
+Branches and pull requests move reports by themselves: each hourly run starts by running `Scripts/mirror-board.py`, which sets In progress when a `beacon/<issue>-*` branch or an open pull request names the issue, and Done when one is merged. It needs no judgement, so it works for branches and pull requests anyone opens. A report flagged Blocked or Waiting for human keeps its status.
+
 The report's detail shows a link at the top: the **Pull request** while the worker has one open for kept work, and **Merged: commit** once it merges.
 
 To send a blocked report back to the worker, answer in your note on the report (or in a comment on the issue), then untick **Blocked** in Your changes. The next run reads your answer and tries again.
@@ -66,6 +68,9 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
 0. Check you can work
    gh auth status. If it fails, send ONE message to NOTIFY saying the worker cannot reach GitHub, and stop.
    With BEACON_PAGE "none", skip to "GitHub only" at the end.
+
+0b. Link branches and pull requests to the board (a script, no judgement)
+   Do Part 0 of BEACON_REPO/Triage/PICKUP.md: read_db list "reports" and "apps" with out_dir, run Scripts/mirror-board.py, write_db each batch. It moves a report to In progress when a beacon/<issue>-* branch or an open pull request names its issue, and to Done with the merge commit when a pull request is merged. Do not run Part 0b (push-edits) here: that is the pickup's.
 
 1. Find the work
    read_db query collection "reports" where [["column","in",["upnext","inprogress"]]], and collection "apps".
