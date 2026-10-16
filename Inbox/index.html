@@ -257,8 +257,12 @@
   .triageside { display: grid; gap: 8px; align-content: start; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
   .triagezones { display: grid; gap: 8px; align-content: start; }
   .zone { min-height: 0; padding: 14px 16px; }
-  .zone h2 { font-size: 15px; }
-  .zone h2 span { font-size: 20px; font-weight: 700; color: var(--ink); }
+  .zonebar { display: flex; align-items: baseline; gap: 8px; width: 100%; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+  .zonebar .chev { width: 1em; color: var(--ink-3); }
+  .zonebar .zname { flex: 1; }
+  .zonebar .n { font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  .zone.expanded { gap: 10px; }
+  .zonelist { text-transform: none; letter-spacing: 0; font-weight: 400; }
   .triagecard { scroll-margin-top: 12px; }
   .triagecard.isopen { border-color: var(--accent); box-shadow: var(--shadow); }
   .triagecard .detail { padding: 0; }
@@ -1545,17 +1549,36 @@
     if (r.status === "feedback-closed") return "close-feedback";
     return r.status === "duplicate" || r.duplicateOf ? "cancel-duplicate" : "cancel-declined";
   };
+  const zonesOpen = new Set();
   const renderTriage = (shown) => {
     const list = shown.filter((r) => columnOf(r) === "todo");
     if (!list.some((r) => r.reference === triageOpen)) triageOpen = list.length ? list[0].reference : "";
     $("#triageMain").replaceChildren(
       el("header", {}, el("h2", {}, document.createTextNode("To Triage"), el("span", { text: String(list.length) })), el("p", { text: "Claude has read and routed these. Open one, then drag it to where it goes." })),
       ...(list.length ? capped("col:triage", list, triageCard) : [el("div", { class: "empty", text: "Nothing to triage." })]));
-    const counts = new Map();
-    for (const r of allReports.filter(inApp)) counts.set(zoneOf(r), (counts.get(zoneOf(r)) || 0) + 1);
-    $("#triageZones").replaceChildren(...TRIAGE_ZONES.map(([key, name]) =>
-      el("section", { class: "kcol zone", "data-col": key, "data-key": key, "aria-label": name },
-        el("h2", {}, document.createTextNode(name), el("span", { text: String(counts.get(key) || 0) })))));
+    const byZone = new Map();
+    for (const r of allReports.filter(inApp)) { const z = zoneOf(r); (byZone.get(z) || byZone.set(z, []).get(z)).push(r); }
+    // A zone's bar opens to its most recent tickets: five, then ten more at a
+    // time, each a list row with Your changes inline.
+    const movedMs = (r) => Date.parse(r.columnAt) || filedMs(r);
+    $("#triageZones").replaceChildren(...TRIAGE_ZONES.map(([key, name]) => {
+      const items = (byZone.get(key) || []).sort((x, y) => movedMs(y) - movedMs(x));
+      const open = zonesOpen.has(key);
+      const bar = el("button", { type: "button", class: "zonebar", "aria-expanded": String(open) },
+        el("span", { class: "chev", text: open ? "▾" : "▸" }), el("span", { class: "zname", text: name }), el("span", { class: "n", text: String(items.length) }));
+      bar.addEventListener("click", () => { if (open) zonesOpen.delete(key); else zonesOpen.add(key); renderBoard(); });
+      const body = [];
+      if (open) {
+        const shownCount = caps["zone:" + key] || 5;
+        body.push(el("div", { class: "list zonelist" }, ...(items.length ? items.slice(0, shownCount).map(row) : [el("div", { class: "empty", text: "Nothing here." })])));
+        if (items.length > shownCount) {
+          const more = el("button", { type: "button", class: "linkish more", text: `Show ${Math.min(10, items.length - shownCount)} more of ${items.length - shownCount}` });
+          more.addEventListener("click", () => { caps["zone:" + key] = shownCount + 10; renderBoard(); });
+          body.push(more);
+        }
+      }
+      return el("section", { class: "kcol zone" + (open ? " expanded" : ""), "data-col": key, "data-key": key, "aria-label": name }, bar, ...body);
+    }));
     // Your changes, for the open ticket. Rebuilt only when that ticket changes,
     // so a note being typed is not lost to another report arriving.
     const current = list.find((r) => r.reference === triageOpen);

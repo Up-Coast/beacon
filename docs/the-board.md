@@ -133,7 +133,7 @@ Tick **Waiting for human** in Your changes to keep a report in To do without the
 
 ## The Triage view
 
-The third layout, **Triage**, is for working through what Claude has triaged. The To Triage column takes the left 60% of the page, one ticket open at a time (the top one when the page loads; opening another closes it) and the rest collapsed to a title and recommendation. **Your changes** sits under the last drop zone and always applies to the open ticket. The other statuses stack on the right as drop zones that show only their count: drag a card onto one to move it, and the count goes up. There are two Canceled zones, one for not doing it and one for a duplicate.
+The third layout, **Triage**, is for working through what Claude has triaged. The To Triage column takes the left 60% of the page, one ticket open at a time (the top one when the page loads; opening another closes it) and the rest collapsed to a title and recommendation. **Your changes** sits under the last drop zone and always applies to the open ticket. The other statuses stack on the right as drop zones that show only their count: drag a card onto one to move it, and the count goes up. Click a zone's bar to open it: it shows its five most recently moved tickets, and **Show 10 more** adds ten at a time. Each is a list row, so opening one shows Your changes inline, as in the list. There are two Canceled zones, one for not doing it and one for a duplicate.
 
 ## Read a row
 
