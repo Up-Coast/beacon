@@ -156,6 +156,10 @@ No one has to move a card for work that exists on GitHub. A branch named `beacon
 
 A script does this (`Scripts/mirror-board.py`), with no AI judgement. It writes to the dashboard when the worker's hourly run starts, so a card moves within the hour. The page cannot read GitHub itself.
 
+## Needs PR approval
+
+Tick **Needs PR approval** in Your changes when you want to check the work before it merges. The worker still does the work, but it opens a pull request instead of merging, and the pull request link shows at the top of the report. You merge it, and the report moves to Done by itself. A line in your note or a comment on the issue saying not to merge has the same effect.
+
 ## Blocked
 
 The worker flags a report **Blocked** when it started the work and cannot finish it: it needs a decision, the fix did not stop the problem, the bug would not reproduce, or it needs something only you can do. [The worker prompt](../Triage/WORKER.md#why-the-worker-stops) lists every reason.

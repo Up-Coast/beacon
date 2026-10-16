@@ -35,11 +35,11 @@ To send a blocked report back to the worker, answer in your note on the report (
 
 | Reason (`blocked.reason`) | Shown as | When |
 |---|---|---|
-| `needs-decision` | Needs your decision | Only for a report triage queued (no approval) that needs a product or business choice the ticket does not make. Never for an approved report, and never for design, art or wording. |
+| `needs-decision` | Needs your decision | A product, business or design choice that the ticket, your note and the existing app do not settle, and where a wrong guess would waste real work. |
 | `still-happening` | Fix tried, still happening | A fix was built, but the reproduction still fails after it. |
 | `cannot-reproduce` | Can't reproduce | Three tries did not show the bug, so there is nothing to prove a fix against. |
-| `needs-you` | Needs something only you can do | A sign-in, an account, a secret, a physical device, infrastructure or a payment. Never for something the worker can make itself. |
-| `unclear` | Not clear what to build | Only for a report triage queued, when the ticket can be read two ways and the wrong one would waste the work. For an approved report, pick the likelier reading and build it. |
+| `needs-you` | Needs something only you can do | A sign-in, an account, a secret, a physical device, infrastructure or a payment. |
+| `unclear` | Not clear what to build | The ticket can be read two ways, or the intended behaviour or UX is not clear, and the readings differ enough that the wrong one wastes the work. |
 | `too-risky` | Too risky to merge alone | A bug triage queued that turns out to touch the blast-radius list in [TRIAGE.md](TRIAGE.md#gate-4--is-it-simple). |
 | `checks-failing` | Checks won't pass | The test suite or build fails, and the failure is not one this change can fix. |
 | `conflict` | Conflicts with other work | The default branch moved and the change no longer merges cleanly. |
@@ -82,10 +82,11 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
    write_db update the report, pinned with if_version to the version you read: status "triaging", column "inprogress", columnAt, and work {by: "beacon-worker", startedAt, branch: "beacon/<issue>-<slug>", attempts: <work.attempts + 1, or 1>, statusBefore: <the status it had>}. If the write is refused, the owner changed the report: skip it. On the issue: gh issue edit --add-label in-progress (create the label if missing).
    If work.attempts is now above 3, do not try again: stop on it with reason "other" and say it has failed three runs.
 
-3. Approval is the decision
-   An approved report (it has an `approval`, or status approved) is the owner telling you to build it. Never stop on it to ask whether to build it, which option to take, or whether she will supply something you can make yourself. Make the choice and build it. Say which choice you made, and why, in the issue comment and the commit message, so she can reverse it on review.
-   Design is your job: icons, illustrations, layout, colours, spacing and wording. Draw the missing icon, write the missing copy, and match the style of what the app already has. Never stop on "needs design work" or "needs new artwork".
-   If the report was Blocked before and the owner has cleared the flag, her answer (or the plain fact she cleared it) is final: never stop on the same kind of question again. Build it.
+3. How to treat an approval
+   An approved report (it has an `approval`, or status approved) means the owner wants it built. Build it. Do not stop to ask whether to build it, or to ask about something you can settle yourself: the existing app, the code, the ticket and her note almost always say. Where a small choice is left open, make it, and say which you made and why in the issue comment and the commit message, so she can reverse it on review.
+   Design work is yours too: icons, illustrations, layout, colours, spacing and wording. Match the style of what the app already has. When the ticket IS the artwork or the design (draw these icons, restyle this screen), that is the work: do it, do not ask her for it.
+   Stop and ask only when you genuinely lack something you cannot work out. That includes a feature whose intended behaviour or UX is not clear, where the readings differ enough that a wrong guess wastes the work. When you stop, ask one specific question, with the options you see and the one you would pick.
+   If the report was Blocked before and the owner has cleared the flag, her answer is final. Build it. Do not ask the same question again; ask a new one only when her answer opens one you could not have foreseen.
 
 3b. Read everything before you change anything
    - The issue: gh issue view <n> --repo <repository> --comments. The report on the page: its body, finding, triageNote, ownerNote, approval.note, and the owner's images in "reports/<reference>/ownerAttachments" (decode each dataURL to a file and look at it).
@@ -100,7 +101,8 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
    e. If the fix does not make the reproduction pass, try again with what you learned, up to three fixes. Then stop on it with reason "still-happening".
 
 5. Finish it
-   If the only thing you cannot do is prove the fix on screen, for example a bug that shows only in a browser this Mac cannot drive, do not block. Build the best fix from the code, run the suite, push the branch and open a pull request (not a draft) that says what could not be verified and where. The report moves to In progress by itself, and the owner merges it after checking.
+   Merge as normal, unless the report carries the flag "Needs PR approval", or the owner's note or an issue comment says not to merge. Then push the branch and open a pull request (not a draft) instead, write pullRequest {number, url, state: "open"} onto the report, and move on: the owner merges it, and the report moves to Done by itself.
+   If you could not prove the fix on screen, for example a bug that shows only in a browser this Mac cannot drive, still do the work as normal and say in the issue comment exactly what you could not verify and where.
    Rebase on the latest default branch, run the suite again, merge to the default branch and push. Never merge with a failing check. Never force-push the default branch.
    - Issue: one comment naming the commit, what changed, and the proof (gh issue comment). Then gh issue edit --add-label auto-fixed --remove-label in-progress, and gh issue close.
    - If a pull request exists for the branch, close it with a comment naming the commit, and write pullRequest.state "merged".
@@ -108,12 +110,12 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
    - Remove the worktree. Delete the merged branch.
 
 6. Stop on it, when it cannot be finished
-   Stop only when the work truly cannot be built by you. Needing a design, a choice or a creative asset is never a reason on an approved report. Stop as soon as one of these is true. Do not keep trying.
-     needs-decision    triage-queued report only: it needs a product or business choice the ticket does not make (never an approved report, never design)
+   Stop when you genuinely cannot finish it without something from the owner. First try to settle it yourself from the ticket, her note, the code and the app's existing patterns. These are the usual reasons, not the only ones: if none fits, use "other" and say what is missing.
+     needs-decision    a product, business or design choice nothing you can read settles, and a wrong guess wastes real work
      still-happening   three fixes did not make the reproduction pass
      cannot-reproduce  three tries did not show the bug
      needs-you         it needs a sign-in, account, secret, physical device, infrastructure change or payment that you cannot do or make yourself
-     unclear           triage-queued report only: the ticket can be read two ways, and the wrong one wastes the work
+     unclear           the intended behaviour or UX is not clear and the readings differ enough that the wrong one wastes the work
      too-risky         a bug queued by triage touches the blast-radius list (TRIAGE.md, gate 4)
      checks-failing    the suite or build fails for a reason this change cannot fix
      conflict          the change no longer merges cleanly with the default branch
