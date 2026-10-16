@@ -195,6 +195,11 @@
   .pill.hold { background: var(--hold-soft); color: var(--hold); }
   .pill.you { background: var(--wait); color: var(--surface); }
   .chip { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; border: 1px solid var(--line-2); color: var(--ink-2); }
+  .decide-line { font-size: 13.5px; color: var(--ink); background: var(--wait-soft); border-radius: 8px; padding: 6px 10px; overflow-wrap: anywhere; }
+  .decide-line.missing, .decide-text.missing { color: var(--bad); }
+  .decide-text { display: grid; gap: 4px; padding: 12px; border-radius: 9px; border-left: 3px solid var(--wait); background: var(--wait-soft); }
+  .decide-text h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  .decide-text p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
   .chip.you { border-color: var(--wait); color: var(--wait); }
   /* Impact: one shape per level, heaviest for "blocked", so colour is never the only cue. */
   .impact { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 20px; height: 20px; vertical-align: -4px; }
@@ -1011,6 +1016,11 @@
   // Only a report that truly needs the owner's call carries this flag; a
   // report that is just Triaged is not asking for one.
   const needsDecision = (r) => flagsOf(r).includes("Needs your decision");
+  // What the decision is, in the triager's words. A report that asks for one
+  // has to say it (`decision`); one that does not shows plainly that it is missing.
+  const decisionLine = (r) => (needsDecision(r)
+    ? el("div", { class: "decide-line" + (r.decision ? "" : " missing"), text: r.decision ? "Decision: " + r.decision : "Decision not written yet: triage has to say what is being asked." })
+    : null);
   const FLAGS = [...new Set(Object.values(STATUS).map((v) => v[2]).filter(Boolean))];
   const chips = (r) => flagsOf(r).map((l) => el("span", { class: "chip" + (l === "Needs your decision" ? " you" : ""), text: l }));
   const pill = (r) => { const [cls, label] = STATUS[statusKey(r)] || ["hold", r.status || "—"]; return el("span", { class: "pill " + cls, text: label }); };
@@ -1054,6 +1064,8 @@
     if (r.triageNote) prose.append(words("Triage note", r.triageNote));
     const detail = el("div", { class: "detail" });
     const decision = renderDecision(r);
+    if (needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
+      el("h3", { text: "The decision" }), el("p", { text: r.decision || "Not written yet. Triage has to say what is being asked, the choices, and what it recommends." })));
     if (decision && !r.approval) detail.append(decision);
     detail.append(facts, prose);
     if (decision && r.approval) detail.append(decision);
@@ -1198,7 +1210,7 @@
   const resetCaps = () => { caps = {}; };
   const row = safely((r) => {
     const d = el("details", { "data-ref": r.reference },
-      el("summary", {}, el("div", { class: "row" }, el("span", { class: "titleline" }, impactIcon(r.impact), el("span", { class: "title", text: r.title || r.reference })), el("span", { class: "pills" }, pill(r), ...chips(r))), el("div", { class: "meta", text: metaLine(r) })),
+      el("summary", {}, el("div", { class: "row" }, el("span", { class: "titleline" }, impactIcon(r.impact), el("span", { class: "title", text: r.title || r.reference })), el("span", { class: "pills" }, pill(r), ...chips(r))), el("div", { class: "meta", text: metaLine(r) }), decisionLine(r)),
       renderDetail(r));
     if (openRefs.has(r.reference)) d.open = true;
     d.addEventListener("toggle", () => {
@@ -1297,6 +1309,7 @@
     const c = el("article", { class: "card" + (needsDecision(r) ? " decide" : ""), "data-ref": r.reference },
       el("div", { class: "titleline" }, impactIcon(r.impact), title),
       el("div", { class: "meta", text: [r.reference, KIND[r.kind] || r.kind, r.app && r.app.name].filter(Boolean).join(" · ") }),
+      decisionLine(r),
       el("div", { class: "pills" }, pill(r), ...chips(r)));
     if (moves.length) {
       const grip = el("span", { class: "grip", title: "Drag to move", "aria-hidden": "true" });
