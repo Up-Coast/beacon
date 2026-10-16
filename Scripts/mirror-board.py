@@ -25,6 +25,7 @@ What it decides, from the issue's state and labels alone (no judgement):
   open, needs-human / needs-info / cannot-reproduce /
         expectation-mismatch / working-as-intended   status of that name
   open, triaged                                      status triaged, column todo
+  open, backlog                                      status backlog, column backlog
   open, none of those                                left alone: it still has
                                                      to be triaged
   closed with wontfix or declined                    status declined
@@ -54,6 +55,7 @@ OPEN_LABELS = [
     ("expectation-mismatch", ("expectation-mismatch", "todo")),
     ("working-as-intended", ("working-as-intended", None)),
     ("auto-fixed", ("auto-fixed", "done")),
+    ("backlog", ("backlog", "backlog")),
     ("triaged", ("triaged", "todo")),
 ]
 RANK = {"filed": 0, "new": 0, "triaged": 1}  # anything else is 2

@@ -27,6 +27,7 @@ The dashboard shows a status on every report. The page stores it as a value. Eve
 | Needs your decision | `needs-human` | The fix is past what may be done unattended. A written diagnosis is attached. |
 | Needs more info | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
 | Can't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
+| Backlog | `backlog` | Kept open and not being worked on now. You park a report here by moving it to the Backlog column; moving it out puts back what it was. An issue labelled `backlog` shows here too. |
 | To do | `approved` | You approved it, or dragged it to Up next. The next run works it. |
 | In progress | `triaging` | A session is working on it now. |
 | Done | `auto-fixed` | Fixed, proven by running the app, and merged. Also an issue a session closed as finished. |
@@ -44,6 +45,7 @@ The dashboard's board layout puts each report in a column. The report stores it 
 |---|---|---|
 | Inbox | `reported` | Every new report starts here. |
 | Triaged | `todo` | The pickup, for everything that waits on you. You, by withdrawing an approval. |
+| Backlog | `backlog` | You, by parking it. Kept open, not being worked on now. |
 | Up next | `upnext` | The pickup, for a bug it will fix on its own. You, by approving. |
 | Done | `done` | The pickup, when the fix is merged to the main branch. |
 | Deployed | `deployed` | You, when the fix is live. The pickup, when it can tell. |

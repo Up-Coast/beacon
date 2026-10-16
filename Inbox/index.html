@@ -223,7 +223,7 @@
   .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--field); border: 1px solid var(--line); border-radius: 9px; flex: none; }
   .seg button { border: 0; background: transparent; padding: 5px 12px; border-radius: 6px; font-weight: 600; font-size: 13px; color: var(--ink-2); cursor: pointer; min-height: 30px; }
   .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(17,24,39,.12); }
-  .kanban { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: start; }
+  .kanban { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; align-items: start; }
   @media (max-width: 1000px) { .kanban { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 560px) { .kanban { grid-template-columns: minmax(0, 1fr); } }
   .kcol { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; min-height: 140px; min-width: 0; padding: 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; }
@@ -614,12 +614,14 @@
 
   // ---- Board words: statuses as docs/how-it-works.md lists them. ----
   const STATUS = {
+    // In the order a report moves through them, so the filter reads as the flow.
     new:                   ["new", "Inbox"],
     filed:                 ["hold", "Inbox"],
     triaged:               ["hold", "Triaged"],
     "needs-human":         ["waiting", "Needs your decision"],
     "needs-info":          ["waiting", "Needs more info"],
     "cannot-reproduce":    ["waiting", "Can't reproduce"],
+    backlog:               ["hold", "Backlog"],
     approved:              ["triaging", "To do"],
     triaging:              ["triaging", "In progress"],
     "auto-fixed":          ["fixed", "Done"],
@@ -650,6 +652,7 @@
   const COLUMNS = [
     ["reported", "Inbox", "Received, not triaged yet."],
     ["todo", "Triaged", "Waiting on you."],
+    ["backlog", "Backlog", "Kept, not being worked on now."],
     ["upnext", "Up next", "What the pickup works on next."],
     ["done", "Done", "Fixed and merged."],
     ["deployed", "Deployed", "Live for the people using it."],
@@ -663,6 +666,7 @@
     if (CLOSED_STATUSES.has(r.status) || r.duplicateOf) return "closed";
     if (COLUMN_IDS.has(r.column)) return r.column;
     if (r.status === "auto-fixed" || (r.status === "triaged" && r.fixCommit)) return "done";
+    if (r.status === "backlog") return "backlog";
     if (r.status === "approved" || r.status === "triaging") return "upnext";
     if (waitsOnOwner(r)) return "todo";
     if (r.status === "new" || r.status === "filed") return "reported";
@@ -1073,8 +1077,14 @@
       let fields = { column: to, columnAt: at };
       if (to === "upnext" && r.status !== "approved" && r.status !== "triaging" && !(r.status === "auto-fixed")) {
         fields = r.approval && r.approval.decision === "approved" ? fields : approveFields(r, "");
+      } else if (to === "backlog") {
+        // Parked: kept open, not worked. Leaving Up next withdraws an approval.
+        fields = { status: "backlog", column: to, columnAt: at, ...(r.status === "approved" ? { approval: null, statusBeforeApproval: null } : {}) };
       } else if (from === "upnext" && r.status === "approved") {
         fields = { status: r.statusBeforeApproval || "triaged", approval: null, statusBeforeApproval: null, column: to, columnAt: at };
+      } else if (r.status === "backlog") {
+        // Taken out of the backlog: back to what it was before it was parked.
+        fields = { status: to === "done" || to === "deployed" ? "auto-fixed" : to === "reported" ? "filed" : "triaged", column: to, columnAt: at };
       } else if (from === "closed") {
         fields = { status: "triaged", approval: null, column: to, columnAt: at };
       }
