@@ -150,6 +150,8 @@
   .dash h1 { font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
   .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
   .tab { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: 14px; font-weight: 600; min-height: 38px; max-width: 100%; }
+  .tab .total { color: var(--ink-3); font-weight: 500; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .tab[aria-selected="true"] .total { color: inherit; opacity: .8; }
   .tab .plat { color: var(--ink-3); font-weight: 500; font-size: 12px; }
   .tab .badge { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--wait-soft); color: var(--wait); font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
   .tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
@@ -207,6 +209,9 @@
   .editor .flagrow { display: flex; flex-wrap: wrap; gap: 6px 14px; }
   .editor label.opt { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
   .editor .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .words ul.links { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
+  .linkish.strong { font-weight: 700; }
+  .editor textarea { min-height: 64px; background: var(--surface); }
   .chip.you { border-color: var(--wait); color: var(--wait); }
   /* Impact: one shape per level, heaviest for "blocked", so colour is never the only cue. */
   .impact { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 20px; height: 20px; vertical-align: -4px; }
@@ -630,7 +635,8 @@
 
   // ---- Board words: statuses as docs/how-it-works.md lists them. ----
   const STATUS = {
-    // In the order a report moves through them, so the filter reads as the flow.
+    // In the same order as the board's columns, then the three ways out.
+    backlog:               ["hold", "Backlog"],
     new:                   ["new", "Inbox"],
     filed:                 ["hold", "Inbox"],
     triaged:               ["hold", "Triaged"],
@@ -640,11 +646,11 @@
     "needs-info":          ["hold", "Triaged", "Needs more info"],
     "cannot-reproduce":    ["hold", "Triaged", "Can't reproduce"],
     "expectation-mismatch":["hold", "Triaged", "Confusing to users"],
-    backlog:               ["hold", "Backlog"],
     todo:                  ["triaging", "To do"],
     approved:              ["triaging", "To do"],
     triaging:              ["triaging", "In progress"],
     "auto-fixed":          ["fixed", "Done"],
+    deployed:              ["fixed", "Deployed"],
     "working-as-intended": ["hold", "Works as designed"],
     declined:              ["hold", "Canceled"],
     closed:                ["hold", "Canceled"],
@@ -662,17 +668,20 @@
     ["decide", "Needs your decision", (r) => needsDecision(r)],
     ["new", "Inbox", (r) => r.status === "new" || r.status === "filed"],
     ["open", "In progress", (r) => BEING_WORKED.has(r.status)],
-    ["fixed", "Done", (r) => r.status === "auto-fixed"],
+    ["fixed", "Done", (r) => r.status === "auto-fixed" || r.status === "deployed"],
   ];
 
   // ---- The board layout's columns. A report's `column` says where it
   // stands; without one, its status decides (see columnOf). Declined and
   // working-as-intended reports are closed, under the board, not a column. ----
   const COLUMNS = [
+    // A column and its status share a name. The ids are older than the names:
+    // `todo` is the Triaged column and `upnext` is To do.
+    ["backlog", "Backlog", "Kept, not being worked on now."],
     ["reported", "Inbox", "Received, not triaged yet."],
     ["todo", "Triaged", "Read and routed, not queued."],
-    ["backlog", "Backlog", "Kept, not being worked on now."],
-    ["upnext", "Up next", "What the pickup works on next."],
+    ["upnext", "To do", "Queued for the next run."],
+    ["inprogress", "In progress", "Being worked on now."],
     ["done", "Done", "Fixed and merged."],
     ["deployed", "Deployed", "Live for the people using it."],
   ];
@@ -683,10 +692,14 @@
   // Only a report with no column falls back to its status.
   const columnOf = (r) => {
     if (CLOSED_STATUSES.has(r.status) || r.duplicateOf) return "closed";
+    // Being worked is In progress, whatever an older `upnext` says.
+    if (r.status === "triaging" && (!r.column || r.column === "upnext" || r.column === "inprogress")) return "inprogress";
     if (COLUMN_IDS.has(r.column)) return r.column;
+    if (r.status === "deployed") return "deployed";
     if (r.status === "auto-fixed" || (r.status === "triaged" && r.fixCommit)) return "done";
     if (r.status === "backlog") return "backlog";
-    if (r.status === "approved" || r.status === "triaging" || r.status === "todo") return "upnext";
+    if (r.status === "approved" || r.status === "todo") return "upnext";
+    if (r.status === "triaging") return "inprogress";
     if (waitsOnOwner(r)) return "todo";
     if (r.status === "new" || r.status === "filed") return "reported";
     return "todo";
@@ -1045,6 +1058,8 @@
       fact("App", `${a.name || ""} ${c.version || ""}${c.build ? ` (${c.build})` : ""}`.trim()),
       fact("Platform", a.platform),
       fact("Commit", c.commit),
+      fact("Page", c.page),
+      fact("Part of the site", c.partOfSite),
       fact("Machine", [c.os, c.osVersion, c.device].filter(Boolean).join(" ")),
       fact("Locale", [c.locale, c.timeZone].filter(Boolean).join(" · ")),
       fact("Appearance", [c.appearance, c.textSize].filter(Boolean).join(" · ")),
@@ -1068,13 +1083,17 @@
     } else {
       prose.append(...[words(FIELD_LABELS.message, b.message)].filter(Boolean));
     }
+    if (Array.isArray(r.attachmentLinks) && r.attachmentLinks.length) {
+      prose.append(el("div", {}, el("h3", { text: "What they attached" }), el("ul", { class: "links" },
+        ...r.attachmentLinks.map((l) => el("li", {}, el("a", { href: String(l.url || ""), target: "_blank", rel: "noopener", text: String(l.name || l.url) }),
+          l.size ? el("span", { class: "meta", text: " (" + l.size + ")" }) : null)))));
+    }
     if (r.finding) prose.append(words("Finding", [r.finding.verdict, r.finding.intent, ...(r.finding.citations || [])].filter(Boolean).join("\n")));
     if (r.triageNote) prose.append(words("Triage note", r.triageNote));
     const detail = el("div", { class: "detail" });
     const decision = renderDecision(r);
     if (needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
       el("h3", { text: "The decision" }), el("p", { text: r.decision || "Not written yet. Triage has to say what is being asked, the choices, and what it recommends." })));
-    if (decision && !r.approval) detail.append(decision);
     if (canMove()) detail.append(renderEditor(r));
     detail.append(facts, prose);
     if (decision && r.approval) detail.append(decision);
@@ -1088,7 +1107,9 @@
   // ---- Writes the owner makes to a report. One shape each, used by the
   // Approve and Decline buttons, the board's drag and its Move to menu. ----
   const stamp = () => new Date().toISOString();
-  const writeReport = (r, fields) => db.doc("reports/" + r.reference).update(fields);
+  // Every change the owner makes is marked `editedAt`: the mirror script leaves
+  // it alone, and push-edits.py copies it to the GitHub issue.
+  const writeReport = (r, fields) => db.doc("reports/" + r.reference).update({ ...fields, editedAt: stamp() });
   // Approving is what the pickup acts on: status "approved" and `approval`.
   // The status it replaced is kept, so withdrawing can put it back.
   const approveFields = (r, note) => ({
@@ -1110,21 +1131,21 @@
   const COLUMN_NAME = Object.fromEntries(COLUMNS.map(([id, name]) => [id, name]));
   const movesFor = (r) => {
     const from = columnOf(r);
+    // A column and its status are the same word, so a move writes both.
+    const STATUS_FOR = { backlog: "backlog", reported: "filed", todo: "triaged", inprogress: "triaging", done: "auto-fixed", deployed: "deployed" };
     return COLUMNS.map(([to]) => to).filter((to) => to !== from).map((to) => {
       const at = stamp();
-      let fields = { column: to, columnAt: at };
-      if (to === "upnext" && r.status !== "approved" && r.status !== "triaging" && !(r.status === "auto-fixed")) {
-        fields = r.approval && r.approval.decision === "approved" ? fields : approveFields(r, "");
-      } else if (to === "backlog") {
-        // Parked: kept open, not worked. Leaving Up next withdraws an approval.
-        fields = { status: "backlog", column: to, columnAt: at, ...(r.status === "approved" ? { approval: null, statusBeforeApproval: null } : {}) };
-      } else if (from === "upnext" && r.status === "approved") {
+      const leaving = r.status === "approved" || from === "closed" ? { approval: null, statusBeforeApproval: null } : {};
+      let fields;
+      if (to === "upnext") {
+        // To do: an approval, unless it is already queued (or being worked, which goes back).
+        if (r.status === "triaging") fields = { status: "todo", column: to, columnAt: at };
+        else if (r.status === "approved" || r.status === "todo") fields = { column: to, columnAt: at };
+        else fields = approveFields(r, "");
+      } else if (from === "upnext" && r.status === "approved" && to === "todo") {
         fields = { status: r.statusBeforeApproval || "triaged", approval: null, statusBeforeApproval: null, column: to, columnAt: at };
-      } else if (r.status === "backlog") {
-        // Taken out of the backlog: back to what it was before it was parked.
-        fields = { status: to === "done" || to === "deployed" ? "auto-fixed" : to === "reported" ? "filed" : "triaged", column: to, columnAt: at };
-      } else if (from === "closed") {
-        fields = { status: "triaged", approval: null, column: to, columnAt: at };
+      } else {
+        fields = { status: STATUS_FOR[to], column: to, columnAt: at, ...leaving };
       }
       return { to, key: to, label: COLUMN_NAME[to], fields };
     }).concat(from === "closed" ? [] : [
@@ -1135,8 +1156,8 @@
   // ---- Editing a report directly: its status and its flags. ----
   // Each status the owner can pick, in flow order, and the fields that set it.
   const STATUS_CHOICES = [
-    ["filed", "Inbox"], ["triaged", "Triaged"], ["backlog", "Backlog"], ["todo", "To do"], ["triaging", "In progress"],
-    ["auto-fixed", "Done"], ["working-as-intended", "Works as designed"], ["declined", "Canceled"], ["duplicate", "Duplicate"],
+    ["backlog", "Backlog"], ["filed", "Inbox"], ["triaged", "Triaged"], ["todo", "To do"], ["triaging", "In progress"],
+    ["auto-fixed", "Done"], ["deployed", "Deployed"], ["working-as-intended", "Works as designed"], ["declined", "Canceled"], ["duplicate", "Duplicate"],
   ];
   const choiceOf = (r) => {
     const s = statusKey(r);
@@ -1153,7 +1174,8 @@
       case "triaged": return { status: "triaged", column: "todo", columnAt: at, approval: null };
       case "backlog": return { status: "backlog", column: "backlog", columnAt: at, approval: null };
       case "todo": return choiceOf(r) === "todo" ? {} : approveFields(r, "");
-      case "triaging": return { status: "triaging", column: "upnext", columnAt: at };
+      case "triaging": return { status: "triaging", column: "inprogress", columnAt: at };
+      case "deployed": return { status: "deployed", column: "deployed", columnAt: at };
       case "auto-fixed": return { status: "auto-fixed", column: "done", columnAt: at };
       case "working-as-intended": return { status: "working-as-intended", columnAt: at };
       case "declined": return cancelFields(r, "declined", "");
@@ -1171,23 +1193,44 @@
     });
     const extra = el("input", { type: "text", "aria-label": "Other flags, separated by commas", placeholder: "Other flags, separated by commas" });
     extra.value = [...have].filter((f) => !FLAGS.includes(f)).join(", ");
-    const save = el("button", { type: "button", class: "primary", text: "Save changes" });
+    // One note on every report: what to do or avoid, or anything worth remembering.
+    const note = el("textarea", { placeholder: "Your note: what the work should do or avoid, or anything to remember", "aria-label": "Your note" });
+    note.value = r.ownerNote || (r.approval && r.approval.note) || "";
     const msg = el("p", { class: "problem", hidden: "" });
-    save.addEventListener("click", async () => {
-      save.disabled = true; msg.hidden = true;
+    const buttons = [];
+    const act = async (fields) => {
+      buttons.forEach((b) => { b.disabled = true; }); msg.hidden = true;
+      try { await writeReport(r, { ownerNote: note.value.trim(), ...fields }); }
+      catch (err) { msg.textContent = "That didn't save: " + (err && err.message || err); msg.hidden = false; }
+      buttons.forEach((b) => { b.disabled = false; });
+    };
+    const save = el("button", { type: "button", class: "primary", text: "Save changes" });
+    save.addEventListener("click", () => {
       const flags = [...boxes.filter((b) => b.input.checked).map((b) => b.f),
         ...extra.value.split(",").map((x) => x.trim()).filter(Boolean)];
-      try {
-        // The status is written in its plain form, and every flag is listed in
-        // `flags`, so what the owner set is exactly what shows. `editedAt`
-        // keeps the mirror script from putting the labels back over it.
-        await writeReport(r, { ...statusFields(r, status.value), flags: [...new Set(flags)], editedAt: stamp() });
-      } catch (err) { msg.textContent = "That didn't save: " + (err && err.message || err); msg.hidden = false; }
-      save.disabled = false;
+      // The status is written in its plain form and every flag is listed in
+      // `flags`, so what the owner set is exactly what shows.
+      act({ ...statusFields(r, status.value), flags: [...new Set(flags)] });
     });
-    return el("div", { class: "editor" }, el("h3", { text: "Change status and flags" }),
+    buttons.push(save);
+    const actions = [save];
+    // Deciding: for anything not finished and not already approved.
+    if (!isFinished(r) && r.status !== "approved" && r.status !== "triaging") {
+      const approve = el("button", { type: "button", class: "linkish strong", text: r.kind === "bug" ? "Approve the fix" : r.kind === "feedback" ? "Act on it" : "Approve building it" });
+      approve.addEventListener("click", () => act(approveFields(r, note.value.trim())));
+      buttons.push(approve); actions.push(approve);
+    }
+    if (columnOf(r) !== "closed") {
+      const notDoing = el("button", { type: "button", class: "linkish", text: "Cancel: not doing" });
+      notDoing.addEventListener("click", () => act(cancelFields(r, "declined", note.value.trim())));
+      const dup = el("button", { type: "button", class: "linkish", text: "Cancel: duplicate" });
+      dup.addEventListener("click", () => act(cancelFields(r, "duplicate", note.value.trim())));
+      buttons.push(notDoing, dup); actions.push(notDoing, dup);
+    }
+    return el("div", { class: "editor" }, el("h3", { text: "Your changes" }),
       el("div", { class: "grid2" }, el("label", { class: "opt" }, el("span", { text: "Status" }), status), extra),
-      el("div", { class: "flagrow" }, ...boxes.map((b) => b.node)), save, msg);
+      el("div", { class: "flagrow" }, ...boxes.map((b) => b.node)), note,
+      el("div", { class: "choices" }, ...actions), msg);
   };
   const canMove = () => Boolean(db && canEdit);
   const showBoardMsg = (text) => { const m = $("#boardMsg"); m.textContent = text; m.hidden = !text; };
@@ -1201,31 +1244,9 @@
   // for triage to merge alone, or a feature request) get Approve and
   // Decline; the pickup builds approved ones on its next run.
   const renderDecision = (r) => {
-    if (r.approval) {
-      const verb = r.approval.decision === "approved" ? "Approved" : r.approval.decision === "duplicate" ? "Canceled as a duplicate" : "Canceled";
-      return words("Your decision", `${verb} on ${fmtWhen(r.approval.at)}${r.approval.note ? ": " + r.approval.note : ""}`);
-    }
-    if (!db || !waitsOnOwner(r)) return null;
-    const note = el("textarea", { placeholder: "Anything the fix should do or avoid (optional)", "aria-label": "Note for the work" });
-    const decide = async (decision) => {
-      buttons.forEach((b) => { b.disabled = true; });
-      try {
-        const text = note.value.trim();
-        await writeReport(r, decision === "approved" ? approveFields(r, text) : cancelFields(r, decision, text));
-      } catch (err) {
-        buttons.forEach((b) => { b.disabled = false; });
-        box.append(el("p", { class: "problem", text: "That didn't save: " + (err && err.message || err) }));
-      }
-    };
-    const approve = el("button", { type: "button", class: "primary", text: r.kind === "bug" ? "Approve the fix" : "Approve building it" });
-    const decline = el("button", { type: "button", class: "linkish", text: "Cancel: not doing" });
-    const duplicate = el("button", { type: "button", class: "linkish", text: "Cancel: duplicate" });
-    approve.addEventListener("click", () => decide("approved"));
-    decline.addEventListener("click", () => decide("declined"));
-    duplicate.addEventListener("click", () => decide("duplicate"));
-    const buttons = [approve, decline, duplicate];
-    const box = el("div", { class: "decide-box" }, el("h3", { text: "Your decision" }), note, el("div", { class: "choices" }, approve, decline, duplicate));
-    return box;
+    if (!r.approval) return null;
+    const verb = r.approval.decision === "approved" ? "Approved" : r.approval.decision === "duplicate" ? "Canceled as a duplicate" : "Canceled";
+    return words("Your decision", `${verb} on ${fmtWhen(r.approval.at)}${r.approval.note ? ": " + r.approval.note : ""}`);
   };
   const loadPictures = async (host) => {
     if (!db || host.dataset.loaded) return;
@@ -1309,15 +1330,19 @@
     select.value = keep === USERS || names.includes(keep) ? keep : "";
   };
   const renderTabs = () => {
-    const tab = (id, name, platform, waiting) => {
+    // A tab shows how many reports the app has (the grey number) and, in
+    // orange, how many of them need the owner's decision.
+    const tab = (id, name, platform, total, waiting) => {
       const b = el("button", { type: "button", class: "tab", role: "tab", "aria-selected": String(selectedApp === id), "data-app": id },
         el("span", { text: name }), platform ? el("span", { class: "plat", text: platform }) : null,
-        waiting ? el("span", { class: "badge", title: `${waiting} waiting on your decision`, text: String(waiting) }) : null);
+        el("span", { class: "total", title: `${total} reports`, text: String(total) }),
+        waiting ? el("span", { class: "badge", title: `${waiting} need your decision`, text: `${waiting} to decide` }) : null);
       return b;
     };
-    const waitingFor = (id) => allReports.filter((r) => needsDecision(r) && (!id || (r.app && r.app.id === id))).length;
-    $("#tabs").replaceChildren(tab("", "All apps", "", waitingFor("")), ...boardApps().map((a) => {
-      const t = tab(a.id, a.name || a.id, a.platform || "", waitingFor(a.id));
+    const inScope = (id) => allReports.filter((r) => (!id || (r.app && r.app.id === id)) && !(hideDone && isFinished(r)));
+    const waitingFor = (id) => inScope(id).filter(needsDecision).length;
+    $("#tabs").replaceChildren(tab("", "All apps", "", inScope("").length, waitingFor("")), ...boardApps().map((a) => {
+      const t = tab(a.id, a.name || a.id, a.platform || "", inScope(a.id).length, waitingFor(a.id));
       if (a.unlisted) { t.classList.add("unlisted"); t.title = "Not in the app list"; }
       return t;
     }));

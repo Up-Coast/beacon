@@ -2,11 +2,33 @@
 
 # Beacon
 
-*Last updated: 2026-10-13*
+*Last updated: 2026-10-15*
 
 Beacon is bug, feature-request and feedback reporting for macOS 26 and iOS 26 apps, and for websites. A tester presses a button in your app, and the report arrives with the app version, build, device and, from the in-app sheet, the app's log, screenshots and a screen recording. A Claude session then works each report by a written triage policy: it reproduces it, fixes what is small, and explains the rest.
 
 Documentation site: [up-coast.github.io/beacon](https://up-coast.github.io/beacon/)
+
+## What it looks like
+
+A tester presses the Beacon button on your site or in your app (the arrow points at it):
+
+![The Report a problem button, bottom right of a website](docs/assets/readme-button.jpg)
+
+The sheet asks what kind of report it is, then the few questions that matter:
+
+![The sheet's first screen: Something's broken, Something's missing, Change request, Something else](docs/assets/readme-sheet-kinds.jpg)
+
+![The questions for a bug: what you expected, what happened, what you did, does it happen again](docs/assets/readme-sheet-form.jpg)
+
+You read every report from every app on one page, grouped by what stage it is in, with who sent it and how much it affects them. Reporters' names and emails are blacked out in this picture:
+
+![The dashboard: a tab for each app, counts, filters, and the reports grouped as Inbox and Triaged](docs/assets/readme-dashboard.jpg)
+
+Open a report to see what the tester wrote, what triage found, and to decide:
+
+![An opened report: the tester's words, the finding and triage note, and the buttons to approve or cancel](docs/assets/readme-report.jpg)
+
+The page is `Inbox/index.html` in this repository: [the dashboard](docs/the-board.md) shows how to publish it, add your apps and run several projects on it.
 
 ## Install
 
@@ -56,7 +78,7 @@ The [Quickstart](docs/quickstart.md) has the full steps. The two setup paths, Cl
 | `Inbox/` | The Beacon page: a Claude artifact with the owner's dashboard for every app, the report form testers use, and the app list. See [Inbox/README.md](Inbox/README.md). |
 | `Web/` | Beacon for websites: the Report a problem button and sheet, with its tests and built files. See [Web/README.md](Web/README.md). |
 | `Triage/` | The triage policy and the pickup prompt. |
-| `Scripts/` | `beacon-adopt-github.sh`, which puts the GitHub pieces into an app's repository, and `beacon-labels.sh`, which creates the labels. |
+| `Scripts/` | `beacon-adopt-github.sh`, which puts the GitHub pieces into an app's repository, and `beacon-labels.sh`, which creates the labels. `mirror-board.py` keeps the dashboard in step with the GitHub issues, and `push-edits.py` copies the owner's changes on the dashboard to the issues. |
 | `.claude/skills/` | The `beacon-setup` and `beacon-triage` skills. |
 | `.claude-plugin/` | The plugin manifest and marketplace entry. |
 | `.github/` | Beacon's CI, the triage and reproduce workflow templates, and the issue templates. |

@@ -66,14 +66,15 @@ The **List** and **Board** switch beside the filters changes how the dashboard l
 - **List**: reports waiting on your decision first, then everything else, newest first or highest impact first.
 - **Board**: one column per stage, left to right. Within a column, the highest impact comes first, then the oldest.
 
-![The dashboard's board layout: the Inbox, Triaged, Backlog, Up next, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
+![The dashboard's board layout: the Backlog, Inbox, Triaged, To do, In progress, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
 
 | Column | What is in it |
 |---|---|
 | **Inbox** | Received, not triaged yet. |
 | **Triaged** | Triage read it and it is not going to To do. A flag can say why: needs more info, can't reproduce, confusing to users, or needs your decision. Feature and change requests and feedback wait here until you move them. |
 | **Backlog** | Kept open, not being worked on now. You park a card here; moving it out puts it back where it was. |
-| **Up next** | What the pickup works on next: bugs it will fix on its own, and anything you approved. |
+| **To do** | Queued for the next run: bugs triage will fix on its own, and anything you approved. |
+| **In progress** | Being worked on now. |
 | **Done** | Fixed and merged to the main branch. |
 | **Deployed** | The fix is live for the people using the app. |
 
@@ -118,7 +119,7 @@ Click a count to show only those reports. Click it again to show everything.
 
 ## Read a row
 
-The list groups reports by the same stages as the board, in the same order: Inbox, Triaged, Backlog, Up next, Done, Deployed, and Closed. A stage with nothing in it is left out. Only a report that truly needs your call has the flag **Needs your decision**.
+The list groups reports by the same stages as the board, in the same order: Backlog, Inbox, Triaged, To do, In progress, Done, Deployed, and Closed. A stage with nothing in it is left out. Only a report that truly needs your call has the flag **Needs your decision**.
 
 Each row shows an impact icon, the report's title, its status, and one line with the reference, kind, app and version, who sent it, when, and how many images it has.
 
@@ -162,7 +163,7 @@ Anyone who can edit the page can click these, so share edit access only with peo
 
 ## Change a report's status and flags
 
-An opened report has **Change status and flags** (for people who can edit the page). Pick the status, tick the flags, add any of your own separated by commas, and **Save changes**. Choosing To do approves it; Canceled and Duplicate close its issue on the next run, as the Cancel buttons do. A report you have changed by hand is left alone by the mirror script, so GitHub's labels never put it back.
+Every opened report has **Your changes** (for people who can edit the page): the status, the flags, your note, and the buttons **Save changes**, **Approve** and **Cancel**. Pick the status, tick the flags, add any of your own separated by commas, write a note, and **Save changes**. The note is on every report; **Approve** uses it as the instruction for the work. Choosing To do approves it; Canceled and Duplicate close its issue on the next run, as the Cancel buttons do. Everything you change on the board is copied to the GitHub issue by the daily check (`Scripts/push-edits.py`): the labels for the status and flags, and open or closed. A report you have changed by hand is left alone by the mirror script, so GitHub's labels never put it back.
 
 ## Filter
 

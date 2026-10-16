@@ -151,6 +151,46 @@ def reporter_of(issue, meta):
     return login
 
 
+def attachments_of(sec):
+    """The links under "What they attached": - [`name`](url) (size)."""
+    out = []
+    for line in (sec or "").splitlines():
+        m = re.match(r"\s*[-*]\s*\[`?(.+?)`?\]\((\S+?)\)\s*(?:\((.+?)\))?\s*$", line)
+        if m:
+            out.append({"name": m.group(1), "url": m.group(2), "size": m.group(3) or ""})
+    return out
+
+
+def table_value(body, key):
+    m = re.search(r"(?m)^\|\s*%s\s*\|\s*`?(.*?)`?\s*\|\s*$" % re.escape(key), body or "")
+    return m.group(1).strip() if m else ""
+
+
+def words_of(kind, sec, body):
+    """The reporter's words, from the headings Beacon's issue rendering writes."""
+    first = lambda *names: next((sec[n] for n in names if sec.get(n)), "")
+    why = next((v for k, v in sec.items() if k.startswith("Why")), "")
+    if kind == "bug" and ("What actually happened" in sec or "What they expected" in sec):
+        return {
+            "kind": "bug",
+            "expected": sec.get("What they expected", ""),
+            "whatHappened": sec.get("What actually happened", ""),
+            "steps": [s for s in (re.sub(r"^\s*(?:\d+[.)]|[-*])\s*", "", x).strip()
+                                  for x in sec.get("Steps to see it", "").splitlines()) if s],
+            "reproducibility": sec.get("Does it happen again?", "").strip("* "),
+        }
+    if kind == "feature-request" and "What they want to be able to do" in sec:
+        return {"kind": kind, "whatIWant": sec["What they want to be able to do"], "why": why,
+                "idea": sec.get("Their idea", "")}
+    if kind == "change-request" and "What they would like changed" in sec:
+        return {"kind": kind, "whatToChange": sec["What they would like changed"],
+                "instead": sec.get("What they would like instead", ""), "why": why}
+    if kind == "feedback" and "What they said" in sec:
+        return {"kind": kind, "message": sec["What they said"]}
+    # An issue written by hand, not rendered by Beacon: its whole text.
+    return {"kind": kind, "message": body}
+
+
 def new_document(app, issue, status, column):
     repo = app["repository"]
     labels = [l["name"] for l in issue["labels"]]
@@ -160,20 +200,17 @@ def new_document(app, issue, status, column):
     body = re.sub(r"<!--\s*beacon-metadata.*?-->", "", body, flags=re.S).strip()[:BODY_LIMIT]
     # The relay quotes the reporter's words in the issue; the board shows them plain.
     sec = {k: re.sub(r"(?m)^>\s?", "", v).strip() for k, v in sections(body).items()}
-    if kind == "bug" and ("What actually happened" in sec or "What they expected" in sec):
-        words = {
-            "kind": "bug",
-            "expected": sec.get("What they expected", ""),
-            "whatHappened": sec.get("What actually happened", ""),
-            "steps": [s for s in (re.sub(r"^\s*(?:\d+[.)]|[-*])\s*", "", x).strip()
-                                  for x in sec.get("Steps to see it", "").splitlines()) if s],
-            "reproducibility": "",
-        }
-    else:
-        words = {"kind": kind, "message": body}
+    words = words_of(kind, sec, body)
     ctx = meta.get("context") if isinstance(meta.get("context"), dict) else {}
     reference = meta.get("reference") if isinstance(meta.get("reference"), str) else \
         "GH-%s-%d" % (repo.split("/")[1], issue["number"])
+    context = {k: str(ctx.get(k, "")) for k in ("version", "build", "commit", "os", "device")}
+    page = table_value(body, "Page")
+    if page:
+        context["page"] = page
+    part = re.search(r"\*\*Part of the site\*\*:\s*(.+)", body)
+    if part:
+        context["partOfSite"] = part.group(1).strip()
     doc = {
         "app": {"id": app["id"], "name": app.get("name", app["id"]),
                 "platform": app.get("platform", ""), "repository": repo},
@@ -181,11 +218,13 @@ def new_document(app, issue, status, column):
         "status": status or "filed", "title": issue["title"],
         "reporter": reporter_of(issue, meta),
         "impact": label_value(labels, "impact:"), "area": label_value(labels, "area:"),
-        "body": words,
-        "context": {k: str(ctx.get(k, "")) for k in ("version", "build", "commit", "os", "device")},
+        "body": words, "context": context,
         "attachmentCount": 0, "issueNumber": issue["number"], "issueURL": issue["url"],
         "source": "beacon-sheet",
     }
+    links = attachments_of(sec.get("What they attached", ""))
+    if links:
+        doc["attachmentLinks"] = links
     if column:
         doc["column"] = column
     return doc

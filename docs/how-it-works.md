@@ -22,16 +22,17 @@ The dashboard shows a status on every report. The page stores it as a value. Eve
 
 ### Status
 
-A status is a step in a report's life. They are listed in the order a report moves through them.
+A status is a step in a report's life. A column and its status share a name, so a card is in the column of its status. They are listed in column order, then the three ways a report ends without a column.
 
 | The dashboard shows | Value | Meaning |
 |---|---|---|
+| Backlog | `backlog` | Kept open and not being worked on now. You park a report here by moving it to the Backlog column; moving it out puts back what it was. An issue labelled `backlog` shows here too. |
 | Inbox | `new`, `filed` | Sent, and nobody has triaged it. `new` is not yet an issue; `filed` has an issue in the app's repository. The next daily check triages it. |
 | Triaged | `triaged`, `needs-human`, `needs-info`, `cannot-reproduce`, `expectation-mismatch` | Triage read it and it is not going to To do: it needs something first, or it is yours to move. A flag beside it can say why (below). |
-| Backlog | `backlog` | Kept open and not being worked on now. You park a report here by moving it to the Backlog column; moving it out puts back what it was. An issue labelled `backlog` shows here too. |
-| To do | `todo`, `approved` | Queued for the next run. Triage puts a bug it can fix itself here automatically (`todo`); you put anything else here by approving it or dragging it to Up next (`approved`). |
+| To do | `todo`, `approved` | Queued for the next run. Triage puts a bug it can fix itself here automatically (`todo`); you put anything else here by approving it or dragging it to To do (`approved`). |
 | In progress | `triaging` | A session is working on it now. |
 | Done | `auto-fixed` | Fixed, proven by running the app, and merged. Also an issue a session closed as finished. |
+| Deployed | `deployed` | The fix is live. |
 | Works as designed | `working-as-intended` | The app behaves as designed. The explanation is on the issue, which is closed. |
 | Canceled | `declined`, `closed` | Not doing it. `declined` is you canceling it; `closed` is an issue closed as not planned. |
 | Duplicate | `duplicate` | A copy of another report. A report that names another with `duplicateOf` shows as Duplicate too. |
@@ -55,12 +56,15 @@ The dashboard's board layout puts each report in a column. The report stores it 
 
 | Column | Value | Set by |
 |---|---|---|
+| Backlog | `backlog` | You, by parking it. |
 | Inbox | `reported` | Every new report starts here. |
-| Triaged | `todo` | The pickup, for everything that waits on you. You, by withdrawing an approval. |
-| Backlog | `backlog` | You, by parking it. Kept open, not being worked on now. |
-| Up next | `upnext` | The pickup, for a bug it will fix on its own. You, by approving. |
+| Triaged | `todo` | The pickup, for everything it does not queue. You, by withdrawing an approval. |
+| To do | `upnext` | The pickup, for a bug it will fix on its own. You, by approving. |
+| In progress | `inprogress` | The pickup, when it starts the work. |
 | Done | `done` | The pickup, when the fix is merged to the main branch. |
 | Deployed | `deployed` | You, when the fix is live. The pickup, when it can tell. |
+
+(The ids are older than the names: `todo` is the Triaged column and `upnext` is To do.)
 
 A report with no `column`, such as one sent before columns existed, is placed by its status: received and filed in Inbox, anything waiting on your decision in Triaged, approved and being looked at in Up next, fixed in Done. The status also wins when it and the column disagree: a fixed report is never shown before Done, an approved or worked one never before Up next, and one waiting on your decision is always in Triaged. Declined reports, reports closed as not planned, and reports that work as designed are shown under Closed, not in a column.
 
