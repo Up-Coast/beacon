@@ -160,6 +160,10 @@ A report the pickup could not finish on its own, such as a fix too big to merge 
 
 Anyone who can edit the page can click these, so share edit access only with people you trust to decide.
 
+## Change a report's status and flags
+
+An opened report has **Change status and flags** (for people who can edit the page). Pick the status, tick the flags, add any of your own separated by commas, and **Save changes**. Choosing To do approves it; Canceled and Duplicate close its issue on the next run, as the Cancel buttons do. A report you have changed by hand is left alone by the mirror script, so GitHub's labels never put it back.
+
 ## Filter
 
 | Filter | Choices |
@@ -171,6 +175,7 @@ Anyone who can edit the page can click these, so share edit access only with peo
 | Impact | Every impact, or one level. |
 | Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey), or one reporter, with how many reports each has sent in the selected app. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |
 | Order | Newest first, oldest first, or highest impact first (oldest first within a level). The list starts on newest first and the board on highest impact first; each remembers the choice on this browser. |
+| Hide done | A switch beside the search box. On, it hides everything finished: the Done and Deployed columns, and everything under Closed (canceled, duplicate, works as designed). The page remembers it on this browser. |
 | Search words | Matches the title, the tester's words, the reporter, the area and the reference. |
 
 A test submission can be hidden: set `hidden` to `true` on its report, and label its issue `test` so the mirror script never brings it back. It stays in the database and is shown nowhere.

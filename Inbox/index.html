@@ -200,6 +200,13 @@
   .decide-text { display: grid; gap: 4px; padding: 12px; border-radius: 9px; border-left: 3px solid var(--wait); background: var(--wait-soft); }
   .decide-text h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
   .decide-text p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .toggle { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; white-space: nowrap; cursor: pointer; }
+  .toggle input, .filters .toggle input { accent-color: var(--accent); flex: none; width: auto; min-height: 0; padding: 0; }
+  .editor { display: grid; gap: 10px; padding: 12px; border-radius: 9px; background: var(--field); border: 1px solid var(--line); }
+  .editor h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-2); }
+  .editor .flagrow { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .editor label.opt { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
+  .editor .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
   .chip.you { border-color: var(--wait); color: var(--wait); }
   /* Impact: one shape per level, heaviest for "blocked", so colour is never the only cue. */
   .impact { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 20px; height: 20px; vertical-align: -4px; }
@@ -230,7 +237,7 @@
   .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--field); border: 1px solid var(--line); border-radius: 9px; flex: none; }
   .seg button { border: 0; background: transparent; padding: 5px 12px; border-radius: 6px; font-weight: 600; font-size: 13px; color: var(--ink-2); cursor: pointer; min-height: 30px; }
   .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(17,24,39,.12); }
-  .kanban { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; align-items: start; }
+  .kanban { display: grid; grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr)); gap: 10px; align-items: start; }
   @media (max-width: 1000px) { .kanban { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 560px) { .kanban { grid-template-columns: minmax(0, 1fr); } }
   .kcol { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; min-height: 140px; min-width: 0; padding: 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; }
@@ -331,6 +338,7 @@
       <select id="fReporter" aria-label="Who sent it"><option value="">Everyone</option></select>
       <select id="fSort" aria-label="Order"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="impact">Highest impact first</option></select>
       <input type="text" id="fSearch" placeholder="Search words" aria-label="Search words">
+      <label class="toggle"><input type="checkbox" id="fHideDone"><span>Hide done</span></label>
       <span class="count" id="fCount"></span>
     </div>
     <div class="group decide" id="decideGroup" hidden>
@@ -1067,6 +1075,7 @@
     if (needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
       el("h3", { text: "The decision" }), el("p", { text: r.decision || "Not written yet. Triage has to say what is being asked, the choices, and what it recommends." })));
     if (decision && !r.approval) detail.append(decision);
+    if (canMove()) detail.append(renderEditor(r));
     detail.append(facts, prose);
     if (decision && r.approval) detail.append(decision);
     if (r.issueURL) {
@@ -1122,6 +1131,63 @@
       { to: "closed", key: "cancel-declined", label: "Canceled: not doing", fields: cancelFields(r, "declined", "") },
       { to: "closed", key: "cancel-duplicate", label: "Canceled: duplicate", fields: cancelFields(r, "duplicate", "") },
     ]);
+  };
+  // ---- Editing a report directly: its status and its flags. ----
+  // Each status the owner can pick, in flow order, and the fields that set it.
+  const STATUS_CHOICES = [
+    ["filed", "Inbox"], ["triaged", "Triaged"], ["backlog", "Backlog"], ["todo", "To do"], ["triaging", "In progress"],
+    ["auto-fixed", "Done"], ["working-as-intended", "Works as designed"], ["declined", "Canceled"], ["duplicate", "Duplicate"],
+  ];
+  const choiceOf = (r) => {
+    const s = statusKey(r);
+    if (s === "new" || s === "filed") return "filed";
+    if (s === "approved" || s === "todo") return "todo";
+    if (s === "closed") return "declined";
+    if (STATUS_CHOICES.some(([k]) => k === s)) return s;
+    return "triaged"; // needs-human, needs-info, cannot-reproduce, expectation-mismatch
+  };
+  const statusFields = (r, choice) => {
+    const at = stamp();
+    switch (choice) {
+      case "filed": return { status: "filed", column: "reported", columnAt: at };
+      case "triaged": return { status: "triaged", column: "todo", columnAt: at, approval: null };
+      case "backlog": return { status: "backlog", column: "backlog", columnAt: at, approval: null };
+      case "todo": return choiceOf(r) === "todo" ? {} : approveFields(r, "");
+      case "triaging": return { status: "triaging", column: "upnext", columnAt: at };
+      case "auto-fixed": return { status: "auto-fixed", column: "done", columnAt: at };
+      case "working-as-intended": return { status: "working-as-intended", columnAt: at };
+      case "declined": return cancelFields(r, "declined", "");
+      case "duplicate": return cancelFields(r, "duplicate", "");
+      default: return {};
+    }
+  };
+  const renderEditor = (r) => {
+    const status = el("select", { "aria-label": "Status" }, ...STATUS_CHOICES.map(([k, l]) => el("option", { value: k, text: l })));
+    status.value = choiceOf(r);
+    const have = new Set(flagsOf(r));
+    const boxes = FLAGS.map((f) => {
+      const input = el("input", { type: "checkbox", value: f }); input.checked = have.has(f);
+      return { f, input, node: el("label", { class: "opt" }, input, el("span", { text: f })) };
+    });
+    const extra = el("input", { type: "text", "aria-label": "Other flags, separated by commas", placeholder: "Other flags, separated by commas" });
+    extra.value = [...have].filter((f) => !FLAGS.includes(f)).join(", ");
+    const save = el("button", { type: "button", class: "primary", text: "Save changes" });
+    const msg = el("p", { class: "problem", hidden: "" });
+    save.addEventListener("click", async () => {
+      save.disabled = true; msg.hidden = true;
+      const flags = [...boxes.filter((b) => b.input.checked).map((b) => b.f),
+        ...extra.value.split(",").map((x) => x.trim()).filter(Boolean)];
+      try {
+        // The status is written in its plain form, and every flag is listed in
+        // `flags`, so what the owner set is exactly what shows. `editedAt`
+        // keeps the mirror script from putting the labels back over it.
+        await writeReport(r, { ...statusFields(r, status.value), flags: [...new Set(flags)], editedAt: stamp() });
+      } catch (err) { msg.textContent = "That didn't save: " + (err && err.message || err); msg.hidden = false; }
+      save.disabled = false;
+    });
+    return el("div", { class: "editor" }, el("h3", { text: "Change status and flags" }),
+      el("div", { class: "grid2" }, el("label", { class: "opt" }, el("span", { text: "Status" }), status), extra),
+      el("div", { class: "flagrow" }, ...boxes.map((b) => b.node)), save, msg);
   };
   const canMove = () => Boolean(db && canEdit);
   const showBoardMsg = (text) => { const m = $("#boardMsg"); m.textContent = text; m.hidden = !text; };
@@ -1180,6 +1246,7 @@
     if ($("#fFlag").value && !flagsOf(r).includes($("#fFlag").value)) return false;
     if (k && r.kind !== k) return false;
     if (impact && r.impact !== impact) return false;
+    if (hideDone && isFinished(r)) return false;
     if (who === USERS) { if (isOwnerReport(r)) return false; }
     else if (who && (r.reporter || "Unknown") !== who) return false;
     if (needle && !JSON.stringify([r.title, r.body, r.reporter, r.area, r.reference]).toLowerCase().includes(needle)) return false;
@@ -1285,6 +1352,11 @@
   });
   // ---- List or board, remembered on this browser. ----
   let layout = remembered("layout") === "board" ? "board" : "list";
+  // Hide done: finished reports (Done, Deployed and everything under Closed) out of the way.
+  let hideDone = remembered("hide-done") === "1";
+  $("#fHideDone").checked = hideDone;
+  $("#fHideDone").addEventListener("change", (e) => { hideDone = e.target.checked; remember("hide-done", hideDone ? "1" : "0"); resetCaps(); renderBoard(); });
+  const isFinished = (r) => ["done", "deployed", "closed"].includes(columnOf(r));
   $("#fSort").value = remembered("sort-" + layout) || (layout === "board" ? "impact" : "newest");
   document.querySelectorAll(".seg [data-layout]").forEach((b) => b.addEventListener("click", () => {
     remember("sort-" + layout, $("#fSort").value);
@@ -1333,14 +1405,17 @@
     const cols = new Map(COLUMNS.map(([id]) => [id, []]));
     const closed = [];
     for (const r of shown) { const c = columnOf(r); (c === "closed" ? closed : cols.get(c)).push(r); }
-    $("#kanban").replaceChildren(...COLUMNS.map(([id, name, blurb]) => {
+    // Hide done also takes the Done and Deployed columns and the Closed area away.
+    const visible = COLUMNS.filter(([id]) => !(hideDone && (id === "done" || id === "deployed")));
+    $("#kanban").style.setProperty("--cols", String(visible.length));
+    $("#kanban").replaceChildren(...visible.map(([id, name, blurb]) => {
       const list = cols.get(id).sort(sortBy());
       return el("section", { class: "kcol", "data-col": id, "aria-label": name },
         el("header", {}, el("h2", {}, document.createTextNode(name), el("span", { text: String(list.length) })), el("p", { text: blurb })),
         ...(list.length ? capped("col:" + id, list, card) : [el("div", { class: "empty", text: "Nothing here." })]));
     }));
     closed.sort(sortBy());
-    $("#closedArea").hidden = !closed.length;
+    $("#closedArea").hidden = !closed.length || hideDone;
     $("#closedTitle").textContent = `Closed: canceled, duplicate or works as designed (${closed.length})`;
     $("#closedList").replaceChildren(...capped("closed", closed, card));
   };

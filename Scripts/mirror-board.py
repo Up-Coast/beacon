@@ -36,7 +36,8 @@ What it decides, from the issue's state and labels alone (no judgement):
 
 A board document is only moved up: a document already at a more specific
 status than the labels say, or one the owner has decided on (it carries an
-`approval`) or the pickup is working (approved, triaging), is left alone.
+`approval`), has edited by hand (`editedAt`) or the pickup is working
+(approved, triaging), is left alone.
 """
 import argparse
 import datetime
@@ -228,7 +229,9 @@ def main():
                 continue
             ref, d = found
             cur = d.get("status")
-            if d.get("approval") or cur in HELD:
+            # Held: the owner decided on it, the pickup is working it, or the
+            # owner set its status and flags by hand (editedAt).
+            if d.get("approval") or d.get("editedAt") or cur in HELD:
                 counts["held"] += 1
                 continue
             if status is None and column is None:
