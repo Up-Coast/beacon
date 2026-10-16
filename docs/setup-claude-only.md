@@ -60,7 +60,7 @@ The pickup needs `gh` signed in to your GitHub account and `python3`. Each run c
 2. Fill in the values at its top. They are the same as the pickup's.
 3. In the Claude desktop app, ask Claude to create a scheduled task with the prompt, running hourly, with the permission mode set to Auto.
 
-When the worker cannot finish a report, it comments on the issue, flags the report **Blocked** and writes why on the dashboard. Answer in your note, then untick **Blocked** to send it back. [The worker prompt](../Triage/WORKER.md) lists the reasons it stops.
+When the worker cannot finish a report, it comments on the issue, flags the report **Blocked** and writes why on the dashboard. It sends a message only when it is stuck itself: a permission refusal, an expired token, or the same problem on 5 runs in a row. Answer in your note, then untick **Blocked** to send it back. [The worker prompt](../Triage/WORKER.md) lists the reasons it stops.
 
 Run the pickup and the worker on a Mac. Reproducing a report and proving a fix means building and running a macOS or iOS app, and that needs a Mac. What the pickup does with each report is in [What happens to a report](what-happens-to-a-report.md).
 
