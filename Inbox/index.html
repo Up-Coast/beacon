@@ -1541,7 +1541,7 @@
     $("#boardTitle").textContent = app ? `${app.name} reports` : "Reports";
     $("#boardSub").textContent = app ? `${app.platform ? app.platform + " · " : ""}newest first` : "Every report from every app on this page, newest first.";
     renderTabs(); renderStats(); renderReporters();
-    const shown = allReports.filter(passes);
+    const shown = allReports.filter((r) => passes(r));
     shown.sort(sortBy());
     $("#fCount").textContent = `${shown.length} of ${allReports.filter(inApp).length}`;
     const onBoard = layout === "board";
