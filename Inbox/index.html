@@ -1184,6 +1184,13 @@
         ...[b.tried ? "Tried: " + b.tried : "", b.branch ? "Work kept on " + b.branch : "", b.at ? "Stopped " + fmtWhen(b.at) : "",
           "Answer in your note, then clear Blocked to send it back to the worker."].filter(Boolean).map((t) => el("p", { class: "meta", text: t }))));
     }
+    // Where the work is: the pull request while one is open, and the commit once merged.
+    const workLinks = [];
+    const repo = r.app && r.app.repository;
+    const pr = r.pullRequest && typeof r.pullRequest === "object" ? r.pullRequest : null;
+    if (pr && /^https:\/\//.test(String(pr.url || ""))) workLinks.push(el("a", { href: pr.url, target: "_blank", rel: "noopener", text: `Pull request${pr.number ? " #" + pr.number : ""}${pr.state ? " (" + pr.state + ")" : ""}` }));
+    if (r.fixCommit && repo && /^[0-9a-f]{7,40}$/i.test(String(r.fixCommit))) workLinks.push(el("a", { href: `https://github.com/${repo}/commit/${r.fixCommit}`, target: "_blank", rel: "noopener", text: `Merged: commit ${String(r.fixCommit).slice(0, 7)}` }));
+    if (workLinks.length) detail.append(el("p", { class: "worklinks", style: "margin:0;display:flex;gap:16px;flex-wrap:wrap;font-weight:600" }, ...workLinks));
     // The Triage view keeps the editor beside the zones, not in the card.
     if (canMove() && !triage) detail.append(renderEditor(r));
     detail.append(facts, prose);

@@ -25,6 +25,8 @@ The task runs only while the Claude app is open and the Mac is awake. A missed r
 | Finishes it | Status Done, column Done, the commit in Fix | A comment naming the commit and the proof, label `auto-fixed`, closed |
 | Stops on it | Back in To do, flag **Blocked**, the reason under "Why the work stopped" | A comment saying why and what it needs, label `flag:blocked` |
 
+The report's detail shows a link at the top: the **Pull request** while the worker has one open for kept work, and **Merged: commit** once it merges.
+
 To send a blocked report back to the worker, answer in your note on the report (or in a comment on the issue), then untick **Blocked** in Your changes. The next run reads your answer and tries again.
 
 ## Why the worker stops
@@ -90,6 +92,7 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
 5. Finish it
    Rebase on the latest default branch, run the suite again, merge to the default branch and push. Never merge with a failing check. Never force-push the default branch.
    - Issue: one comment naming the commit, what changed, and the proof (gh issue comment). Then gh issue edit --add-label auto-fixed --remove-label in-progress, and gh issue close.
+   - If a pull request exists for the branch, close it with a comment naming the commit, and write pullRequest.state "merged".
    - Page, pinned to the version from step 2's result: status "auto-fixed", column "done", columnAt, fixCommit, triageNote (two to four plain sentences for the owner: what was built and how it was proven), work.finishedAt, and approval.actedAt when it has an approval.
    - Remove the worktree. Delete the merged branch.
 
@@ -104,7 +107,7 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
      checks-failing    the suite or build fails for a reason this change cannot fix
      conflict          the change no longer merges cleanly with the default branch
      other             anything else, said in the note
-   a. If the work is worth keeping, push work.branch (never the default branch).
+   a. If the work is worth keeping, push work.branch (never the default branch) and open a draft pull request for it: gh pr create --draft --repo <repository> --head <work.branch> --title "<ticket number>: <title>" --body "<what is built and what is missing>". Write it onto the report as pullRequest {number, url, state: "draft"}.
    b. Comment on the issue, in this shape:
         **Beacon worker stopped: <reason, in the words above>**
         What I need from you: <one or two plain sentences, the thing that unblocks it>
