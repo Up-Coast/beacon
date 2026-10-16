@@ -119,6 +119,10 @@ Click a count to show only those reports. Click it again to show everything.
 
 The board has no Inbox column; Inbox reports show in the list.
 
+## Attach images to a report
+
+Under your note in Your changes, **Add images** attaches screenshots or mockups of your own. They show as thumbnails under the note, save as soon as you add them, and have an × to remove one. Click any thumbnail, yours or the reporter's, to see it full size; click again or press Escape to close. They are kept apart from the reporter's images, in the report's `ownerAttachments`, and the pickup reads them with your note.
+
 ## Waiting for human
 
 Tick **Waiting for human** in Your changes to keep a report in To do without the pickup working on it, for example when it needs design work first. The pickup skips it until you untick the box. The flag shows as a chip on the card and in the Any flag filter.

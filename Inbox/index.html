@@ -300,6 +300,10 @@
   .words p, .words ol { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
   .words ol { padding-left: 22px; display: grid; gap: 4px; }
   .pictures { display: flex; gap: 10px; flex-wrap: wrap; }
+  dialog.lightbox { padding: 0; border: 0; background: transparent; max-width: 96vw; max-height: 96vh; }
+  dialog.lightbox::backdrop { background: rgba(17,24,39,.75); }
+  dialog.lightbox img { display: block; max-width: 96vw; max-height: 96vh; border-radius: 8px; cursor: zoom-out; }
+  .thumb img, .pictures img { cursor: zoom-in; }
   .pictures img { max-width: min(320px, 100%); max-height: 240px; border: 1px solid var(--line); border-radius: 8px; }
   .pictures .loading { color: var(--ink-3); font-size: 13px; }
   @media (prefers-reduced-motion: no-preference) { .kind, .choice, .tab, .stat { transition: border-color .12s, background .12s; } }
@@ -381,6 +385,7 @@
       </details>
     </div>
   </section>
+  <dialog class="lightbox" id="imageDialog" aria-label="Image"><img id="lightboxImg" alt=""></dialog>
   <dialog class="sheet" id="reportDialog" aria-labelledby="dialogTitle">
     <header>
       <div class="titleline" id="dialogHead"></div>
@@ -1227,6 +1232,40 @@
     // One note on every report: what to do or avoid, or anything worth remembering.
     const note = el("textarea", { placeholder: "Your note: what the work should do or avoid, or anything to remember", "aria-label": "Your note" });
     note.value = r.ownerNote || (r.approval && r.approval.note) || "";
+    // The owner's own images, kept apart from the reporter's, shown under the note
+    // as thumbnails. They save as soon as they are added.
+    const ownerImages = db ? db.doc("reports/" + r.reference).collection("ownerAttachments") : null;
+    let owned = [];
+    const thumbsEl = el("div", { class: "thumbs" });
+    const drawOwned = () => thumbsEl.replaceChildren(...owned.map((a) => {
+      const img = openable(el("img", { alt: a.filename || "" })); img.src = a.dataURL;
+      const x = el("button", { type: "button", class: "x", "aria-label": "Remove " + (a.filename || "image"), text: "×" });
+      x.addEventListener("click", async () => {
+        try { await ownerImages.doc(a.id).delete(); owned = owned.filter((o) => o.id !== a.id); drawOwned(); }
+        catch (err) { msg.textContent = "That didn't remove: " + (err && err.message || err); msg.hidden = false; }
+      });
+      return el("div", { class: "thumb" }, img, x);
+    }));
+    const fileInput = el("input", { type: "file", accept: "image/*", multiple: "", hidden: "" });
+    const attachBtn = el("label", { class: "attach" }, document.createTextNode("Add images"), fileInput);
+    if (ownerImages) {
+      ownerImages.orderBy("order").get().then((snap) => { owned = snap.docs.map((d) => ({ id: d.id, ...d.data() })); drawOwned(); }).catch(() => {});
+      fileInput.addEventListener("change", async () => {
+        msg.hidden = true;
+        for (const file of [...fileInput.files]) {
+          if (!file.type.startsWith("image/")) continue;
+          if (owned.length >= IMAGE_MAX_COUNT) { msg.textContent = `Up to ${IMAGE_MAX_COUNT} images per report.`; msg.hidden = false; break; }
+          try {
+            const a = await shrink(file);
+            const id = String(Date.now()) + "-" + owned.length;
+            const doc = { ...a, reference: r.reference, order: Date.now() };
+            await ownerImages.doc(id).set(doc);
+            owned.push({ id, ...doc }); drawOwned();
+          } catch (err) { msg.textContent = `${file.name || "That image"} couldn't be added: ${err && err.message || err}.`; msg.hidden = false; }
+        }
+        fileInput.value = "";
+      });
+    }
     const msg = el("p", { class: "problem", hidden: "" });
     const buttons = [];
     const act = async (fields) => {
@@ -1260,7 +1299,7 @@
     }
     return el("div", { class: "editor" }, el("h3", { text: "Your changes" }),
       el("div", { class: "grid2" }, el("label", { class: "opt" }, el("span", { text: "Status" }), status), extra),
-      el("div", { class: "flagrow" }, ...boxes.map((b) => b.node)), note,
+      el("div", { class: "flagrow" }, ...boxes.map((b) => b.node)), note, ...(ownerImages ? [thumbsEl, attachBtn] : []),
       el("div", { class: "choices" }, ...actions), msg);
   };
   const canMove = () => Boolean(db && canEdit);
@@ -1279,12 +1318,16 @@
     const verb = r.approval.decision === "approved" ? "Approved" : r.approval.decision === "duplicate" ? "Canceled as a duplicate" : "Canceled";
     return words("Your decision", `${verb} on ${fmtWhen(r.approval.at)}${r.approval.note ? ": " + r.approval.note : ""}`);
   };
+  // Click a picture to see it full size; click again, or Escape, to close.
+  const showImage = (src, alt) => { $("#lightboxImg").src = src; $("#lightboxImg").alt = alt || ""; $("#imageDialog").showModal(); };
+  $("#imageDialog").addEventListener("click", () => $("#imageDialog").close());
+  const openable = (img) => { img.addEventListener("click", () => showImage(img.src, img.alt)); return img; };
   const loadPictures = async (host) => {
     if (!db || host.dataset.loaded) return;
     host.dataset.loaded = "1";
     try {
       const snap = await db.doc("reports/" + host.dataset.ref).collection("attachments").orderBy("order").get();
-      host.replaceChildren(...snap.docs.map((d) => { const a = d.data(); const img = el("img", { alt: a.filename || "" }); img.src = a.dataURL; return img; }));
+      host.replaceChildren(...snap.docs.map((d) => { const a = d.data(); const img = el("img", { alt: a.filename || "" }); img.src = a.dataURL; return openable(img); }));
     } catch (err) { host.replaceChildren(el("span", { class: "loading", text: "Images couldn't be loaded: " + (err && err.message || err) })); }
   };
 
