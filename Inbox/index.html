@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Beacon</title>
 <style>
   :root {
@@ -1072,7 +1073,7 @@
     r.reporter, fmtWhen(r.filedAt),
     r.attachmentCount ? `${r.attachmentCount} image${r.attachmentCount === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ");
 
-  const renderDetail = (r, showDecision = true) => {
+  const renderDetail = (r, showDecision = true, triage = false) => {
     const c = r.context || {}, b = r.body || {}, a = r.app || {};
     const facts = el("dl", { class: "facts" }, ...[
       IMPACT_LABEL[r.impact] ? el("div", {}, el("dt", { text: "Impact" }), el("dd", {}, el("span", { class: "impactfact" }, impactIcon(r.impact), el("span", { text: IMPACT_LABEL[r.impact] })))) : null,
@@ -1116,8 +1117,11 @@
     const decision = renderDecision(r);
     if (showDecision && needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
       el("h3", { text: "Recommendation" }), el("p", { text: decisionText(r) || "Not written yet. Triage has to say whether it recommends approving or declining, and why." })));
-    if (canMove()) detail.append(renderEditor(r));
+    // The Triage view reads the ticket first and puts the editor after it,
+    // without Approve or Cancel: the Status menu already does both.
+    if (canMove() && !triage) detail.append(renderEditor(r));
     detail.append(facts, prose);
+    if (canMove() && triage) detail.append(renderEditor(r, false));
     if (decision && r.approval) detail.append(decision);
     if (r.issueURL) {
       const link = el("a", { href: r.issueURL, target: "_blank", rel: "noopener", text: `Issue #${r.issueNumber || ""}`.trim() });
@@ -1205,7 +1209,7 @@
       default: return {};
     }
   };
-  const renderEditor = (r) => {
+  const renderEditor = (r, links = true) => {
     const status = el("select", { "aria-label": "Status" }, ...STATUS_CHOICES.map(([k, l]) => el("option", { value: k, text: l })));
     status.value = choiceOf(r);
     const have = new Set(flagsOf(r));
@@ -1237,12 +1241,12 @@
     buttons.push(save);
     const actions = [save];
     // Deciding: for anything not finished and not already approved.
-    if (!isFinished(r) && r.status !== "approved" && r.status !== "triaging") {
+    if (links && !isFinished(r) && r.status !== "approved" && r.status !== "triaging") {
       const approve = el("button", { type: "button", class: "linkish strong", text: r.kind === "bug" ? "Approve the fix" : r.kind === "feedback" ? "Act on it" : "Approve building it" });
       approve.addEventListener("click", () => act(approveFields(r, note.value.trim())));
       buttons.push(approve); actions.push(approve);
     }
-    if (columnOf(r) !== "closed") {
+    if (links && columnOf(r) !== "closed") {
       const notDoing = el("button", { type: "button", class: "linkish", text: "Cancel: not doing" });
       notDoing.addEventListener("click", () => act(cancelFields(r, "declined", note.value.trim())));
       const dup = el("button", { type: "button", class: "linkish", text: "Cancel: duplicate" });
@@ -1462,7 +1466,7 @@
     const c = el("article", { class: "card triagecard" + (needsDecision(r) ? " decide" : ""), "data-ref": r.reference },
       el("div", { class: "titleline" }, impactIcon(r.impact), el("span", { class: "title", text: r.title || r.reference }), el("span", { class: "pills" }, pill(r), ...chips(r))),
       el("div", { class: "meta", text: metaLine(r) }));
-    const detail = renderDetail(r);
+    const detail = renderDetail(r, true, true);
     c.append(detail);
     detail.querySelectorAll(".pictures").forEach(loadPictures);
     if (moves.length) makeMovable(c, r, moves);
