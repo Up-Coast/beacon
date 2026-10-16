@@ -35,11 +35,11 @@ To send a blocked report back to the worker, answer in your note on the report (
 
 | Reason (`blocked.reason`) | Shown as | When |
 |---|---|---|
-| `needs-decision` | Needs your decision | The work needs a product or design choice that the ticket and your note do not make. |
+| `needs-decision` | Needs your decision | Only for a report triage queued (no approval) that needs a product or business choice the ticket does not make. Never for an approved report, and never for design, art or wording. |
 | `still-happening` | Fix tried, still happening | A fix was built, but the reproduction still fails after it. |
 | `cannot-reproduce` | Can't reproduce | Three tries did not show the bug, so there is nothing to prove a fix against. |
-| `needs-you` | Needs something only you can do | A sign-in, an account, a secret, a device, infrastructure or a payment. |
-| `unclear` | Not clear what to build | The ticket can be read two ways and the wrong one would waste the work. |
+| `needs-you` | Needs something only you can do | A sign-in, an account, a secret, a physical device, infrastructure or a payment. Never for something the worker can make itself. |
+| `unclear` | Not clear what to build | Only for a report triage queued, when the ticket can be read two ways and the wrong one would waste the work. For an approved report, pick the likelier reading and build it. |
 | `too-risky` | Too risky to merge alone | A bug triage queued that turns out to touch the blast-radius list in [TRIAGE.md](TRIAGE.md#gate-4--is-it-simple). |
 | `checks-failing` | Checks won't pass | The test suite or build fails, and the failure is not one this change can fix. |
 | `conflict` | Conflicts with other work | The default branch moved and the change no longer merges cleanly. |
@@ -82,7 +82,12 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
    write_db update the report, pinned with if_version to the version you read: status "triaging", column "inprogress", columnAt, and work {by: "beacon-worker", startedAt, branch: "beacon/<issue>-<slug>", attempts: <work.attempts + 1, or 1>, statusBefore: <the status it had>}. If the write is refused, the owner changed the report: skip it. On the issue: gh issue edit --add-label in-progress (create the label if missing).
    If work.attempts is now above 3, do not try again: stop on it with reason "other" and say it has failed three runs.
 
-3. Read everything before you change anything
+3. Approval is the decision
+   An approved report (it has an `approval`, or status approved) is the owner telling you to build it. Never stop on it to ask whether to build it, which option to take, or whether she will supply something you can make yourself. Make the choice and build it. Say which choice you made, and why, in the issue comment and the commit message, so she can reverse it on review.
+   Design is your job: icons, illustrations, layout, colours, spacing and wording. Draw the missing icon, write the missing copy, and match the style of what the app already has. Never stop on "needs design work" or "needs new artwork".
+   If the report was Blocked before and the owner has cleared the flag, her answer (or the plain fact she cleared it) is final: never stop on the same kind of question again. Build it.
+
+3b. Read everything before you change anything
    - The issue: gh issue view <n> --repo <repository> --comments. The report on the page: its body, finding, triageNote, ownerNote, approval.note, and the owner's images in "reports/<reference>/ownerAttachments" (decode each dataURL to a file and look at it).
    - If the report carries `blocked` from an earlier stop, the owner has cleared the flag: their answer is in ownerNote, approval.note, or an issue comment newer than blocked.at. Act on it. If there is no answer, use what you have and try again once.
    - An approved report is the owner's decision: build what the ticket and the note ask, even where a spec says otherwise, and update that spec in the same commit (TRIAGE.md, gate 2). A report queued by triage (status todo, no approval) is a bug: gate 4's blast-radius list still applies to it.
@@ -102,12 +107,12 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
    - Remove the worktree. Delete the merged branch.
 
 6. Stop on it, when it cannot be finished
-   Stop as soon as one of these is true. Do not keep trying.
-     needs-decision    it needs a product or design choice the ticket and note do not make
+   Stop only when the work truly cannot be built by you. Needing a design, a choice or a creative asset is never a reason on an approved report. Stop as soon as one of these is true. Do not keep trying.
+     needs-decision    triage-queued report only: it needs a product or business choice the ticket does not make (never an approved report, never design)
      still-happening   three fixes did not make the reproduction pass
      cannot-reproduce  three tries did not show the bug
-     needs-you         it needs a sign-in, account, secret, device, infrastructure change or payment
-     unclear           the ticket can be read two ways, and the wrong one wastes the work
+     needs-you         it needs a sign-in, account, secret, physical device, infrastructure change or payment that you cannot do or make yourself
+     unclear           triage-queued report only: the ticket can be read two ways, and the wrong one wastes the work
      too-risky         a bug queued by triage touches the blast-radius list (TRIAGE.md, gate 4)
      checks-failing    the suite or build fails for a reason this change cannot fix
      conflict          the change no longer merges cleanly with the default branch
