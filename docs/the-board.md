@@ -121,7 +121,7 @@ The board has no Inbox column; Inbox reports show in the list.
 
 ## The Triage view
 
-The third layout, **Triage**, is for working through what Claude has triaged. The To Triage column takes the left 60% of the page, each card showing the whole report with its recommendation. The other statuses stack on the right as drop zones that show only their count: drag a card onto one to move it, and the count goes up. There are two Canceled zones, one for not doing it and one for a duplicate.
+The third layout, **Triage**, is for working through what Claude has triaged. The To Triage column takes the left 60% of the page, one ticket open at a time (the top one when the page loads; opening another closes it) and the rest collapsed to a title and recommendation. **Your changes** sits under the last drop zone and always applies to the open ticket. The other statuses stack on the right as drop zones that show only their count: drag a card onto one to move it, and the count goes up. There are two Canceled zones, one for not doing it and one for a duplicate.
 
 ## Read a row
 

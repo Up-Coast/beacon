@@ -254,7 +254,8 @@
   /* ---- The Triage view: To Triage wide (60%), every other status a drop zone. ---- */
   .triage { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; align-items: start; }
   @media (max-width: 800px) { .triage { grid-template-columns: minmax(0, 1fr); } }
-  .triagezones { display: grid; gap: 8px; align-content: start; position: sticky; top: 12px; }
+  .triageside { display: grid; gap: 8px; align-content: start; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
+  .triagezones { display: grid; gap: 8px; align-content: start; }
   .zone { min-height: 0; padding: 14px 16px; }
   .zone h2 { font-size: 15px; }
   .zone h2 span { font-size: 20px; font-weight: 700; color: var(--ink); }
@@ -367,7 +368,7 @@
     </div>
     <div id="triageView" class="triage" hidden>
       <section class="kcol triagecol" data-col="todo" data-key="todo" aria-label="To Triage" id="triageMain"></section>
-      <div class="triagezones" id="triageZones"></div>
+      <div class="triageside"><div id="triageZones" class="triagezones"></div><div id="triageEditor"></div></div>
     </div>
     <div id="kanbanView" hidden>
       <p class="problem" id="boardMsg" role="alert" hidden></p>
@@ -1117,11 +1118,10 @@
     const decision = renderDecision(r);
     if (showDecision && needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
       el("h3", { text: "Recommendation" }), el("p", { text: decisionText(r) || "Not written yet. Triage has to say whether it recommends approving or declining, and why." })));
-    // The Triage view reads the ticket first and puts the editor after it,
-    // without Approve or Cancel: the Status menu already does both.
+    // The Triage view keeps the editor beside the zones, not in the card.
     if (canMove() && !triage) detail.append(renderEditor(r));
     detail.append(facts, prose);
-    if (canMove() && triage) detail.append(renderEditor(r, false));
+
     if (decision && r.approval) detail.append(decision);
     if (r.issueURL) {
       const link = el("a", { href: r.issueURL, target: "_blank", rel: "noopener", text: `Issue #${r.issueNumber || ""}`.trim() });
@@ -1461,14 +1461,22 @@
   });
   // ---- The Triage view: the To Triage column wide on the left, every other
   // status on the right as a drop zone that shows only its count. ----
+  // One ticket is open at a time, and Your changes belongs to it. Opening
+  // another closes this one; the top ticket is open when the page loads.
+  let triageOpen = "", triageEditorKey = "";
   const triageCard = safely((r) => {
     const moves = canMove() ? movesFor(r) : [];
-    const c = el("article", { class: "card triagecard" + (needsDecision(r) ? " decide" : ""), "data-ref": r.reference },
-      el("div", { class: "titleline" }, impactIcon(r.impact), el("span", { class: "title", text: r.title || r.reference }), el("span", { class: "pills" }, pill(r), ...chips(r))),
+    const open = r.reference === triageOpen;
+    const title = el("button", { type: "button", class: "open", text: r.title || r.reference, "aria-expanded": String(open) });
+    title.addEventListener("click", () => { if (suppressClick) { suppressClick = false; return; } triageOpen = r.reference; renderBoard(); });
+    const c = el("article", { class: "card triagecard" + (open ? " isopen" : "") + (needsDecision(r) ? " decide" : ""), "data-ref": r.reference },
+      el("div", { class: "titleline" }, impactIcon(r.impact), title, el("span", { class: "pills" }, pill(r), ...chips(r))),
       el("div", { class: "meta", text: metaLine(r) }));
-    const detail = renderDetail(r, true, true);
-    c.append(detail);
-    detail.querySelectorAll(".pictures").forEach(loadPictures);
+    if (open) {
+      const detail = renderDetail(r, true, true);
+      c.append(detail);
+      detail.querySelectorAll(".pictures").forEach(loadPictures);
+    } else c.append(decisionLine(r));
     if (moves.length) makeMovable(c, r, moves);
     return c;
   });
@@ -1483,14 +1491,23 @@
   };
   const renderTriage = (shown) => {
     const list = shown.filter((r) => columnOf(r) === "todo");
+    if (!list.some((r) => r.reference === triageOpen)) triageOpen = list.length ? list[0].reference : "";
     $("#triageMain").replaceChildren(
-      el("header", {}, el("h2", {}, document.createTextNode("To Triage"), el("span", { text: String(list.length) })), el("p", { text: "Claude has read and routed these. Drag each one to where it goes." })),
+      el("header", {}, el("h2", {}, document.createTextNode("To Triage"), el("span", { text: String(list.length) })), el("p", { text: "Claude has read and routed these. Open one, then drag it to where it goes." })),
       ...(list.length ? capped("col:triage", list, triageCard) : [el("div", { class: "empty", text: "Nothing to triage." })]));
     const counts = new Map();
     for (const r of allReports.filter(inApp)) counts.set(zoneOf(r), (counts.get(zoneOf(r)) || 0) + 1);
     $("#triageZones").replaceChildren(...TRIAGE_ZONES.map(([key, name]) =>
       el("section", { class: "kcol zone", "data-col": key, "data-key": key, "aria-label": name },
         el("h2", {}, document.createTextNode(name), el("span", { text: String(counts.get(key) || 0) })))));
+    // Your changes, for the open ticket. Rebuilt only when that ticket changes,
+    // so a note being typed is not lost to another report arriving.
+    const current = list.find((r) => r.reference === triageOpen);
+    const key = current ? JSON.stringify(current) : "";
+    if (key !== triageEditorKey || !$("#triageEditor").firstChild) {
+      triageEditorKey = key;
+      $("#triageEditor").replaceChildren(...(current && canMove() ? [renderEditor(current, false)] : []));
+    }
   };
   const renderKanban = (shown) => {
     const cols = new Map(COLUMNS.map(([id]) => [id, []]));
