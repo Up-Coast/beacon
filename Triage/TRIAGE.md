@@ -162,7 +162,7 @@ Set by the app: `beacon`, `type:bug|feature-request|change-request|feedback`, `i
 
 Set by triage: `severity:*`, `needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`, `auto-fixed`, `needs-human`, `triaged`.
 
-`needs-human` is for something that truly needs the owner's call, and the report must say what the call is: write `decision` on the page report (the question in plain words, the choices, what happens if nothing is decided, and your recommendation). If you cannot write it, it is not a decision: label `triaged` and leave it for the owner to move.
+`needs-human` is for something that truly needs the owner's call, and the report must say what the call is: write `decision` on the page report (the recommendation, written as one or two plain sentences: approve or decline, and the reason the report itself does not already give. Never a question, a list of choices or an "if nothing is decided" line: approving or declining the report is the choice, so restating it asks nothing.). If you cannot write it, it is not a decision: label `triaged` and leave it for the owner to move.
 
 Create them once per repository with `Scripts/beacon-labels.sh`.
 

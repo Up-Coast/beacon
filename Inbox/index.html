@@ -1048,7 +1048,7 @@
     return Object.entries(d).map(([k, v]) => `${k.charAt(0).toUpperCase()}${k.slice(1).replace(/([A-Z])/g, " $1").toLowerCase()}: ${part(v)}`).join("\n");
   };
   const decisionLine = (r) => (needsDecision(r)
-    ? el("div", { class: "decide-line" + (decisionText(r) ? "" : " missing"), text: decisionText(r) ? "Decision: " + decisionText(r) : "Decision not written yet: triage has to say what is being asked." })
+    ? el("div", { class: "decide-line" + (decisionText(r) ? "" : " missing"), text: decisionText(r) ? "Recommendation: " + decisionText(r) : "Recommendation not written yet: triage has to say whether to approve or decline, and why." })
     : null);
   const FLAGS = [...new Set(Object.values(STATUS).map((v) => v[2]).filter(Boolean))];
   const chips = (r) => flagsOf(r).map((l) => el("span", { class: "chip" + (l === "Needs your decision" ? " you" : ""), text: l }));
@@ -1058,7 +1058,7 @@
     r.reporter, fmtWhen(r.filedAt),
     r.attachmentCount ? `${r.attachmentCount} image${r.attachmentCount === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ");
 
-  const renderDetail = (r) => {
+  const renderDetail = (r, showDecision = true) => {
     const c = r.context || {}, b = r.body || {}, a = r.app || {};
     const facts = el("dl", { class: "facts" }, ...[
       IMPACT_LABEL[r.impact] ? el("div", {}, el("dt", { text: "Impact" }), el("dd", {}, el("span", { class: "impactfact" }, impactIcon(r.impact), el("span", { text: IMPACT_LABEL[r.impact] })))) : null,
@@ -1100,8 +1100,8 @@
     if (r.triageNote) prose.append(words("Triage note", r.triageNote));
     const detail = el("div", { class: "detail" });
     const decision = renderDecision(r);
-    if (needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
-      el("h3", { text: "The decision" }), el("p", { text: decisionText(r) || "Not written yet. Triage has to say what is being asked, the choices, and what it recommends." })));
+    if (showDecision && needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
+      el("h3", { text: "Recommendation" }), el("p", { text: decisionText(r) || "Not written yet. Triage has to say whether it recommends approving or declining, and why." })));
     if (canMove()) detail.append(renderEditor(r));
     detail.append(facts, prose);
     if (decision && r.approval) detail.append(decision);
@@ -1309,7 +1309,7 @@
   const row = safely((r) => {
     const d = el("details", { "data-ref": r.reference },
       el("summary", {}, el("div", { class: "row" }, el("span", { class: "titleline" }, impactIcon(r.impact), el("span", { class: "title", text: r.title || r.reference })), el("span", { class: "pills" }, pill(r), ...chips(r))), el("div", { class: "meta", text: metaLine(r) }), decisionLine(r)),
-      renderDetail(r));
+      renderDetail(r, false));
     if (openRefs.has(r.reference)) d.open = true;
     d.addEventListener("toggle", () => {
       if (d.open) { openRefs.add(r.reference); d.querySelectorAll(".pictures").forEach(loadPictures); }

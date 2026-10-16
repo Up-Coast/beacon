@@ -154,7 +154,7 @@ To see the worst first, choose **Highest impact first** in the order menu. To se
 
 ## Approve or cancel
 
-A report that needs your call shows **The decision** at its top: the question, the choices, what happens if you do nothing, and a recommendation. Every opened report has the buttons below its note.
+A report that needs your call shows triage's **Recommendation** under its title: approve or decline, and why. Every opened report has the buttons below its note.
 
 - **Approve the fix** (or **Approve building it**, or **Act on it** for feedback): the next pickup builds it, merges it and writes the commit onto the report. Dragging the card to To do is the same approval. What you wrote in the note is the instruction for the work.
 - **Cancel: not doing:** the next pickup closes the issue as not planned, with your note.
