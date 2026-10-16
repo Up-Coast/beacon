@@ -116,7 +116,7 @@ Click a count to show only those reports. Click it again to show everything.
 
 ## Read a row
 
-Reports that wait on your decision come first, under **Waiting on your decision**, each marked **Your decision**. Everything else follows.
+The list groups reports by the same stages as the board, in the same order: Reported, Triaged, Up next, Done, Deployed, and Closed. A stage with nothing in it is left out. A report that waits on your decision is marked **Your decision**.
 
 Each row shows an impact icon, the report's title, its status, and one line with the reference, kind, app and version, who sent it, when, and how many images it has.
 

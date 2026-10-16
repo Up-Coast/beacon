@@ -22,14 +22,14 @@ The dashboard shows a status on every report. The page stores it as a value. Eve
 
 | The dashboard shows | Value | Meaning |
 |---|---|---|
-| Received | `new` | Sent, not yet picked up. |
-| Filed | `filed` | An issue exists for it in the app's repository. |
-| Being looked at | `triaging` | A session is working on it now. |
+| Just received | `new` | Sent, not yet picked up. |
+| Not triaged yet | `filed` | An issue exists for it in the app's repository, and nobody has triaged it. The next daily check does. |
+| Being worked on | `triaging` | A session is working on it now. |
 | Needs more from the tester | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
 | Couldn't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
 | Working as designed | `working-as-intended` | The app behaves as designed. The explanation is on the issue, which is closed. |
 | App isn't explaining itself | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |
-| Needs a person | `needs-human` | The fix is past what may be done unattended. A written diagnosis is attached. |
+| Needs your decision | `needs-human` | The fix is past what may be done unattended. A written diagnosis is attached. |
 | Fixed | `auto-fixed` | Fixed, proven by running the app, and merged. |
 | Triaged | `triaged` | Read, labelled and routed. Waiting on a person. |
 

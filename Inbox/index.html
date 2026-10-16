@@ -171,6 +171,11 @@
   .group { display: grid; gap: 8px; }
   .group > h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
   .group.decide > h2 { color: var(--wait); }
+  .stage { display: grid; gap: 8px; margin-top: 18px; }
+  .stage:first-child { margin-top: 0; }
+  .stage > h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .stage > h2 .n { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .stage > h2 .blurb { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--ink-3); font-size: 12.5px; }
   .list { display: grid; gap: 8px; }
   .list details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
   .group.decide details { border-left: 3px solid var(--wait); }
@@ -609,11 +614,11 @@
 
   // ---- Board words: statuses as docs/how-it-works.md lists them. ----
   const STATUS = {
-    new:                   ["new", "Received"],
-    filed:                 ["hold", "Filed"],
-    triaging:              ["triaging", "Being looked at"],
+    new:                   ["new", "Just received"],
+    filed:                 ["hold", "Not triaged yet"],
+    triaging:              ["triaging", "Being worked on"],
     "auto-fixed":          ["fixed", "Fixed"],
-    "needs-human":         ["waiting", "Needs a person"],
+    "needs-human":         ["waiting", "Needs your decision"],
     approved:              ["triaging", "Approved, waiting for the next run"],
     declined:              ["hold", "Declined"],
     closed:                ["hold", "Closed, not planned"],
@@ -628,13 +633,13 @@
   // Reports the owner decides: work the pickup stopped on. Approve and
   // Decline appear on these until an approval is written.
   const DECIDABLE = new Set(["needs-human", "triaged", "expectation-mismatch", "cannot-reproduce", "needs-info"]);
-  const IN_PROGRESS = new Set(["filed", "triaging", "approved"]);
+  const BEING_WORKED = new Set(["triaging", "approved"]);
   const waitsOnOwner = (r) => !r.approval && DECIDABLE.has(r.status) && r.kind !== "feedback";
   // The four counts at the top of the dashboard, and the filter each sets.
   const GROUPS = [
     ["decide", "Waiting on you", waitsOnOwner],
-    ["new", "Received", (r) => r.status === "new"],
-    ["open", "In progress", (r) => IN_PROGRESS.has(r.status)],
+    ["new", "Not triaged yet", (r) => r.status === "new" || r.status === "filed"],
+    ["open", "Being worked on", (r) => BEING_WORKED.has(r.status)],
     ["fixed", "Fixed", (r) => r.status === "auto-fixed"],
   ];
 
@@ -1376,16 +1381,23 @@
       if (!bare) renderKanban(shown);
       return;
     }
-    const decide = shown.filter(waitsOnOwner), rest = shown.filter((r) => !waitsOnOwner(r));
-    $("#decideGroup").hidden = bare || !decide.length;
-    $("#decideList").replaceChildren(...capped("list:decide", decide, row, 50));
-    $("#restTitle").textContent = decide.length ? "Everything else" : "Reports";
-    $("#restGroup").hidden = bare || Boolean(decide.length && !rest.length);
+    // The list groups reports by the same stages as the board, in the same order.
+    $("#decideGroup").hidden = true;
+    $("#restTitle").hidden = true;
+    $("#restGroup").hidden = bare;
     const queue = $("#queue");
     if (reached === false) queue.replaceChildren(el("div", { class: "empty", text: "Reports show here once the page can reach them." }));
     else if (!allReports.filter(inApp).length) queue.replaceChildren(el("div", { class: "empty", text: reached ? "No reports yet." : "Loading reports…" }));
     else if (!shown.length) queue.replaceChildren(el("div", { class: "empty", text: "Nothing matches those filters." }));
-    else queue.replaceChildren(...capped("list:rest", rest, row, 50));
+    else {
+      const stages = [...COLUMNS, ["closed", "Closed", "Declined, closed as not planned, or working as designed."]];
+      const byStage = new Map(stages.map(([id]) => [id, []]));
+      for (const r of shown) byStage.get(columnOf(r)).push(r);
+      queue.replaceChildren(...stages.filter(([id]) => byStage.get(id).length).map(([id, name, blurb]) =>
+        el("section", { class: "stage" },
+          el("h2", {}, document.createTextNode(name), el("span", { class: "n", text: String(byStage.get(id).length) }), el("span", { class: "blurb", text: blurb })),
+          el("div", { class: "list" }, ...capped("list:" + id, byStage.get(id), row, 50)))));
+    }
   };
   for (const [value, [, label]] of Object.entries(STATUS)) $("#fStatus").append(el("option", { value, text: label }));
   for (const [value, label] of Object.entries(KIND_FILTER)) $("#fKind").append(el("option", { value, text: label }));
