@@ -1039,8 +1039,16 @@
   const needsDecision = (r) => flagsOf(r).includes("Needs your decision");
   // What the decision is, in the triager's words. A report that asks for one
   // has to say it (`decision`); one that does not shows plainly that it is missing.
+  // `decision` should be plain text, but a triager may write it as an object
+  // (question, choices, recommendation); show its parts, never "[object Object]".
+  const decisionText = (r) => {
+    const d = r.decision;
+    if (!d || typeof d !== "object") return d || "";
+    const part = (v) => (Array.isArray(v) ? v.map(part).join("; ") : v && typeof v === "object" ? Object.values(v).map(part).join(" ") : String(v));
+    return Object.entries(d).map(([k, v]) => `${k.charAt(0).toUpperCase()}${k.slice(1).replace(/([A-Z])/g, " $1").toLowerCase()}: ${part(v)}`).join("\n");
+  };
   const decisionLine = (r) => (needsDecision(r)
-    ? el("div", { class: "decide-line" + (r.decision ? "" : " missing"), text: r.decision ? "Decision: " + r.decision : "Decision not written yet: triage has to say what is being asked." })
+    ? el("div", { class: "decide-line" + (decisionText(r) ? "" : " missing"), text: decisionText(r) ? "Decision: " + decisionText(r) : "Decision not written yet: triage has to say what is being asked." })
     : null);
   const FLAGS = [...new Set(Object.values(STATUS).map((v) => v[2]).filter(Boolean))];
   const chips = (r) => flagsOf(r).map((l) => el("span", { class: "chip" + (l === "Needs your decision" ? " you" : ""), text: l }));
@@ -1093,7 +1101,7 @@
     const detail = el("div", { class: "detail" });
     const decision = renderDecision(r);
     if (needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
-      el("h3", { text: "The decision" }), el("p", { text: r.decision || "Not written yet. Triage has to say what is being asked, the choices, and what it recommends." })));
+      el("h3", { text: "The decision" }), el("p", { text: decisionText(r) || "Not written yet. Triage has to say what is being asked, the choices, and what it recommends." })));
     if (canMove()) detail.append(renderEditor(r));
     detail.append(facts, prose);
     if (decision && r.approval) detail.append(decision);
@@ -1258,7 +1266,7 @@
   };
 
   const inApp = (r) => !selectedApp || (r.app && r.app.id === selectedApp);
-  const passes = (r) => {
+  const passes = (r, skipReporter = false) => {
     const status = $("#fStatus").value, k = $("#fKind").value, impact = $("#fImpact").value, who = $("#fReporter").value;
     const needle = $("#fSearch").value.trim().toLowerCase();
     if (!inApp(r)) return false;
@@ -1268,8 +1276,10 @@
     if (k && r.kind !== k) return false;
     if (impact && r.impact !== impact) return false;
     if (hideDone && isFinished(r)) return false;
-    if (who === USERS) { if (isOwnerReport(r)) return false; }
-    else if (who && (r.reporter || "Unknown") !== who) return false;
+    if (!skipReporter) {
+      if (who === USERS) { if (isOwnerReport(r)) return false; }
+      else if (who && (r.reporter || "Unknown") !== who) return false;
+    }
     if (needle && !JSON.stringify([r.title, r.body, r.reporter, r.area, r.reference]).toLowerCase().includes(needle)) return false;
     return true;
   };
@@ -1315,9 +1325,12 @@
   const isOwnerReport = (r) => /^abbey(\s|jackson|$)|abbey@/i.test(r.reporter || "");
   let reporterKey = "";
   const renderReporters = () => {
+    // Counts follow the other filters, so a number here is what picking that
+    // person would show on the board.
     const counts = new Map();
-    const scoped = allReports.filter(inApp);
-    for (const r of scoped) { const w = r.reporter || "Unknown"; counts.set(w, (counts.get(w) || 0) + 1); }
+    const scoped = allReports.filter((r) => passes(r, true));
+    for (const r of allReports.filter(inApp)) counts.set(r.reporter || "Unknown", 0);
+    for (const r of scoped) { const w = r.reporter || "Unknown"; counts.set(w, counts.get(w) + 1); }
     const names = [...counts.keys()].sort((x, y) => x.localeCompare(y));
     const users = scoped.filter((r) => !isOwnerReport(r)).length;
     const key = users + "\u0002" + names.map((n) => n + "\u0000" + counts.get(n)).join("\u0001");
