@@ -26,7 +26,7 @@ You read every report from every app on one page, grouped by what stage it is in
 
 Open a report to see what the tester wrote, what triage found and its recommendation, and to decide:
 
-![An opened report: triage's recommendation, Your changes with the approve and cancel links, then the facts and the tester's words](docs/assets/readme-report.jpg)
+![An opened report: triage's recommendation, Your changes, then the facts and the tester's words](docs/assets/readme-report.jpg)
 
 The board lays the same reports out as one column per stage. Drag a card to another column to move it:
 

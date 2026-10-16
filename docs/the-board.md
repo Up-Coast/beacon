@@ -81,9 +81,9 @@ The **List**, **Board** and **Triage** switch beside the filters changes how the
 
 Canceled and duplicate reports, reports closed as feedback, and reports that work as designed are not in a column. They are under **Closed**, below the board, folded away until you open it.
 
-Click a card's title to open the whole report, the same detail a list row shows, Approve and Cancel included.
+Click a card's title to open the whole report, the same detail a list row shows, with Your changes.
 
-![A card opened from the board: the report's detail in a panel over the board, with Approve the fix and the Cancel links](assets/page-kanban-card.png)
+![A card opened from the board: the report's detail in a panel over the board, with Your changes](assets/page-kanban-card.png)
 
 ### Move a card
 
@@ -91,9 +91,9 @@ With a mouse, drag the card itself. With a finger, drag it by its grip, the dott
 
 | Where it lands | What it does |
 |---|---|
-| To do | Approves it, exactly as **Approve the fix** or **Approve building it** does, unless it is already approved or being worked. The next pickup works it. Feedback can go here too: the pickup acts on it. |
+| To do | Approves it, exactly as choosing **To do** in the Status menu does, unless it is already approved or being worked. The next pickup works it. Feedback can go here too: the pickup acts on it. |
 | Out of To do, before work starts | Withdraws your approval and puts back the status it had. |
-| Canceled: not doing, Canceled: duplicate, or Closed: feedback | Closes it, with the reason. The next run closes the issue and says why. These are in the **Move to** menu and, for the two cancels, as the **Cancel** buttons on an opened report; they are not columns. |
+| Canceled: not doing, Canceled: duplicate, or Closed: feedback | Closes it, with the reason. The next run closes the issue and says why. These are in the **Move to** menu and; they are not columns. |
 | Any other column | Moves the card and nothing else. The pickup leaves a card where you put it; the only cards it moves are the ones it triages out of Inbox (into To Triage for you, or To do for bugs it fixes) and the ones it finishes (into Done). |
 | Back from Closed | Reopens it as triaged, in the column you chose. |
 
@@ -123,10 +123,10 @@ Click a count to show only those reports. Click it again to show everything.
 The third layout, **Triage**, is for working through what Claude has triaged: read a ticket, then drag it to where it goes.
 
 - **To Triage, on the left.** The To Triage column takes the left 60% of the page. One ticket is open at a time, shown with its whole report and triage's recommendation, outlined in blue. The top ticket is open when the page loads. Click another ticket's title to open it; the first closes, and the page scrolls the new one to the top. The rest are collapsed to a title, its status and the recommendation.
-- **Your changes, on the right.** The editor sits under the last status bar and always applies to the open ticket. A note you are typing is kept while other reports arrive, and starts again when you open a different ticket. This view leaves out the Approve and Cancel links: the Status menu does both.
+- **Your changes, on the right.** The editor sits under the last status bar and always applies to the open ticket. A note you are typing is kept while other reports arrive, and starts again when you open a different ticket. Approving and cancelling are statuses, so the Status menu does both.
 - **Status bars, on the right.** Every other status is a bar that shows its count: Backlog and To do on a row each, then In progress, Done and Deployed together, then Canceled: not doing, Canceled: duplicate and Closed: feedback together. The board's Inbox column is not here.
 - **Drag a ticket onto a bar** to move it. A small tag with the ticket's title follows the pointer and says where it would land ("Move to Done"), and the bar under the pointer turns blue. Drop it and the bar's count goes up; the next ticket opens. The ticket's **Move to** menu does the same from the keyboard.
-- **Look inside a status.** Click a bar to open it: it shows its five most recently moved tickets, newest first, and **Show 10 more** adds ten at a time. An opened bar takes the whole row. Each ticket is a list row, so opening one shows Your changes inline, Approve and Cancel included, as in the List. Several bars can be open at once.
+- **Look inside a status.** Click a bar to open it: it shows its five most recently moved tickets, newest first, and **Show 10 more** adds ten at a time. An opened bar takes the whole row. Each ticket is a list row, so opening one shows Your changes inline, as in the List. Several bars can be open at once.
 
 ![The Triage view: the To Triage column on the left with one ticket open, and on the right the status bars with their counts and Your changes underneath](assets/page-triage.png)
 
@@ -154,11 +154,11 @@ Each row shows an impact icon, the report's title, its status, and one line with
 
 Open a row to see the whole report:
 
-![A report that waits on a decision, opened: triage's recommendation and Your changes with Approve the fix and Cancel, then the facts and the tester's words](assets/page-decision.png)
+![A report that waits on a decision, opened: triage's recommendation and Your changes, then the facts and the tester's words](assets/page-decision.png)
 
 | Part | What it shows |
 |---|---|
-| **Your decision** | Approve and Decline, on a report that waits on you. Your decision, once made. |
+| **Your changes** | Status, flags, your note and images, for a report you can change. Your decision, once made. |
 | **Facts** | Impact, reporter, app with version and build, platform, commit, operating system and device, language and time zone, appearance and text size, area, when it was filed, repository, and the fixing commit. |
 | **The tester's words** | For a bug: what they expected, what happened, the steps, and whether it happens again. For a request: what they want, what makes it hard, and their idea. For a change request: what to change, what instead, and why. For anything else: their message. |
 | **Finding** | The verdict, what the product is supposed to do, and where in the source that is written down. |
@@ -183,11 +183,12 @@ To see the worst first, choose **Highest impact first** in the order menu. To se
 
 ## Approve or cancel
 
-A report that needs your call shows triage's **Recommendation** under its title: approve or decline, and why. Every opened report has the buttons below its note.
+A report that needs your call shows triage's **Recommendation** under its title: approve or decline, and why. You decide with the **Status** menu in Your changes, with a drag, or with **Move to**; there are no separate buttons.
 
-- **Approve the fix** (or **Approve building it**, or **Act on it** for feedback): the next pickup builds it, merges it and writes the commit onto the report. Dragging the card to To do is the same approval. What you wrote in the note is the instruction for the work.
-- **Cancel: not doing:** the next pickup closes the issue as not planned, with your note.
-- **Cancel: duplicate:** the next pickup closes the issue as a duplicate, with your note. Name the original in the note if you want it linked.
+- **To do** approves it: the next pickup builds it, merges it and writes the commit onto the report. Dragging the card to To do is the same approval. What you wrote in the note is the instruction for the work.
+- **Canceled** closes the issue as not planned at the next run, with your note.
+- **Duplicate** closes it as a duplicate. Name the original in the note if you want it linked.
+- **Closed: feedback** closes it as completed, for feedback you have read.
 
 ## Changes reach GitHub at the next run
 
@@ -199,7 +200,7 @@ The page could update the issue the moment you change something, through a GitHu
 
 ## Change a report's status and flags
 
-Every opened report has **Your changes** (for people who can edit the page): the status, the flags, your note, and the buttons **Save changes**, **Approve** and **Cancel**. Pick the status, tick the flags, add any of your own separated by commas, write a note, and **Save changes**. The note is on every report; **Approve** uses it as the instruction for the work. Choosing To do approves it; Canceled and Duplicate close its issue on the next run, as the Cancel buttons do. Everything you change on the board is copied to the GitHub issue by the daily check (`Scripts/push-edits.py`): the labels for the status and flags, and open or closed. A report you have changed by hand is left alone by the mirror script, so GitHub's labels never put it back.
+Every opened report has **Your changes** (for people who can edit the page): the status, the flags, your note, and **Save changes**. Pick the status, tick the flags, add any of your own separated by commas, write a note, and **Save changes**. The note is on every report and is the instruction for the work once you choose To do. Choosing To do approves it; Canceled, Duplicate and Closed: feedback close its issue on the next run. Everything you change on the board is copied to the GitHub issue by the daily check (`Scripts/push-edits.py`): the labels for the status and flags, and open or closed. A report you have changed by hand is left alone by the mirror script, so GitHub's labels never put it back.
 
 ## Filter
 

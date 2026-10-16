@@ -50,7 +50,7 @@ A flag says more about a report than its status does. A report has one status an
 | Confusing to users | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |
 | Waiting for human | `flags` list only | Yours to set in Your changes. The report can sit in To do, but the pickup leaves it completely alone until you clear the flag, for example while it needs design work. It is the one thing that holds an approved report back. |
 
-A status value the page does not know shows as the value itself. You set To do, Backlog, Canceled, Duplicate and Closed: feedback on the dashboard (the Approve and Cancel buttons, the Status menu, or Move to). The mirror script sets Canceled and Duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
+A status value the page does not know shows as the value itself. You set To do, Backlog, Canceled, Duplicate and Closed: feedback on the dashboard (the Status menu, or Move to). The mirror script sets Canceled and Duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
 
 ## Columns
 

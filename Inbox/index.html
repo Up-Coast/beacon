@@ -1237,7 +1237,7 @@
       default: return {};
     }
   };
-  const renderEditor = (r, links = true) => {
+  const renderEditor = (r) => {
     const status = el("select", { "aria-label": "Status" }, ...STATUS_CHOICES.map(([k, l]) => el("option", { value: k, text: l })));
     status.value = choiceOf(r);
     const have = new Set(flagsOf(r));
@@ -1301,24 +1301,11 @@
       act({ ...statusFields(r, status.value), flags: [...new Set(flags)] });
     });
     buttons.push(save);
-    const actions = [save];
-    // Deciding: for anything not finished and not already approved.
-    if (links && !isFinished(r) && r.status !== "approved" && r.status !== "triaging") {
-      const approve = el("button", { type: "button", class: "linkish strong", text: r.kind === "bug" ? "Approve the fix" : r.kind === "feedback" ? "Act on it" : "Approve building it" });
-      approve.addEventListener("click", () => act(approveFields(r, note.value.trim())));
-      buttons.push(approve); actions.push(approve);
-    }
-    if (links && columnOf(r) !== "closed") {
-      const notDoing = el("button", { type: "button", class: "linkish", text: "Cancel: not doing" });
-      notDoing.addEventListener("click", () => act(cancelFields(r, "declined", note.value.trim())));
-      const dup = el("button", { type: "button", class: "linkish", text: "Cancel: duplicate" });
-      dup.addEventListener("click", () => act(cancelFields(r, "duplicate", note.value.trim())));
-      buttons.push(notDoing, dup); actions.push(notDoing, dup);
-    }
+    // Approving and cancelling are statuses: the Status menu does both.
     return el("div", { class: "editor" }, el("h3", { text: "Your changes" }),
       el("div", { class: "grid2" }, el("label", { class: "opt" }, el("span", { text: "Status" }), status), extra),
       el("div", { class: "flagrow" }, ...boxes.map((b) => b.node)), note, ...(ownerImages ? [thumbsEl, attachBtn] : []),
-      el("div", { class: "choices" }, ...actions), msg);
+      el("div", { class: "choices" }, save), msg);
   };
   const canMove = () => Boolean(db && canEdit);
   const showBoardMsg = (text) => { const m = $("#boardMsg"); m.textContent = text; m.hidden = !text; };
@@ -1596,7 +1583,7 @@
     const key = current ? JSON.stringify(current) : "";
     if (key !== triageEditorKey || !$("#triageEditor").firstChild) {
       triageEditorKey = key;
-      $("#triageEditor").replaceChildren(...(current && canMove() ? [renderEditor(current, false)] : []));
+      $("#triageEditor").replaceChildren(...(current && canMove() ? [renderEditor(current)] : []));
     }
   };
   const renderKanban = (shown) => {
