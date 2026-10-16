@@ -51,6 +51,8 @@ A page with a database is internal to your Claude organization and cannot be sha
     - **Scheduled.** In Claude Code on the Mac that has your apps' source, ask Claude to create a scheduled task with the prompt.
     - **On demand.** Paste the prompt into a Claude Code session when you want a run.
 
+The pickup needs `gh` signed in to your GitHub account and `python3`. Each run copies the issues onto the dashboard and copies what you changed on the dashboard back to the issues, so run it daily. Pressing **Run now** applies a change at once.
+
 Run the pickup on a Mac. Reproducing a report and proving a fix means building and running a macOS or iOS app, and that needs a Mac. What the pickup does with each report is in [What happens to a report](what-happens-to-a-report.md).
 
 ## 5. Tell your testers

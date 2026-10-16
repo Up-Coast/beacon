@@ -74,6 +74,8 @@ The Mac is the default, and the adoption script copies no workflows unless you a
 
 Only a Mac can reproduce a report and prove a fix by building and running a macOS or iOS app.
 
+The pickup needs `gh` signed in to your GitHub account and `python3`. Each run copies the issues onto the dashboard and copies what you changed on the dashboard back to the issues, so run it daily. Pressing **Run now** applies a change at once.
+
 ### On GitHub Actions
 
 Ask for the workflows when you adopt Beacon:

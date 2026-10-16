@@ -90,10 +90,10 @@ With a mouse, drag the card itself. With a finger, drag it by its grip, the dott
 
 | Where it lands | What it does |
 |---|---|
-| Up next | Approves it, exactly as **Approve the fix** or **Approve building it** does, unless it is already approved or being worked. The next pickup works it. Feedback can go here too: the pickup acts on it. |
-| Out of Up next, before work starts | Withdraws your approval and puts back the status it had. |
+| To do | Approves it, exactly as **Approve the fix** or **Approve building it** does, unless it is already approved or being worked. The next pickup works it. Feedback can go here too: the pickup acts on it. |
+| Out of To do, before work starts | Withdraws your approval and puts back the status it had. |
 | Canceled: not doing, or Canceled: duplicate | Cancels it, with the reason. The next run closes the issue and says why. These are in the **Move to** menu and as the **Cancel** buttons on an opened report; they are not columns. |
-| Any other column | Moves the card and nothing else. The pickup leaves a card where you put it; the only cards it moves are the ones it triages out of Reported (into Triaged for you, or Up next for bugs it fixes) and the ones it finishes (into Done). |
+| Any other column | Moves the card and nothing else. The pickup leaves a card where you put it; the only cards it moves are the ones it triages out of Inbox (into Triaged for you, or To do for bugs it fixes) and the ones it finishes (into Done). |
 | Back from Closed | Reopens it as triaged, in the column you chose. |
 
 ## Choose an app
@@ -152,14 +152,21 @@ Every report carries the tester's answer to "How much is this affecting you?". T
 
 To see the worst first, choose **Highest impact first** in the order menu. To see one level only, choose it in the impact menu.
 
-## Approve or decline
+## Approve or cancel
 
-A report the pickup could not finish on its own, such as a fix too big to merge without a person or a feature request, shows **Your decision** when you open it, in the list or from a card on the board. On the board, dragging the card from Triaged to Up next is the same approval, with no note. Add a note if the work should do or avoid something, then click **Approve the fix** (or **Approve building it**) or **Decline**.
+A report that needs your call shows **The decision** at its top: the question, the choices, what happens if you do nothing, and a recommendation. Every opened report has the buttons below its note.
 
-- **Approve:** the report shows "Approved, waiting for the next run". The next pickup builds it, merges it and writes the commit onto the report.
-- **Decline:** the pickup closes the issue with your note.
+- **Approve the fix** (or **Approve building it**, or **Act on it** for feedback): the next pickup builds it, merges it and writes the commit onto the report. Dragging the card to To do is the same approval. What you wrote in the note is the instruction for the work.
+- **Cancel: not doing:** the next pickup closes the issue as not planned, with your note.
+- **Cancel: duplicate:** the next pickup closes the issue as a duplicate, with your note. Name the original in the note if you want it linked.
 
-Anyone who can edit the page can click these, so share edit access only with people you trust to decide.
+## Changes reach GitHub at the next run
+
+Everything you change on the dashboard (a status, a flag, a move, a note, an approval, a cancel) is copied to the GitHub issue by the pickup, which runs daily: the labels for the status and the flags, and open or closed. The page cannot call GitHub itself, so it is not instant. Pressing **Run now** on the pickup's scheduled task applies it at once. The other direction, GitHub to the board, is the same run: issues closed or labelled outside the dashboard show up here.
+
+## Coming soon: changes reach GitHub straight away
+
+The page could update the issue the moment you change something, through a GitHub connector added to your claude.ai account. The documentation says a page can use such a connector. It has not been tried with Beacon yet. It is tracked in [Up-Coast/beacon issue 2](https://github.com/Up-Coast/beacon/issues/2). Until then, the daily run does it.
 
 ## Change a report's status and flags
 

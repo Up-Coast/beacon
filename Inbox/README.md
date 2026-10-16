@@ -6,7 +6,7 @@
 
 | View | What it is |
 |---|---|
-| **Reports** | [The dashboard](../docs/the-board.md): every report from every app, a tab per app, counts of what waits on the owner, and Approve and Decline, as a list or as a board with Reported, Triaged, Up next, Done and Deployed columns. The page opens here. |
+| **Reports** | [The dashboard](../docs/the-board.md): every report from every app, a tab per app, counts of what waits on the owner, and Approve and Cancel, as a list or as a board with Backlog, Inbox, Triaged, To do, In progress, Done and Deployed columns. Your changes reach the GitHub issues at the next daily run. The page opens here. |
 | **Send a report** | The report form testers fill in. A link from the Beacon button inside an app opens here, with the app chosen. |
 | **Apps** | The app list: add, change and remove apps, with no database editing and no republish. |
 

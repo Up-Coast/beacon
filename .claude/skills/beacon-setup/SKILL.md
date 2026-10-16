@@ -89,7 +89,12 @@ Follow the numbered steps of the chosen setup page exactly. In outline:
 **The pickup, any path.** Copy the prompt from `Triage/PICKUP.md`, fill in
 its four values (their page link, the path to this repository, the folder
 their code lives under, and where to notify), and offer it as a scheduled
-task in Claude Code or as a prompt they paste when they want a run. On the
+task in Claude Code, daily, or as a prompt they paste when they want a run.
+The pickup needs `gh` signed in to their GitHub account and `python3` on the
+Mac that runs it: it runs `Scripts/mirror-board.py` (the dashboard follows the
+issues) and `Scripts/push-edits.py` (what they change on the dashboard reaches
+the issues at the next run, because the page cannot call GitHub). Tell them
+that, and that "Run now" on the task applies a change at once. On the
 GitHub path there is also the copied workflow, which needs the Claude GitHub
 App and one secret — both theirs to add; say so and point at the setup page.
 
