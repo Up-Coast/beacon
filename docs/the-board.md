@@ -166,8 +166,11 @@ Anyone who can edit the page can click these, so share edit access only with peo
 | Status | Every status, or one status. |
 | Kind | Every kind, Bugs, Requests, Change requests or Feedback. |
 | Impact | Every impact, or one level. |
-| Order | In the list: newest first, or highest impact first, newest first within a level. On the board, each column is always highest impact first, then oldest. |
+| Who sent it | Everyone, or one reporter, with how many reports each has sent in the selected app. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |
+| Order | Newest first, oldest first, or highest impact first (oldest first within a level). The list starts on newest first and the board on highest impact first; each remembers the choice on this browser. |
 | Search words | Matches the title, the tester's words, the reporter, the area and the reference. |
+
+A test submission can be hidden: set `hidden` to `true` on its report, and label its issue `test` so the mirror script never brings it back. It stays in the database and is shown nowhere.
 
 The count beside the search box shows how many reports match, out of the selected app's total.
 

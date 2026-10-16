@@ -126,6 +126,25 @@ def metadata(body):
         return {}
 
 
+def reporter_of(issue, meta):
+    """Who sent it. A report from a website or app comes through the relay, so
+    the issue's author is the relay; the person is named in the issue's first
+    lines ("Reported by **Name** ... Reach them at **address**")."""
+    body = issue.get("body") or ""
+    named = re.search(r"Reported by \*\*(.+?)\*\*", body)
+    reach = re.search(r"Reach them at \*\*(.+?)\*\*", body)
+    name = named.group(1).strip() if named else ""
+    email = reach.group(1).strip() if reach else ""
+    if name and email:
+        return "%s <%s>" % (name, email)
+    if name:
+        return name
+    login = (issue.get("author") or {}).get("login", "")
+    if login.startswith("app/") or login.endswith("[bot]"):
+        return "Anonymous (%s)" % (meta.get("platform") or "relay")
+    return login
+
+
 def new_document(app, issue, status, column):
     repo = app["repository"]
     labels = [l["name"] for l in issue["labels"]]
@@ -133,7 +152,8 @@ def new_document(app, issue, status, column):
     kind = label_value(labels, "type:") or "feedback"
     body = (issue.get("body") or "")
     body = re.sub(r"<!--\s*beacon-metadata.*?-->", "", body, flags=re.S).strip()[:BODY_LIMIT]
-    sec = sections(body)
+    # The relay quotes the reporter's words in the issue; the board shows them plain.
+    sec = {k: re.sub(r"(?m)^>\s?", "", v).strip() for k, v in sections(body).items()}
     if kind == "bug" and ("What actually happened" in sec or "What they expected" in sec):
         words = {
             "kind": "bug",
@@ -153,7 +173,7 @@ def new_document(app, issue, status, column):
                 "platform": app.get("platform", ""), "repository": repo},
         "reference": reference, "kind": kind, "filedAt": issue["createdAt"],
         "status": status or "filed", "title": issue["title"],
-        "reporter": (issue.get("author") or {}).get("login", ""),
+        "reporter": reporter_of(issue, meta),
         "impact": label_value(labels, "impact:"), "area": label_value(labels, "area:"),
         "body": words,
         "context": {k: str(ctx.get(k, "")) for k in ("version", "build", "commit", "os", "device")},
@@ -189,6 +209,9 @@ def main():
         if app.get("tracker", "github") != "github" or not app.get("repository"):
             continue
         for issue in gh_issues(app["repository"]):
+            # A test submission, labelled test: never on the board.
+            if any(l["name"] == "test" for l in issue["labels"]):
+                continue
             status, column = desired(issue)
             found = by_issue.get((app["id"], issue["number"]))
             if not found:
