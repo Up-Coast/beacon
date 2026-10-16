@@ -78,6 +78,18 @@ def gh_issues(repo):
     return json.loads(out)
 
 
+def app_prefix(app):
+    """Two or three capital letters: the app's `prefix`, else the initials of its
+    name, else the first three letters of a one-word name (Up Coast platform is
+    UCP, Dayletter is DAY). Inbox/index.html computes the same."""
+    own = re.sub(r"[^A-Za-z]", "", str(app.get("prefix") or "")).upper()[:3]
+    if len(own) >= 2:
+        return own
+    words = [w for w in re.split(r"[^A-Za-z]+", str(app.get("name") or "")) if w]
+    letters = "".join(w[0] for w in words) if len(words) > 1 else (words[0] if words else "")
+    return letters.upper()[:3] or "BN"
+
+
 def gh_work(repo):
     """Per issue number: the beacon/<n>-* branches and the pull requests that name it.
 
@@ -289,6 +301,7 @@ def new_document(app, issue, status, column):
         "impact": label_value(labels, "impact:"), "area": label_value(labels, "area:"),
         "body": words, "context": context,
         "attachmentCount": 0, "issueNumber": issue["number"], "issueURL": issue["url"],
+        "ticket": "%s-%d" % (app_prefix(app), issue["number"]),
         "source": "beacon-sheet",
     }
     links = attachments_of(sec.get("What they attached", ""))
@@ -305,12 +318,15 @@ def main():
     ap.add_argument("--apps", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--versions")
+    ap.add_argument("--default-version", type=int, default=1,
+                    help="version assumed for a document not in --versions")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
     reports = load_dir(a.reports)
     apps = [dict(id=i, **d) for i, d in load_dir(a.apps).items()]
     versions = json.load(open(a.versions)) if a.versions else {}
+    base = a.default_version
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     by_issue = {}
@@ -339,21 +355,32 @@ def main():
             ref, d = found
             cur = d.get("status")
             # A branch or pull request moves the report, whoever decided on it.
+            ticket = "%s-%d" % (app_prefix(app), issue["number"])
+            # The number a person says out loud, written once so every reader
+            # of the board (the worker, the pickup) uses the same one.
+            extra = {"ticket": ticket} if d.get("ticket") != ticket else {}
             linked = link_change(d, issue, work.get(issue["number"]))
+            linked.update(extra) if linked else None
             if linked:
                 if "status" in linked or "column" in linked:
                     linked["columnAt"] = now
                 writes.append({"op": "update", "collection": "reports", "doc_id": ref, "data": linked,
-                               "if_version": int(versions.get(ref, 1))})
+                               "if_version": int(versions.get(ref, base))})
                 counts["linked"] += 1
                 continue
             # Held: the owner decided on it, the pickup is working it, or the
             # owner set its status and flags by hand (editedAt).
             if d.get("approval") or d.get("editedAt") or cur in HELD:
                 counts["held"] += 1
+                if extra:
+                    writes.append({"op": "update", "collection": "reports", "doc_id": ref, "data": extra,
+                                   "if_version": int(versions.get(ref, base))})
                 continue
             if status is None and column is None:
                 counts["untriaged"] += 1
+                if extra:
+                    writes.append({"op": "update", "collection": "reports", "doc_id": ref, "data": extra,
+                                   "if_version": int(versions.get(ref, base))})
                 continue
             change = {}
             cur_column = d.get("column")
@@ -369,10 +396,14 @@ def main():
                 change["column"] = column
             if not change:
                 counts["same"] += 1
+                if extra:
+                    writes.append({"op": "update", "collection": "reports", "doc_id": ref, "data": extra,
+                                   "if_version": int(versions.get(ref, base))})
                 continue
+            change.update(extra)
             change["columnAt"] = now
             writes.append({"op": "update", "collection": "reports", "doc_id": ref, "data": change,
-                           "if_version": int(versions.get(ref, 1))})
+                           "if_version": int(versions.get(ref, base))})
             counts["update"] += 1
 
     summary = dict(counts, writes=len(writes), batches=(len(writes) + BATCH - 1) // BATCH)

@@ -1124,6 +1124,7 @@
     return letters.toUpperCase().slice(0, 3) || "BN";
   };
   const ticketId = (r) => {
+    if (r.ticket) return r.ticket;
     if (!r.issueNumber) return r.reference;
     const listed = (typeof boardApps === "function" ? boardApps() : []).find((a) => r.app && a.id === r.app.id);
     return `${appPrefix(listed || r.app)}-${r.issueNumber}`;
