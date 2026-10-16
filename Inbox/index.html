@@ -287,6 +287,11 @@
   .card.movable { cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
   .card.movable .open { user-select: none; -webkit-user-select: none; }
   .card.dragging { opacity: .35; }
+  .ghost.compact { width: 260px; gap: 2px; padding: 8px 12px; border-color: var(--accent); }
+  .ghost.compact .title { font-size: 14px; }
+  .ghost.compact .ghostto { font-size: 13px; font-weight: 700; color: var(--accent); }
+  .triagezones .zone.over { border: 2px solid var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .triagezones .zone.over .zonebar { color: var(--accent); }
   .ghost { position: fixed; z-index: 1000; pointer-events: none; opacity: .95; transform: rotate(1.5deg); box-shadow: 0 16px 40px -12px rgba(17,24,39,.45); }
   .closed { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-top: 12px; }
   .closed summary { cursor: pointer; padding: 10px 14px; font-weight: 600; color: var(--ink-2); }
@@ -1633,8 +1638,16 @@
       if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
       const box = drag.cardEl.getBoundingClientRect();
       drag.dx = drag.x - box.left; drag.dy = drag.y - box.top;
-      drag.ghost = drag.cardEl.cloneNode(true);
-      drag.ghost.classList.add("ghost"); drag.ghost.style.width = box.width + "px";
+      if (drag.cardEl.classList.contains("triagecard")) {
+        // An opened ticket is far too big to carry: drag a small tag that
+        // names where it would land, kept just below and right of the pointer.
+        const t = drag.cardEl.querySelector(".title, .open");
+        drag.ghost = el("div", { class: "card ghost compact" }, el("div", { class: "title", text: t ? t.textContent : "" }), el("div", { class: "ghostto", text: "Drop on a status" }));
+        drag.dx = -16; drag.dy = -16;
+      } else {
+        drag.ghost = drag.cardEl.cloneNode(true);
+        drag.ghost.classList.add("ghost"); drag.ghost.style.width = box.width + "px";
+      }
       document.body.append(drag.ghost);
       drag.cardEl.classList.add("dragging");
       document.querySelectorAll(".kcol").forEach((col) => col.classList.toggle("target", drag.moves.some((m) => m.key === col.dataset.key)));
@@ -1644,6 +1657,8 @@
     const col = columnAt(e.clientX, e.clientY);
     const ok = col && drag.moves.some((m) => m.key === col.dataset.key) ? col : null;
     if (ok !== drag.over) { if (drag.over) drag.over.classList.remove("over"); if (ok) ok.classList.add("over"); drag.over = ok; }
+    const to = drag.ghost.querySelector(".ghostto");
+    if (to) to.textContent = ok ? "Move to " + (ok.getAttribute("aria-label") || ok.dataset.key) : "Drop on a status";
   };
   const finishDrag = () => {
     if (!drag) return null;
