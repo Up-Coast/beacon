@@ -75,9 +75,9 @@ Up next first: before new work, read_db query reports where [["column","==","upn
    Feature and change requests: never build one the owner has not approved. Label, route, note what already exists, set column "todo", and leave open for the owner. One the owner approved is in Up next and is built there.
    Feedback: label triaged, set column "todo", leave open.
 4. Every outcome also goes onto the page report (find it by issueNumber). write_db update with:
-   - status: triaging while the report is being worked, then one of auto-fixed, needs-human, needs-info, cannot-reproduce, working-as-intended, expectation-mismatch or triaged
+   - status: a bug you will fix yourself goes to todo (To do) the moment triage decides, then triaging (In progress) while you work it, then auto-fixed. Everything triage does not put in To do is triaged; the flag beside it says why: needs-info (Needs more info), cannot-reproduce (Can't reproduce), expectation-mismatch (Confusing to users), or needs-human (Needs your decision), which is only for something that truly needs the owner's call: a fix past the blast-radius list, or a product or business choice that is hers. Feature requests, usability, wording and design changes are plain triaged: they wait for the owner to move them to To do, with no flag. working-as-intended is the other way a report ends.
    - column and columnAt, as the report moves:
-     - "upnext" when triage finds a real bug that passes every gate and you will fix it yourself (set it before you start the fix, with status triaging)
+     - "upnext" when triage finds a real bug that passes every gate and you will fix it yourself (set it at once, with status todo, and set status triaging when you start the fix)
      - "todo" for everything that waits on the owner: needs-human, needs-info, cannot-reproduce, expectation-mismatch, feature and change requests, design or wording changes, and triaged feedback
      - "done" when the fix or the approved build is merged to the default branch (status auto-fixed, fixCommit set)
      - "deployed" only when you can tell the fix is live, such as a release or deployment that contains fixCommit; otherwise leave it in "done" for the owner

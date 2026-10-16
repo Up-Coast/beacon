@@ -27,9 +27,9 @@ A status is a step in a report's life. They are listed in the order a report mov
 | The dashboard shows | Value | Meaning |
 |---|---|---|
 | Inbox | `new`, `filed` | Sent, and nobody has triaged it. `new` is not yet an issue; `filed` has an issue in the app's repository. The next daily check triages it. |
-| Triaged | `triaged`, `needs-human`, `needs-info`, `cannot-reproduce`, `expectation-mismatch` | Read and routed, and waiting on you. The flags beside it say why (below). |
+| Triaged | `triaged`, `needs-human`, `needs-info`, `cannot-reproduce`, `expectation-mismatch` | Triage read it and it is not going to To do: it needs something first, or it is yours to move. A flag beside it can say why (below). |
 | Backlog | `backlog` | Kept open and not being worked on now. You park a report here by moving it to the Backlog column; moving it out puts back what it was. An issue labelled `backlog` shows here too. |
-| To do | `approved` | You approved it, or dragged it to Up next. The next run works it. |
+| To do | `todo`, `approved` | Queued for the next run. Triage puts a bug it can fix itself here automatically (`todo`); you put anything else here by approving it or dragging it to Up next (`approved`). |
 | In progress | `triaging` | A session is working on it now. |
 | Done | `auto-fixed` | Fixed, proven by running the app, and merged. Also an issue a session closed as finished. |
 | Works as designed | `working-as-intended` | The app behaves as designed. The explanation is on the issue, which is closed. |
@@ -38,11 +38,11 @@ A status is a step in a report's life. They are listed in the order a report mov
 
 ### Flags
 
-A flag says more about a report than its status does. A report has one status and any number of flags. Flags show beside the status and can be filtered on. They come from the report's stored value, and a session can add its own in a `flags` list. **Needs your decision** is on every report that waits on you.
+A flag says more about a report than its status does. A report has one status and any number of flags. Flags show beside the status and can be filtered on. They come from the report's stored value, and a session can add its own in a `flags` list. **Needs your decision** is only for a report that truly needs your call; a report that is just Triaged is not asking for one.
 
 | The dashboard shows | Value | Meaning |
 |---|---|---|
-| Needs your decision | `needs-human`, or any Triaged report that is not feedback | It waits on you. For `needs-human` the fix is past what may be done unattended, and a written diagnosis is attached. |
+| Needs your decision | `needs-human` | Triage cannot go on without your call: the fix is past what may be done unattended, or it is a product or business choice. A written diagnosis is attached. |
 | Needs more info | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
 | Can't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
 | Confusing to users | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |

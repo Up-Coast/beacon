@@ -71,7 +71,7 @@ The **List** and **Board** switch beside the filters changes how the dashboard l
 | Column | What is in it |
 |---|---|
 | **Inbox** | Received, not triaged yet. |
-| **Triaged** | Triaged, and waiting on you: needs your decision, can't reproduce, needs more info, works as designed with a gap worth a report, feature and change requests, and feedback. |
+| **Triaged** | Triage read it and it is not going to To do. A flag can say why: needs more info, can't reproduce, confusing to users, or needs your decision. Feature and change requests and feedback wait here until you move them. |
 | **Backlog** | Kept open, not being worked on now. You park a card here; moving it out puts it back where it was. |
 | **Up next** | What the pickup works on next: bugs it will fix on its own, and anything you approved. |
 | **Done** | Fixed and merged to the main branch. |
@@ -118,7 +118,7 @@ Click a count to show only those reports. Click it again to show everything.
 
 ## Read a row
 
-The list groups reports by the same stages as the board, in the same order: Inbox, Triaged, Backlog, Up next, Done, Deployed, and Closed. A stage with nothing in it is left out. A report that waits on your decision has the flag **Needs your decision**.
+The list groups reports by the same stages as the board, in the same order: Inbox, Triaged, Backlog, Up next, Done, Deployed, and Closed. A stage with nothing in it is left out. Only a report that truly needs your call has the flag **Needs your decision**.
 
 Each row shows an impact icon, the report's title, its status, and one line with the reference, kind, app and version, who sent it, when, and how many images it has.
 

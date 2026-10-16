@@ -628,6 +628,7 @@
     "cannot-reproduce":    ["hold", "Triaged", "Can't reproduce"],
     "expectation-mismatch":["hold", "Triaged", "Confusing to users"],
     backlog:               ["hold", "Backlog"],
+    todo:                  ["triaging", "To do"],
     approved:              ["triaging", "To do"],
     triaging:              ["triaging", "In progress"],
     "auto-fixed":          ["fixed", "Done"],
@@ -641,11 +642,11 @@
   // Reports the owner decides: work the pickup stopped on. Approve and
   // Decline appear on these until an approval is written.
   const DECIDABLE = new Set(["needs-human", "triaged", "expectation-mismatch", "cannot-reproduce", "needs-info"]);
-  const BEING_WORKED = new Set(["triaging", "approved"]);
+  const BEING_WORKED = new Set(["triaging"]);
   const waitsOnOwner = (r) => !r.approval && DECIDABLE.has(r.status) && r.kind !== "feedback";
   // The four counts at the top of the dashboard, and the filter each sets.
   const GROUPS = [
-    ["decide", "Waiting on you", waitsOnOwner],
+    ["decide", "Needs your decision", (r) => needsDecision(r)],
     ["new", "Inbox", (r) => r.status === "new" || r.status === "filed"],
     ["open", "In progress", (r) => BEING_WORKED.has(r.status)],
     ["fixed", "Done", (r) => r.status === "auto-fixed"],
@@ -656,7 +657,7 @@
   // working-as-intended reports are closed, under the board, not a column. ----
   const COLUMNS = [
     ["reported", "Inbox", "Received, not triaged yet."],
-    ["todo", "Triaged", "Waiting on you."],
+    ["todo", "Triaged", "Read and routed, not queued."],
     ["backlog", "Backlog", "Kept, not being worked on now."],
     ["upnext", "Up next", "What the pickup works on next."],
     ["done", "Done", "Fixed and merged."],
@@ -672,7 +673,7 @@
     if (COLUMN_IDS.has(r.column)) return r.column;
     if (r.status === "auto-fixed" || (r.status === "triaged" && r.fixCommit)) return "done";
     if (r.status === "backlog") return "backlog";
-    if (r.status === "approved" || r.status === "triaging") return "upnext";
+    if (r.status === "approved" || r.status === "triaging" || r.status === "todo") return "upnext";
     if (waitsOnOwner(r)) return "todo";
     if (r.status === "new" || r.status === "filed") return "reported";
     return "todo";
@@ -1005,8 +1006,11 @@
   // a session attached in `flags`.
   const flagsOf = (r) => {
     const own = r.duplicateOf ? "" : (STATUS[r.status] || [])[2];
-    return [...new Set([waitsOnOwner(r) ? "Needs your decision" : "", own, ...(Array.isArray(r.flags) ? r.flags : [])].filter(Boolean))];
+    return [...new Set([own, ...(Array.isArray(r.flags) ? r.flags : [])].filter(Boolean))];
   };
+  // Only a report that truly needs the owner's call carries this flag; a
+  // report that is just Triaged is not asking for one.
+  const needsDecision = (r) => flagsOf(r).includes("Needs your decision");
   const FLAGS = [...new Set(Object.values(STATUS).map((v) => v[2]).filter(Boolean))];
   const chips = (r) => flagsOf(r).map((l) => el("span", { class: "chip" + (l === "Needs your decision" ? " you" : ""), text: l }));
   const pill = (r) => { const [cls, label] = STATUS[statusKey(r)] || ["hold", r.status || "—"]; return el("span", { class: "pill " + cls, text: label }); };
@@ -1232,7 +1236,7 @@
         waiting ? el("span", { class: "badge", title: `${waiting} waiting on your decision`, text: String(waiting) }) : null);
       return b;
     };
-    const waitingFor = (id) => allReports.filter((r) => waitsOnOwner(r) && (!id || (r.app && r.app.id === id))).length;
+    const waitingFor = (id) => allReports.filter((r) => needsDecision(r) && (!id || (r.app && r.app.id === id))).length;
     $("#tabs").replaceChildren(tab("", "All apps", "", waitingFor("")), ...boardApps().map((a) => {
       const t = tab(a.id, a.name || a.id, a.platform || "", waitingFor(a.id));
       if (a.unlisted) { t.classList.add("unlisted"); t.title = "Not in the app list"; }
@@ -1290,7 +1294,7 @@
     const moves = canMove() ? movesFor(r) : [];
     const title = el("button", { type: "button", class: "open", text: r.title || r.reference });
     title.addEventListener("click", () => { if (suppressClick) { suppressClick = false; return; } openReport(r.reference); });
-    const c = el("article", { class: "card" + (waitsOnOwner(r) ? " decide" : ""), "data-ref": r.reference },
+    const c = el("article", { class: "card" + (needsDecision(r) ? " decide" : ""), "data-ref": r.reference },
       el("div", { class: "titleline" }, impactIcon(r.impact), title),
       el("div", { class: "meta", text: [r.reference, KIND[r.kind] || r.kind, r.app && r.app.name].filter(Boolean).join(" · ") }),
       el("div", { class: "pills" }, pill(r), ...chips(r)));
