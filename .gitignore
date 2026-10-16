@@ -11,3 +11,4 @@ site/
 
 # Supabase CLI working files
 Relay/supabase-edge/supabase/.temp/
+__pycache__/
