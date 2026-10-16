@@ -20,13 +20,21 @@ The sheet asks what kind of report it is, then the few questions that matter:
 
 ![The questions for a bug: what you expected, what happened, what you did, does it happen again](docs/assets/readme-sheet-form.jpg)
 
-You read every report from every app on one page, grouped by what stage it is in, with who sent it and how much it affects them. Reporters' names and emails are blacked out in this picture:
+You read every report from every app on one page, grouped by what stage it is in, with who sent it and how much it affects them. These pictures use made-up sample reports.
 
-![The dashboard: a tab for each app, counts, filters, and the reports grouped as Inbox and Triaged](docs/assets/readme-dashboard.jpg)
+![The dashboard's list: a tab for each app, counts, filters, and the reports grouped by stage](docs/assets/readme-dashboard.jpg)
 
-Open a report to see what the tester wrote, what triage found, and to decide:
+Open a report to see what the tester wrote, what triage found and its recommendation, and to decide:
 
-![An opened report: the tester's words, the finding and triage note, and the buttons to approve or cancel](docs/assets/readme-report.jpg)
+![An opened report: triage's recommendation, Your changes with the approve and cancel links, then the facts and the tester's words](docs/assets/readme-report.jpg)
+
+The board lays the same reports out as one column per stage. Drag a card to another column to move it:
+
+![The board: Backlog, To Triage, To do, In progress, Done and Deployed columns, each holding its cards](docs/assets/readme-board.jpg)
+
+The Triage view is for working through what Claude has triaged: one ticket open on the left with its whole report, and every other status on the right as a bar to drag it onto:
+
+![The Triage view: the To Triage column with one ticket open, the status bars with their counts, and Your changes for the open ticket](docs/assets/readme-triage.jpg)
 
 The page is `Inbox/index.html` in this repository: [the dashboard](docs/the-board.md) shows how to publish it, add your apps and run several projects on it.
 
