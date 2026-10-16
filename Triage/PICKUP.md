@@ -81,7 +81,7 @@ Up next first: before new work, read_db query reports where [["column","==","upn
      - "todo" for everything that waits on the owner: needs-human, needs-info, cannot-reproduce, expectation-mismatch, feature and change requests, design or wording changes, and triaged feedback
      - "done" when the fix or the approved build is merged to the default branch (status auto-fixed, fixCommit set)
      - "deployed" only when you can tell the fix is live, such as a release or deployment that contains fixCommit; otherwise leave it in "done" for the owner
-     - working-as-intended and declined reports keep their column; the dashboard shows them as closed
+     - working-as-intended, declined (Canceled, not doing) and duplicate reports keep their column; the dashboard shows them as closed. For a duplicate, close the issue as a duplicate (and with --duplicate-of when the owner's note names the original); for a declined one, close it as not planned. In both, comment why and write approval.actedAt.
    - finding: {intent, citations, verdict}
    - triageNote: two to four plain sentences for the owner saying what was found and what happens next
    - fixCommit, when there is one

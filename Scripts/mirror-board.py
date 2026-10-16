@@ -28,6 +28,7 @@ What it decides, from the issue's state and labels alone (no judgement):
   open, none of those                                left alone: it still has
                                                      to be triaged
   closed with wontfix or declined                    status declined
+  closed as a duplicate                              status duplicate
   closed as not planned                              status closed
   closed, working-as-intended                        status working-as-intended
   closed, anything else                              status auto-fixed, column done
@@ -90,6 +91,8 @@ def desired(issue):
     if issue["state"].upper() == "CLOSED":
         if labels & {"wontfix", "declined"}:
             return ("declined", None)
+        if (issue.get("stateReason") or "").upper() == "DUPLICATE" or "duplicate" in labels:
+            return ("duplicate", None)
         if (issue.get("stateReason") or "").upper() == "NOT_PLANNED":
             # Closed without being done, by a session that checked it (no
             # longer applies, a duplicate, an idea with nothing to do yet).

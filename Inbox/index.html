@@ -614,19 +614,20 @@
 
   // ---- Board words: statuses as docs/how-it-works.md lists them. ----
   const STATUS = {
-    new:                   ["new", "Just received"],
-    filed:                 ["hold", "Not triaged yet"],
-    triaging:              ["triaging", "Being worked on"],
-    "auto-fixed":          ["fixed", "Fixed"],
-    "needs-human":         ["waiting", "Needs your decision"],
-    approved:              ["triaging", "Approved, waiting for the next run"],
-    declined:              ["hold", "Declined"],
-    closed:                ["hold", "Closed, not planned"],
-    "needs-info":          ["waiting", "Needs more from the tester"],
-    "cannot-reproduce":    ["waiting", "Couldn't reproduce"],
-    "working-as-intended": ["hold", "Working as designed"],
-    "expectation-mismatch":["hold", "App isn't explaining itself"],
+    new:                   ["new", "Inbox"],
+    filed:                 ["hold", "Inbox"],
     triaged:               ["hold", "Triaged"],
+    "needs-human":         ["waiting", "Needs your decision"],
+    "needs-info":          ["waiting", "Needs more info"],
+    "cannot-reproduce":    ["waiting", "Can't reproduce"],
+    approved:              ["triaging", "To do"],
+    triaging:              ["triaging", "In progress"],
+    "auto-fixed":          ["fixed", "Done"],
+    "working-as-intended": ["hold", "Works as designed"],
+    "expectation-mismatch":["hold", "Works as designed"],
+    declined:              ["hold", "Canceled"],
+    closed:                ["hold", "Canceled"],
+    duplicate:             ["hold", "Duplicate"],
   };
   const KIND = { bug: "Bug", "feature-request": "Request", "change-request": "Change request", feedback: "Feedback" };
   const KIND_FILTER = { bug: "Bugs", "feature-request": "Requests", "change-request": "Change requests", feedback: "Feedback" };
@@ -638,28 +639,28 @@
   // The four counts at the top of the dashboard, and the filter each sets.
   const GROUPS = [
     ["decide", "Waiting on you", waitsOnOwner],
-    ["new", "Not triaged yet", (r) => r.status === "new" || r.status === "filed"],
-    ["open", "Being worked on", (r) => BEING_WORKED.has(r.status)],
-    ["fixed", "Fixed", (r) => r.status === "auto-fixed"],
+    ["new", "Inbox", (r) => r.status === "new" || r.status === "filed"],
+    ["open", "In progress", (r) => BEING_WORKED.has(r.status)],
+    ["fixed", "Done", (r) => r.status === "auto-fixed"],
   ];
 
   // ---- The board layout's columns. A report's `column` says where it
   // stands; without one, its status decides (see columnOf). Declined and
   // working-as-intended reports are closed, under the board, not a column. ----
   const COLUMNS = [
-    ["reported", "Reported", "Received, not triaged yet."],
+    ["reported", "Inbox", "Received, not triaged yet."],
     ["todo", "Triaged", "Waiting on you."],
     ["upnext", "Up next", "What the pickup works on next."],
     ["done", "Done", "Fixed and merged."],
     ["deployed", "Deployed", "Live for the people using it."],
   ];
   const COLUMN_IDS = new Set(COLUMNS.map((c) => c[0]));
-  const CLOSED_STATUSES = new Set(["declined", "working-as-intended", "closed"]);
+  const CLOSED_STATUSES = new Set(["declined", "working-as-intended", "closed", "duplicate"]);
   // Where a card stands. The stored `column` wins: the owner can put any card
   // anywhere, and the pickup writes a column whenever it changes a status.
   // Only a report with no column falls back to its status.
   const columnOf = (r) => {
-    if (CLOSED_STATUSES.has(r.status)) return "closed";
+    if (CLOSED_STATUSES.has(r.status) || r.duplicateOf) return "closed";
     if (COLUMN_IDS.has(r.column)) return r.column;
     if (r.status === "auto-fixed" || (r.status === "triaged" && r.fixCommit)) return "done";
     if (r.status === "approved" || r.status === "triaging") return "upnext";
@@ -988,7 +989,10 @@
   const fmtWhen = (iso) => iso ? new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "";
   const fact = (label, value) => value ? el("div", {}, el("dt", { text: label }), el("dd", { text: value })) : null;
   const words = (label, text) => text ? el("div", {}, el("h3", { text: label }), el("p", { text })) : null;
-  const pill = (r) => { const [cls, label] = STATUS[r.status] || ["hold", r.status || "—"]; return el("span", { class: "pill " + cls, text: label }); };
+  // A report marked as a copy of another shows as Duplicate whatever its status.
+  const statusKey = (r) => (r.duplicateOf ? "duplicate" : r.status);
+  const statusLabel = (r) => (STATUS[statusKey(r)] || [, statusKey(r) || "—"])[1];
+  const pill = (r) => { const [cls, label] = STATUS[statusKey(r)] || ["hold", r.status || "—"]; return el("span", { class: "pill " + cls, text: label }); };
   const metaLine = (r) => [r.reference, KIND[r.kind] || r.kind,
     `${(r.app && r.app.name) || ""} ${(r.context && r.context.version) || ""}`.trim(),
     r.reporter, fmtWhen(r.filedAt),
@@ -1049,7 +1053,12 @@
     status: "approved", approval: { decision: "approved", note, at: stamp() },
     statusBeforeApproval: r.status, column: "upnext", columnAt: stamp(),
   });
-  const declineFields = (r, note) => ({ status: "declined", approval: { decision: "declined", note, at: stamp() } });
+  // Canceling: not doing it (declined) or a copy of another report (duplicate).
+  // The pickup closes the issue and says why.
+  const cancelFields = (r, decision, note) => ({
+    status: decision === "duplicate" ? "duplicate" : "declined",
+    approval: { decision, note, at: stamp() }, statusBeforeApproval: r.status, columnAt: stamp(),
+  });
   // Where the owner may move a card from where it is, and what each move writes.
   // Every card moves to every other column. What a move writes depends only
   // on where it lands: Up next approves (unless it already is), leaving Up
@@ -1069,8 +1078,11 @@
       } else if (from === "closed") {
         fields = { status: "triaged", approval: null, column: to, columnAt: at };
       }
-      return { to, label: COLUMN_NAME[to], fields };
-    });
+      return { to, key: to, label: COLUMN_NAME[to], fields };
+    }).concat(from === "closed" ? [] : [
+      { to: "closed", key: "cancel-declined", label: "Canceled: not doing", fields: cancelFields(r, "declined", "") },
+      { to: "closed", key: "cancel-duplicate", label: "Canceled: duplicate", fields: cancelFields(r, "duplicate", "") },
+    ]);
   };
   const canMove = () => Boolean(db && canEdit);
   const showBoardMsg = (text) => { const m = $("#boardMsg"); m.textContent = text; m.hidden = !text; };
@@ -1085,7 +1097,7 @@
   // Decline; the pickup builds approved ones on its next run.
   const renderDecision = (r) => {
     if (r.approval) {
-      const verb = r.approval.decision === "approved" ? "Approved" : "Declined";
+      const verb = r.approval.decision === "approved" ? "Approved" : r.approval.decision === "duplicate" ? "Canceled as a duplicate" : "Canceled";
       return words("Your decision", `${verb} on ${fmtWhen(r.approval.at)}${r.approval.note ? ": " + r.approval.note : ""}`);
     }
     if (!db || !waitsOnOwner(r)) return null;
@@ -1094,18 +1106,20 @@
       buttons.forEach((b) => { b.disabled = true; });
       try {
         const text = note.value.trim();
-        await writeReport(r, decision === "approved" ? approveFields(r, text) : declineFields(r, text));
+        await writeReport(r, decision === "approved" ? approveFields(r, text) : cancelFields(r, decision, text));
       } catch (err) {
         buttons.forEach((b) => { b.disabled = false; });
         box.append(el("p", { class: "problem", text: "That didn't save: " + (err && err.message || err) }));
       }
     };
     const approve = el("button", { type: "button", class: "primary", text: r.kind === "bug" ? "Approve the fix" : "Approve building it" });
-    const decline = el("button", { type: "button", class: "linkish", text: "Decline" });
+    const decline = el("button", { type: "button", class: "linkish", text: "Cancel: not doing" });
+    const duplicate = el("button", { type: "button", class: "linkish", text: "Cancel: duplicate" });
     approve.addEventListener("click", () => decide("approved"));
     decline.addEventListener("click", () => decide("declined"));
-    const buttons = [approve, decline];
-    const box = el("div", { class: "decide-box" }, el("h3", { text: "Your decision" }), note, el("div", { class: "choices" }, approve, decline));
+    duplicate.addEventListener("click", () => decide("duplicate"));
+    const buttons = [approve, decline, duplicate];
+    const box = el("div", { class: "decide-box" }, el("h3", { text: "Your decision" }), note, el("div", { class: "choices" }, approve, decline, duplicate));
     return box;
   };
   const loadPictures = async (host) => {
@@ -1123,7 +1137,7 @@
     const needle = $("#fSearch").value.trim().toLowerCase();
     if (!inApp(r)) return false;
     if (group && !GROUPS.find((g) => g[0] === group)[2](r)) return false;
-    if (status && r.status !== status) return false;
+    if (status && statusLabel(r) !== status) return false;
     if (k && r.kind !== k) return false;
     if (impact && r.impact !== impact) return false;
     if (who === USERS) { if (isOwnerReport(r)) return false; }
@@ -1270,8 +1284,8 @@
       });
       grip.addEventListener("pointerdown", (e) => startDrag(e, r, c, moves));
       const menu = el("select", { "aria-label": `Move ${r.title || r.reference} to` },
-        el("option", { value: "", text: "Move to…" }), ...moves.map((m) => el("option", { value: m.to, text: m.label })));
-      menu.addEventListener("change", () => { const m = moves.find((x) => x.to === menu.value); if (m) applyMove(r, m); });
+        el("option", { value: "", text: "Move to…" }), ...moves.map((m) => el("option", { value: m.key, text: m.label })));
+      menu.addEventListener("change", () => { const m = moves.find((x) => x.key === menu.value); if (m) applyMove(r, m); });
       c.append(el("div", { class: "move" }, grip, menu));
     }
     return c;
@@ -1288,7 +1302,7 @@
     }));
     closed.sort(sortBy());
     $("#closedArea").hidden = !closed.length;
-    $("#closedTitle").textContent = `Closed: declined, not planned or working as designed (${closed.length})`;
+    $("#closedTitle").textContent = `Closed: canceled, duplicate or works as designed (${closed.length})`;
     $("#closedList").replaceChildren(...capped("closed", closed, card));
   };
 
@@ -1398,7 +1412,7 @@
     else if (!allReports.filter(inApp).length) queue.replaceChildren(el("div", { class: "empty", text: reached ? "No reports yet." : "Loading reports…" }));
     else if (!shown.length) queue.replaceChildren(el("div", { class: "empty", text: "Nothing matches those filters." }));
     else {
-      const stages = [...COLUMNS, ["closed", "Closed", "Declined, closed as not planned, or working as designed."]];
+      const stages = [...COLUMNS, ["closed", "Closed", "Canceled, duplicate, or works as designed."]];
       const byStage = new Map(stages.map(([id]) => [id, []]));
       for (const r of shown) byStage.get(columnOf(r)).push(r);
       queue.replaceChildren(...stages.filter(([id]) => byStage.get(id).length).map(([id, name, blurb]) =>
@@ -1407,7 +1421,8 @@
           el("div", { class: "list" }, ...capped("list:" + id, byStage.get(id), row, 50)))));
     }
   };
-  for (const [value, [, label]] of Object.entries(STATUS)) $("#fStatus").append(el("option", { value, text: label }));
+  // One choice per word: Inbox is both received and filed, Canceled both declined and closed.
+  for (const label of [...new Set(Object.values(STATUS).map((v) => v[1]))]) $("#fStatus").append(el("option", { value: label, text: label }));
   for (const [value, label] of Object.entries(KIND_FILTER)) $("#fKind").append(el("option", { value, text: label }));
   for (const [value, label] of IMPACT) $("#fImpact").append(el("option", { value, text: label }));
   ["fStatus", "fKind", "fImpact", "fReporter", "fSort"].forEach((id) => $("#" + id).addEventListener("change", () => {

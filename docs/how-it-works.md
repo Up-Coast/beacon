@@ -22,18 +22,19 @@ The dashboard shows a status on every report. The page stores it as a value. Eve
 
 | The dashboard shows | Value | Meaning |
 |---|---|---|
-| Just received | `new` | Sent, not yet picked up. |
-| Not triaged yet | `filed` | An issue exists for it in the app's repository, and nobody has triaged it. The next daily check does. |
-| Being worked on | `triaging` | A session is working on it now. |
-| Needs more from the tester | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
-| Couldn't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
-| Working as designed | `working-as-intended` | The app behaves as designed. The explanation is on the issue, which is closed. |
-| App isn't explaining itself | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |
+| Inbox | `new`, `filed` | Sent, and nobody has triaged it. `new` is not yet an issue; `filed` has an issue in the app's repository. The next daily check triages it. |
+| Triaged | `triaged` | Read, labelled and routed. Waiting on you. |
 | Needs your decision | `needs-human` | The fix is past what may be done unattended. A written diagnosis is attached. |
-| Fixed | `auto-fixed` | Fixed, proven by running the app, and merged. |
-| Triaged | `triaged` | Read, labelled and routed. Waiting on a person. |
+| Needs more info | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
+| Can't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
+| To do | `approved` | You approved it, or dragged it to Up next. The next run works it. |
+| In progress | `triaging` | A session is working on it now. |
+| Done | `auto-fixed` | Fixed, proven by running the app, and merged. Also an issue a session closed as finished. |
+| Works as designed | `working-as-intended`, `expectation-mismatch` | The app did what it should; the tester expected something else. The explanation is on the issue, which is closed. For `expectation-mismatch` a separate report about the gap is opened. |
+| Canceled | `declined`, `closed` | Not doing it. `declined` is you canceling it; `closed` is an issue closed as not planned. |
+| Duplicate | `duplicate` | A copy of another report. A report that names another with `duplicateOf` shows as Duplicate too. |
 
-A status value the page does not know shows as the value itself. Two more values come from you on the dashboard: `approved` (Approved, waiting for the next run) and `declined`. One more comes from the issue: `closed` (Closed, not planned) is a report whose issue was closed as not planned, which the mirror script sets (Triage/PICKUP.md, Part 0).
+A status value the page does not know shows as the value itself. You set To do, Canceled and Duplicate on the dashboard (the Approve and Cancel buttons, or Move to). The mirror script sets Canceled and Duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
 
 ## Columns
 
@@ -41,13 +42,13 @@ The dashboard's board layout puts each report in a column. The report stores it 
 
 | Column | Value | Set by |
 |---|---|---|
-| Reported | `reported` | Every new report starts here. |
+| Inbox | `reported` | Every new report starts here. |
 | Triaged | `todo` | The pickup, for everything that waits on you. You, by withdrawing an approval. |
 | Up next | `upnext` | The pickup, for a bug it will fix on its own. You, by approving. |
 | Done | `done` | The pickup, when the fix is merged to the main branch. |
 | Deployed | `deployed` | You, when the fix is live. The pickup, when it can tell. |
 
-A report with no `column`, such as one sent before columns existed, is placed by its status: received and filed in Reported, anything waiting on your decision in Triaged, approved and being looked at in Up next, fixed in Done. The status also wins when it and the column disagree: a fixed report is never shown before Done, an approved or worked one never before Up next, and one waiting on your decision is always in Triaged. Declined reports, reports closed as not planned, and reports that work as designed are shown under Closed, not in a column.
+A report with no `column`, such as one sent before columns existed, is placed by its status: received and filed in Inbox, anything waiting on your decision in Triaged, approved and being looked at in Up next, fixed in Done. The status also wins when it and the column disagree: a fixed report is never shown before Done, an approved or worked one never before Up next, and one waiting on your decision is always in Triaged. Declined reports, reports closed as not planned, and reports that work as designed are shown under Closed, not in a column.
 
 
 ## What Beacon needs to run

@@ -66,17 +66,17 @@ The **List** and **Board** switch beside the filters changes how the dashboard l
 - **List**: reports waiting on your decision first, then everything else, newest first or highest impact first.
 - **Board**: one column per stage, left to right. Within a column, the highest impact comes first, then the oldest.
 
-![The dashboard's board layout: the Reported, Triaged, Up next, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
+![The dashboard's board layout: the Inbox, Triaged, Up next, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
 
 | Column | What is in it |
 |---|---|
-| **Reported** | Received, not triaged yet. |
+| **Inbox** | Received, not triaged yet. |
 | **Triaged** | Triaged, and waiting on you: needs a person, couldn't reproduce, needs more from the tester, the app isn't explaining itself, feature and change requests, and feedback. |
 | **Up next** | What the pickup works on next: bugs it will fix on its own, and anything you approved. |
 | **Done** | Fixed and merged to the main branch. |
 | **Deployed** | The fix is live for the people using the app. |
 
-Declined reports and reports that work as designed are not in a column. They are under **Closed**, below the board, folded away until you open it.
+Canceled and duplicate reports, and reports that work as designed, are not in a column. They are under **Closed**, below the board, folded away until you open it.
 
 Click a card's title to open the whole report, the same detail a list row shows, Approve and Decline included.
 
@@ -90,6 +90,7 @@ With a mouse, drag the card itself. With a finger, drag it by its grip, the dott
 |---|---|
 | Up next | Approves it, exactly as **Approve the fix** or **Approve building it** does, unless it is already approved or being worked. The next pickup works it. Feedback can go here too: the pickup acts on it. |
 | Out of Up next, before work starts | Withdraws your approval and puts back the status it had. |
+| Canceled: not doing, or Canceled: duplicate | Cancels it, with the reason. The next run closes the issue and says why. These are in the **Move to** menu and as the **Cancel** buttons on an opened report; they are not columns. |
 | Any other column | Moves the card and nothing else. The pickup leaves a card where you put it; the only cards it moves are the ones it triages out of Reported (into Triaged for you, or Up next for bugs it fixes) and the ones it finishes (into Done). |
 | Back from Closed | Reopens it as triaged, in the column you chose. |
 
@@ -116,7 +117,7 @@ Click a count to show only those reports. Click it again to show everything.
 
 ## Read a row
 
-The list groups reports by the same stages as the board, in the same order: Reported, Triaged, Up next, Done, Deployed, and Closed. A stage with nothing in it is left out. A report that waits on your decision is marked **Your decision**.
+The list groups reports by the same stages as the board, in the same order: Inbox, Triaged, Up next, Done, Deployed, and Closed. A stage with nothing in it is left out. A report that waits on your decision is marked **Your decision**.
 
 Each row shows an impact icon, the report's title, its status, and one line with the reference, kind, app and version, who sent it, when, and how many images it has.
 
