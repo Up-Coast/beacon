@@ -142,6 +142,10 @@ The drop targets and counts follow the app tab you chose; the counts on the bars
 
 Under your note in Your changes, **Add images** attaches screenshots or mockups of your own. They show as thumbnails under the note, save as soon as you add them, and have an × to remove one. Up to six per report, each shrunk to fit. Click any thumbnail, yours or the reporter's, to see it full size; click again or press Escape to close. They are kept apart from the reporter's images, in the report's `ownerAttachments`, and the pickup reads them with your note.
 
+## Ticket numbers
+
+Every report with a GitHub issue shows as the app's prefix and the issue number, such as `UCP-163`. The prefix is two or three capital letters: the initials of the app's name (Up Coast platform is `UCP`), or its first three letters when the name is one word (Dayletter is `DAY`). The number is the issue number, so it runs in order within each app. A report the pickup has not yet filed shows its `BN-` reference until it has an issue.
+
 ## Waiting for human
 
 Tick **Waiting for human** in Your changes to keep a report in To do without the worker building it, for example when it needs design work first. The worker skips it until you untick the box. The flag shows as a chip on the card and in the Any flag filter, and also as the label `flag:waiting-for-human` on the issue.

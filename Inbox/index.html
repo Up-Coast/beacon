@@ -1113,7 +1113,22 @@
   const FLAGS = [...new Set([...Object.values(STATUS).map((v) => v[2]).filter(Boolean), HOLD_FLAG, BLOCK_FLAG])];
   const chips = (r) => flagsOf(r).map((l) => el("span", { class: "chip" + (l === "Needs your decision" || l === BLOCK_FLAG ? " you" : ""), text: l }));
   const pill = (r) => { const [cls, label] = STATUS[statusKey(r)] || ["hold", r.status || "—"]; return el("span", { class: "pill " + cls, text: label }); };
-  const metaLine = (r) => [r.reference, KIND[r.kind] || r.kind,
+  // The number a person says out loud: the app's 2-3 letter prefix and the
+  // issue number (UCP-163). A report not yet filed as an issue shows its
+  // random reference until the pickup files it.
+  const appPrefix = (a) => {
+    const set = String((a && a.prefix) || "").replace(/[^A-Za-z]/g, "").toUpperCase().slice(0, 3);
+    if (set.length >= 2) return set;
+    const words = String((a && a.name) || "").split(/[^A-Za-z]+/).filter(Boolean);
+    const letters = words.length > 1 ? words.map((w) => w[0]).join("") : (words[0] || "");
+    return letters.toUpperCase().slice(0, 3) || "BN";
+  };
+  const ticketId = (r) => {
+    if (!r.issueNumber) return r.reference;
+    const listed = (typeof boardApps === "function" ? boardApps() : []).find((a) => r.app && a.id === r.app.id);
+    return `${appPrefix(listed || r.app)}-${r.issueNumber}`;
+  };
+  const metaLine = (r) => [ticketId(r), KIND[r.kind] || r.kind,
     `${(r.app && r.app.name) || ""} ${(r.context && r.context.version) || ""}`.trim(),
     r.reporter, fmtWhen(r.filedAt),
     r.attachmentCount ? `${r.attachmentCount} image${r.attachmentCount === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ");
@@ -1376,7 +1391,7 @@
       if (who === USERS) { if (isOwnerReport(r)) return false; }
       else if (who && (r.reporter || "Unknown") !== who) return false;
     }
-    if (needle && !JSON.stringify([r.title, r.body, r.reporter, r.area, r.reference]).toLowerCase().includes(needle)) return false;
+    if (needle && !JSON.stringify([r.title, r.body, r.reporter, r.area, r.reference, ticketId(r)]).toLowerCase().includes(needle)) return false;
     return true;
   };
   // A report the page cannot draw shows as a plain line, never a blank board.
@@ -1531,7 +1546,7 @@
     title.addEventListener("click", () => { if (suppressClick) { suppressClick = false; return; } openReport(r.reference); });
     const c = el("article", { class: "card" + (waitsOnYou(r) ? " decide" : ""), "data-ref": r.reference },
       el("div", { class: "titleline" }, impactIcon(r.impact), title),
-      el("div", { class: "meta", text: [r.reference, KIND[r.kind] || r.kind, r.app && r.app.name].filter(Boolean).join(" · ") }),
+      el("div", { class: "meta", text: [ticketId(r), KIND[r.kind] || r.kind, r.app && r.app.name].filter(Boolean).join(" · ") }),
       decisionLine(r),
       el("div", { class: "pills" }, pill(r), ...chips(r)));
     if (moves.length) makeMovable(c, r, moves);
