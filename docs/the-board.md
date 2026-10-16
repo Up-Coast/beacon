@@ -119,6 +119,10 @@ Click a count to show only those reports. Click it again to show everything.
 
 The board has no Inbox column; Inbox reports show in the list.
 
+## Waiting for human
+
+Tick **Waiting for human** in Your changes to keep a report in To do without the pickup working on it, for example when it needs design work first. The pickup skips it until you untick the box. The flag shows as a chip on the card and in the Any flag filter.
+
 ## The Triage view
 
 The third layout, **Triage**, is for working through what Claude has triaged. The To Triage column takes the left 60% of the page, one ticket open at a time (the top one when the page loads; opening another closes it) and the rest collapsed to a title and recommendation. **Your changes** sits under the last drop zone and always applies to the open ticket. The other statuses stack on the right as drop zones that show only their count: drag a card onto one to move it, and the count goes up. There are two Canceled zones, one for not doing it and one for a duplicate.

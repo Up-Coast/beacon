@@ -1068,7 +1068,10 @@
   const decisionLine = (r) => (needsDecision(r)
     ? el("div", { class: "decide-line" + (decisionText(r) ? "" : " missing"), text: decisionText(r) ? "Recommendation: " + decisionText(r) : "Recommendation not written yet: triage has to say whether to approve or decline, and why." })
     : null);
-  const FLAGS = [...new Set(Object.values(STATUS).map((v) => v[2]).filter(Boolean))];
+  // The owner's own flag: the report can sit in To do, but the pickup leaves it
+  // alone until she clears the flag (it needs design or a decision first).
+  const HOLD_FLAG = "Waiting for human";
+  const FLAGS = [...new Set([...Object.values(STATUS).map((v) => v[2]).filter(Boolean), HOLD_FLAG])];
   const chips = (r) => flagsOf(r).map((l) => el("span", { class: "chip" + (l === "Needs your decision" ? " you" : ""), text: l }));
   const pill = (r) => { const [cls, label] = STATUS[statusKey(r)] || ["hold", r.status || "—"]; return el("span", { class: "pill " + cls, text: label }); };
   const metaLine = (r) => [r.reference, KIND[r.kind] || r.kind,

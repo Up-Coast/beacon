@@ -38,7 +38,7 @@ Never ask for something the report already contains. The app details, the settin
 
 ## Gate 2 — Is it actually a bug?
 
-**An approved report skips this gate.** When the owner has approved a report (status `approved`, or the report in To do by the owner's hand), the owner has already decided the behaviour should change. Build it. Do not compare it with a requirements document, spec or plan and do not close it as working as intended: those documents record what was built first, a ticket is newer, and software is built first and then iterated. If a document contradicts the ticket, the ticket wins; build the change and update the document in the same commit so they agree. Never decline, defer or hand back an approved report because a document says otherwise.
+**An approved report skips this gate.** When the owner has approved a report (status `approved`, or the report in To do by the owner's hand), the owner has already decided the behaviour should change. Build it. Do not compare it with a requirements document, spec or plan and do not close it as working as intended: those documents record what was built first, a ticket is newer, and software is built first and then iterated. If a document contradicts the ticket, the ticket wins; build the change and update the document in the same commit so they agree. Never decline, defer or hand back an approved report because a document says otherwise. The one exception is the owner's own `Waiting for human` flag: a report carrying it is left completely alone until the owner clears it.
 
 **Never start from the reporter's "expected". Start from what the product is supposed to do.** Find that in the source before touching anything:
 
