@@ -259,6 +259,8 @@
   .zone { min-height: 0; padding: 14px 16px; }
   .zone h2 { font-size: 15px; }
   .zone h2 span { font-size: 20px; font-weight: 700; color: var(--ink); }
+  .triagecard { scroll-margin-top: 12px; }
+  .triagecard.isopen { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
   .triagecard .detail { padding: 0; }
   .triagecard { padding: 14px; gap: 10px; }
   .kcol.target { border-style: dashed; border-color: var(--accent); }
@@ -1468,7 +1470,11 @@
     const moves = canMove() ? movesFor(r) : [];
     const open = r.reference === triageOpen;
     const title = el("button", { type: "button", class: "open", text: r.title || r.reference, "aria-expanded": String(open) });
-    title.addEventListener("click", () => { if (suppressClick) { suppressClick = false; return; } triageOpen = r.reference; renderBoard(); });
+    title.addEventListener("click", () => { if (suppressClick) { suppressClick = false; return; } triageOpen = r.reference; renderBoard();
+      // Bring it to the top of the page, where the sticky side panel sits beside it.
+      const shown = document.querySelector(`#triageMain [data-ref="${CSS.escape(r.reference)}"]`);
+      if (shown) shown.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
     const c = el("article", { class: "card triagecard" + (open ? " isopen" : "") + (needsDecision(r) ? " decide" : ""), "data-ref": r.reference },
       el("div", { class: "titleline" }, impactIcon(r.impact), title, el("span", { class: "pills" }, pill(r), ...chips(r))),
       el("div", { class: "meta", text: metaLine(r) }));
