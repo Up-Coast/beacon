@@ -46,7 +46,7 @@ STATUS_LABEL = {
     "todo": ["todo"], "approved": ["todo"], "triaging": ["in-progress"],
     "auto-fixed": ["auto-fixed"], "deployed": ["auto-fixed", "deployed"],
     "working-as-intended": ["working-as-intended"], "declined": ["wontfix"],
-    "closed": ["wontfix"], "duplicate": ["duplicate"],
+    "closed": ["wontfix"], "duplicate": ["duplicate"], "feedback-closed": ["feedback-closed"],
     # Statuses the owner never sets by hand now; they keep their own label.
     "needs-human": ["triaged", "needs-human"], "needs-info": ["triaged", "needs-info"],
     "cannot-reproduce": ["triaged", "cannot-reproduce"],
@@ -59,7 +59,7 @@ FLAG_LABEL = {
 # Closing states: status -> gh close reason
 CLOSES = {
     "auto-fixed": "completed", "deployed": "completed", "working-as-intended": "completed",
-    "declined": "not planned", "closed": "not planned", "duplicate": "duplicate",
+    "declined": "not planned", "closed": "not planned", "duplicate": "duplicate", "feedback-closed": "completed",
 }
 MANAGED = {l for ls in STATUS_LABEL.values() for l in ls} | set(FLAG_LABEL.values()) | {"deployed"}
 

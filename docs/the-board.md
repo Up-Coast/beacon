@@ -119,6 +119,10 @@ Click a count to show only those reports. Click it again to show everything.
 
 The board has no Inbox column; Inbox reports show in the list.
 
+## Closed: feedback
+
+**Closed: feedback** is a third way to close a report, next to Canceled: not doing and Canceled: duplicate. Use it for feedback you have read and need nothing more from. It is a Status choice, a Move to option and a drop zone in the Triage view. The pickup closes the issue as completed, labelled `feedback-closed`, without doing any work.
+
 ## Attach images to a report
 
 Under your note in Your changes, **Add images** attaches screenshots or mockups of your own. They show as thumbnails under the note, save as soon as you add them, and have an × to remove one. Click any thumbnail, yours or the reporter's, to see it full size; click again or press Escape to close. They are kept apart from the reporter's images, in the report's `ownerAttachments`, and the pickup reads them with your note.

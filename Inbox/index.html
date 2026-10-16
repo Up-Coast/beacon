@@ -676,6 +676,7 @@
     deployed:              ["fixed", "Deployed"],
     "working-as-intended": ["hold", "Works as designed"],
     declined:              ["hold", "Canceled"],
+    "feedback-closed":     ["hold", "Closed: feedback"],
     closed:                ["hold", "Canceled"],
     duplicate:             ["hold", "Duplicate"],
   };
@@ -709,7 +710,7 @@
     ["deployed", "Deployed", "Live for the people using it."],
   ];
   const COLUMN_IDS = new Set(COLUMNS.map((c) => c[0]));
-  const CLOSED_STATUSES = new Set(["declined", "working-as-intended", "closed", "duplicate"]);
+  const CLOSED_STATUSES = new Set(["declined", "working-as-intended", "closed", "duplicate", "feedback-closed"]);
   // Where a card stands. The stored `column` wins: the owner can put any card
   // anywhere, and the pickup writes a column whenever it changes a status.
   // Only a report with no column falls back to its status.
@@ -1155,7 +1156,7 @@
   // Canceling: not doing it (declined) or a copy of another report (duplicate).
   // The pickup closes the issue and says why.
   const cancelFields = (r, decision, note) => ({
-    status: decision === "duplicate" ? "duplicate" : "declined",
+    status: decision === "duplicate" ? "duplicate" : decision === "feedback" ? "feedback-closed" : "declined",
     approval: { decision, note, at: stamp() }, statusBeforeApproval: r.status, columnAt: stamp(),
   });
   // Where the owner may move a card from where it is, and what each move writes.
@@ -1187,13 +1188,14 @@
     }).concat(from === "closed" ? [] : [
       { to: "closed", key: "cancel-declined", label: "Canceled: not doing", fields: cancelFields(r, "declined", "") },
       { to: "closed", key: "cancel-duplicate", label: "Canceled: duplicate", fields: cancelFields(r, "duplicate", "") },
+      { to: "closed", key: "close-feedback", label: "Closed: feedback", fields: cancelFields(r, "feedback", "") },
     ]);
   };
   // ---- Editing a report directly: its status and its flags. ----
   // Each status the owner can pick, in flow order, and the fields that set it.
   const STATUS_CHOICES = [
     ["backlog", "Backlog"], ["filed", "Inbox"], ["triaged", "To Triage"], ["todo", "To do"], ["triaging", "In progress"],
-    ["auto-fixed", "Done"], ["deployed", "Deployed"], ["working-as-intended", "Works as designed"], ["declined", "Canceled"], ["duplicate", "Duplicate"],
+    ["auto-fixed", "Done"], ["deployed", "Deployed"], ["working-as-intended", "Works as designed"], ["declined", "Canceled"], ["duplicate", "Duplicate"], ["feedback-closed", "Closed: feedback"],
   ];
   const choiceOf = (r) => {
     const s = statusKey(r);
@@ -1216,6 +1218,7 @@
       case "working-as-intended": return { status: "working-as-intended", columnAt: at };
       case "declined": return cancelFields(r, "declined", "");
       case "duplicate": return cancelFields(r, "duplicate", "");
+      case "feedback-closed": return cancelFields(r, "feedback", "");
       default: return {};
     }
   };
@@ -1315,7 +1318,7 @@
   // Decline; the pickup builds approved ones on its next run.
   const renderDecision = (r) => {
     if (!r.approval) return null;
-    const verb = r.approval.decision === "approved" ? "Approved" : r.approval.decision === "duplicate" ? "Canceled as a duplicate" : "Canceled";
+    const verb = r.approval.decision === "approved" ? "Approved" : r.approval.decision === "duplicate" ? "Canceled as a duplicate" : r.approval.decision === "feedback" ? "Closed as feedback" : "Canceled";
     return words("Your decision", `${verb} on ${fmtWhen(r.approval.at)}${r.approval.note ? ": " + r.approval.note : ""}`);
   };
   // Click a picture to see it full size; click again, or Escape, to close.
@@ -1534,11 +1537,12 @@
   });
   const TRIAGE_ZONES = [
     ["backlog", "Backlog"], ["upnext", "To do"], ["inprogress", "In progress"], ["done", "Done"], ["deployed", "Deployed"],
-    ["cancel-declined", "Canceled: not doing"], ["cancel-duplicate", "Canceled: duplicate"],
+    ["cancel-declined", "Canceled: not doing"], ["cancel-duplicate", "Canceled: duplicate"], ["close-feedback", "Closed: feedback"],
   ];
   const zoneOf = (r) => {
     const c = columnOf(r);
     if (c !== "closed") return c;
+    if (r.status === "feedback-closed") return "close-feedback";
     return r.status === "duplicate" || r.duplicateOf ? "cancel-duplicate" : "cancel-declined";
   };
   const renderTriage = (shown) => {

@@ -60,7 +60,7 @@ OPEN_LABELS = [
     ("triaged", ("triaged", "todo")),
 ]
 RANK = {"filed": 0, "new": 0, "triaged": 1}  # anything else is 2
-HELD = {"approved", "triaging", "declined"}
+HELD = {"approved", "triaging", "declined", "feedback-closed"}
 BATCH = 50
 BODY_LIMIT = 6000
 
@@ -92,6 +92,8 @@ def desired(issue):
     """(status, column) the issue's state asks for; None where it asks nothing."""
     labels = {l["name"] for l in issue["labels"]}
     if issue["state"].upper() == "CLOSED":
+        if "feedback-closed" in labels:
+            return ("feedback-closed", None)
         if labels & {"wontfix", "declined"}:
             return ("declined", None)
         if (issue.get("stateReason") or "").upper() == "DUPLICATE" or "duplicate" in labels:
