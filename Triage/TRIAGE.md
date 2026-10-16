@@ -38,6 +38,8 @@ Never ask for something the report already contains. The app details, the settin
 
 ## Gate 2 — Is it actually a bug?
 
+**An approved report skips this gate.** When the owner has approved a report (status `approved`, or the report in To do by the owner's hand), the owner has already decided the behaviour should change. Build it. Do not compare it with a requirements document, spec or plan and do not close it as working as intended: those documents record what was built first, a ticket is newer, and software is built first and then iterated. If a document contradicts the ticket, the ticket wins; build the change and update the document in the same commit so they agree. Never decline, defer or hand back an approved report because a document says otherwise.
+
 **Never start from the reporter's "expected". Start from what the product is supposed to do.** Find that in the source before touching anything:
 
 - acceptance criteria or specs for the area (the `area:` label maps to source paths in `BeaconIndex.json`)
@@ -168,6 +170,7 @@ Create them once per repository with `Scripts/beacon-labels.sh`.
 
 - Work on a bug it could not reproduce.
 - Change behaviour to match a reporter's expectation without checking what the product is supposed to do.
+- Refuse, decline or hand back a report the owner approved because a requirements document, spec or plan says the current behaviour is intended. The approval is the product decision.
 - Implement a feature request or a change request, or act on feedback, without the owner authorizing it.
 - Close an issue as "working as intended" when the reporter expected something different, without first filing the expectation-mismatch issue.
 - Write to a tester. Triage writes on the issue and on the dashboard, and never contacts the person who reported.
