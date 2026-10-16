@@ -194,6 +194,8 @@
   .pill.waiting { background: var(--wait-soft); color: var(--wait); }
   .pill.hold { background: var(--hold-soft); color: var(--hold); }
   .pill.you { background: var(--wait); color: var(--surface); }
+  .chip { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; border: 1px solid var(--line-2); color: var(--ink-2); }
+  .chip.you { border-color: var(--wait); color: var(--wait); }
   /* Impact: one shape per level, heaviest for "blocked", so colour is never the only cue. */
   .impact { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 20px; height: 20px; vertical-align: -4px; }
   .impact svg { width: 20px; height: 20px; display: block; }
@@ -318,6 +320,7 @@
         <button type="button" data-layout="board" aria-pressed="false">Board</button>
       </div>
       <select id="fStatus" aria-label="Status"><option value="">Every status</option></select>
+      <select id="fFlag" aria-label="Flag"><option value="">Any flag</option></select>
       <select id="fKind" aria-label="Kind"><option value="">Every kind</option></select>
       <select id="fImpact" aria-label="Impact"><option value="">Every impact</option></select>
       <select id="fReporter" aria-label="Who sent it"><option value="">Everyone</option></select>
@@ -618,15 +621,17 @@
     new:                   ["new", "Inbox"],
     filed:                 ["hold", "Inbox"],
     triaged:               ["hold", "Triaged"],
-    "needs-human":         ["waiting", "Needs your decision"],
-    "needs-info":          ["waiting", "Needs more info"],
-    "cannot-reproduce":    ["waiting", "Can't reproduce"],
+    // These four are not steps in the flow: the report is Triaged, and the
+    // third word says why it waits. They show as a flag beside the status.
+    "needs-human":         ["hold", "Triaged", "Needs your decision"],
+    "needs-info":          ["hold", "Triaged", "Needs more info"],
+    "cannot-reproduce":    ["hold", "Triaged", "Can't reproduce"],
+    "expectation-mismatch":["hold", "Triaged", "Confusing to users"],
     backlog:               ["hold", "Backlog"],
     approved:              ["triaging", "To do"],
     triaging:              ["triaging", "In progress"],
     "auto-fixed":          ["fixed", "Done"],
     "working-as-intended": ["hold", "Works as designed"],
-    "expectation-mismatch":["hold", "Works as designed"],
     declined:              ["hold", "Canceled"],
     closed:                ["hold", "Canceled"],
     duplicate:             ["hold", "Duplicate"],
@@ -996,6 +1001,14 @@
   // A report marked as a copy of another shows as Duplicate whatever its status.
   const statusKey = (r) => (r.duplicateOf ? "duplicate" : r.status);
   const statusLabel = (r) => (STATUS[statusKey(r)] || [, statusKey(r) || "—"])[1];
+  // Flags say more about a report than its status: why it waits, or anything
+  // a session attached in `flags`.
+  const flagsOf = (r) => {
+    const own = r.duplicateOf ? "" : (STATUS[r.status] || [])[2];
+    return [...new Set([waitsOnOwner(r) ? "Needs your decision" : "", own, ...(Array.isArray(r.flags) ? r.flags : [])].filter(Boolean))];
+  };
+  const FLAGS = [...new Set(Object.values(STATUS).map((v) => v[2]).filter(Boolean))];
+  const chips = (r) => flagsOf(r).map((l) => el("span", { class: "chip" + (l === "Needs your decision" ? " you" : ""), text: l }));
   const pill = (r) => { const [cls, label] = STATUS[statusKey(r)] || ["hold", r.status || "—"]; return el("span", { class: "pill " + cls, text: label }); };
   const metaLine = (r) => [r.reference, KIND[r.kind] || r.kind,
     `${(r.app && r.app.name) || ""} ${(r.context && r.context.version) || ""}`.trim(),
@@ -1148,6 +1161,7 @@
     if (!inApp(r)) return false;
     if (group && !GROUPS.find((g) => g[0] === group)[2](r)) return false;
     if (status && statusLabel(r) !== status) return false;
+    if ($("#fFlag").value && !flagsOf(r).includes($("#fFlag").value)) return false;
     if (k && r.kind !== k) return false;
     if (impact && r.impact !== impact) return false;
     if (who === USERS) { if (isOwnerReport(r)) return false; }
@@ -1179,9 +1193,8 @@
   };
   const resetCaps = () => { caps = {}; };
   const row = safely((r) => {
-    const flag = waitsOnOwner(r) ? el("span", { class: "pill you", text: "Your decision" }) : null;
     const d = el("details", { "data-ref": r.reference },
-      el("summary", {}, el("div", { class: "row" }, el("span", { class: "titleline" }, impactIcon(r.impact), el("span", { class: "title", text: r.title || r.reference })), el("span", { class: "pills" }, flag, pill(r))), el("div", { class: "meta", text: metaLine(r) })),
+      el("summary", {}, el("div", { class: "row" }, el("span", { class: "titleline" }, impactIcon(r.impact), el("span", { class: "title", text: r.title || r.reference })), el("span", { class: "pills" }, pill(r), ...chips(r))), el("div", { class: "meta", text: metaLine(r) })),
       renderDetail(r));
     if (openRefs.has(r.reference)) d.open = true;
     d.addEventListener("toggle", () => {
@@ -1277,11 +1290,10 @@
     const moves = canMove() ? movesFor(r) : [];
     const title = el("button", { type: "button", class: "open", text: r.title || r.reference });
     title.addEventListener("click", () => { if (suppressClick) { suppressClick = false; return; } openReport(r.reference); });
-    const flag = waitsOnOwner(r) ? el("span", { class: "pill you", text: "Your decision" }) : null;
     const c = el("article", { class: "card" + (waitsOnOwner(r) ? " decide" : ""), "data-ref": r.reference },
       el("div", { class: "titleline" }, impactIcon(r.impact), title),
       el("div", { class: "meta", text: [r.reference, KIND[r.kind] || r.kind, r.app && r.app.name].filter(Boolean).join(" · ") }),
-      el("div", { class: "pills" }, flag, pill(r)));
+      el("div", { class: "pills" }, pill(r), ...chips(r)));
     if (moves.length) {
       const grip = el("span", { class: "grip", title: "Drag to move", "aria-hidden": "true" });
       grip.innerHTML = GRIP;
@@ -1374,8 +1386,7 @@
     const seen = JSON.stringify(r);
     if (seen === dialogShown) return;
     dialogShown = seen;
-    const flag = waitsOnOwner(r) ? el("span", { class: "pill you", text: "Your decision" }) : null;
-    $("#dialogHead").replaceChildren(...[impactIcon(r.impact), el("span", { id: "dialogTitle", text: r.title || r.reference }), flag, pill(r)].filter(Boolean));
+    $("#dialogHead").replaceChildren(...[impactIcon(r.impact), el("span", { id: "dialogTitle", text: r.title || r.reference }), pill(r), ...chips(r)].filter(Boolean));
     const detail = renderDetail(r);
     detail.prepend(el("div", { class: "meta", text: metaLine(r) }));
     $("#dialogBody").replaceChildren(detail);
@@ -1431,11 +1442,12 @@
           el("div", { class: "list" }, ...capped("list:" + id, byStage.get(id), row, 50)))));
     }
   };
+  for (const l of FLAGS) $("#fFlag").append(el("option", { value: l, text: l }));
   // One choice per word: Inbox is both received and filed, Canceled both declined and closed.
   for (const label of [...new Set(Object.values(STATUS).map((v) => v[1]))]) $("#fStatus").append(el("option", { value: label, text: label }));
   for (const [value, label] of Object.entries(KIND_FILTER)) $("#fKind").append(el("option", { value, text: label }));
   for (const [value, label] of IMPACT) $("#fImpact").append(el("option", { value, text: label }));
-  ["fStatus", "fKind", "fImpact", "fReporter", "fSort"].forEach((id) => $("#" + id).addEventListener("change", () => {
+  ["fStatus", "fFlag", "fKind", "fImpact", "fReporter", "fSort"].forEach((id) => $("#" + id).addEventListener("change", () => {
     if (id === "fSort") remember("sort-" + layout, $("#fSort").value);
     resetCaps(); renderBoard();
   }));

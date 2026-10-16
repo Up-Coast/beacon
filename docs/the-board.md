@@ -118,7 +118,7 @@ Click a count to show only those reports. Click it again to show everything.
 
 ## Read a row
 
-The list groups reports by the same stages as the board, in the same order: Inbox, Triaged, Backlog, Up next, Done, Deployed, and Closed. A stage with nothing in it is left out. A report that waits on your decision is marked **Your decision**.
+The list groups reports by the same stages as the board, in the same order: Inbox, Triaged, Backlog, Up next, Done, Deployed, and Closed. A stage with nothing in it is left out. A report that waits on your decision has the flag **Needs your decision**.
 
 Each row shows an impact icon, the report's title, its status, and one line with the reference, kind, app and version, who sent it, when, and how many images it has.
 
@@ -166,6 +166,7 @@ Anyone who can edit the page can click these, so share edit access only with peo
 |---|---|
 | App | The tabs. |
 | Status | Every status, or one status. |
+| Flag | Any flag, or one: Needs your decision, Needs more info, Can't reproduce, Confusing to users. |
 | Kind | Every kind, Bugs, Requests, Change requests or Feedback. |
 | Impact | Every impact, or one level. |
 | Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey), or one reporter, with how many reports each has sent in the selected app. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |

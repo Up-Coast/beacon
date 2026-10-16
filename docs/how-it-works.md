@@ -20,22 +20,34 @@ Before it investigates, the pickup reads what earlier reports for the same app a
 
 The dashboard shows a status on every report. The page stores it as a value. Every value from `needs-info` down is also a GitHub label with the same name, set by triage. `new`, `filed` and `triaging` exist only on the page.
 
+### Status
+
+A status is a step in a report's life. They are listed in the order a report moves through them.
+
 | The dashboard shows | Value | Meaning |
 |---|---|---|
 | Inbox | `new`, `filed` | Sent, and nobody has triaged it. `new` is not yet an issue; `filed` has an issue in the app's repository. The next daily check triages it. |
-| Triaged | `triaged` | Read, labelled and routed. Waiting on you. |
-| Needs your decision | `needs-human` | The fix is past what may be done unattended. A written diagnosis is attached. |
-| Needs more info | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
-| Can't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
+| Triaged | `triaged`, `needs-human`, `needs-info`, `cannot-reproduce`, `expectation-mismatch` | Read and routed, and waiting on you. The flags beside it say why (below). |
 | Backlog | `backlog` | Kept open and not being worked on now. You park a report here by moving it to the Backlog column; moving it out puts back what it was. An issue labelled `backlog` shows here too. |
 | To do | `approved` | You approved it, or dragged it to Up next. The next run works it. |
 | In progress | `triaging` | A session is working on it now. |
 | Done | `auto-fixed` | Fixed, proven by running the app, and merged. Also an issue a session closed as finished. |
-| Works as designed | `working-as-intended`, `expectation-mismatch` | The app did what it should; the tester expected something else. The explanation is on the issue, which is closed. For `expectation-mismatch` a separate report about the gap is opened. |
+| Works as designed | `working-as-intended` | The app behaves as designed. The explanation is on the issue, which is closed. |
 | Canceled | `declined`, `closed` | Not doing it. `declined` is you canceling it; `closed` is an issue closed as not planned. |
 | Duplicate | `duplicate` | A copy of another report. A report that names another with `duplicateOf` shows as Duplicate too. |
 
-A status value the page does not know shows as the value itself. You set To do, Canceled and Duplicate on the dashboard (the Approve and Cancel buttons, or Move to). The mirror script sets Canceled and Duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
+### Flags
+
+A flag says more about a report than its status does. A report has one status and any number of flags. Flags show beside the status and can be filtered on. They come from the report's stored value, and a session can add its own in a `flags` list. **Needs your decision** is on every report that waits on you.
+
+| The dashboard shows | Value | Meaning |
+|---|---|---|
+| Needs your decision | `needs-human`, or any Triaged report that is not feedback | It waits on you. For `needs-human` the fix is past what may be done unattended, and a written diagnosis is attached. |
+| Needs more info | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
+| Can't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
+| Confusing to users | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |
+
+A status value the page does not know shows as the value itself. You set To do, Backlog, Canceled and Duplicate on the dashboard (the Approve and Cancel buttons, or Move to). The mirror script sets Canceled and Duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
 
 ## Columns
 
