@@ -45,6 +45,7 @@ copy() {  # copy <relative path> — file or directory
 echo "Copying into $TARGET"
 copy Triage/TRIAGE.md
 copy Triage/PICKUP.md
+copy Triage/WORKER.md
 copy .claude/skills/beacon-triage
 if [ "$WITH_ACTIONS" = 1 ]; then
   copy .github/workflows/beacon-triage.yml
@@ -62,7 +63,8 @@ cat <<MSG
 
 Done. Commit what was copied. Still yours to do, once (docs/setup-github.md):
   1. Register a GitHub OAuth App with Device Flow enabled; put its Client ID in the app.
-  2. Set the pickup going: Triage/PICKUP.md as a scheduled task on your Mac.
+  2. Set the pickup going: Triage/PICKUP.md as a daily scheduled task on your Mac,
+     and the worker: Triage/WORKER.md as an hourly one.
 MSG
 if [ "$WITH_ACTIONS" = 1 ]; then
   cat <<MSG

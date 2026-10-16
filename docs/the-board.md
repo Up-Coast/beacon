@@ -111,7 +111,7 @@ Four counts sit under the tabs, for the selected app or for all apps:
 
 | Count | Reports counted |
 |---|---|
-| **Waiting on you** | Reports that wait on your decision: the pickup stopped on them and nobody has approved or declined them. Feedback is never counted here. |
+| **Waiting on you** | Reports that wait on you: the pickup stopped on them for your decision, or the worker flagged them **Blocked**. Feedback is never counted here. |
 | **Received** | Sent, not yet picked up. |
 | **In progress** | Filed, being looked at, or approved and waiting for the next run. |
 | **Fixed** | Fixed, proven and merged. |
@@ -144,7 +144,17 @@ Under your note in Your changes, **Add images** attaches screenshots or mockups 
 
 ## Waiting for human
 
-Tick **Waiting for human** in Your changes to keep a report in To do without the pickup working on it, for example when it needs design work first. The pickup skips it until you untick the box. The flag shows as a chip on the card and in the Any flag filter, and also as the label `flag:waiting-for-human` on the issue.
+Tick **Waiting for human** in Your changes to keep a report in To do without the worker building it, for example when it needs design work first. The worker skips it until you untick the box. The flag shows as a chip on the card and in the Any flag filter, and also as the label `flag:waiting-for-human` on the issue.
+
+## Blocked
+
+The worker flags a report **Blocked** when it started the work and cannot finish it: it needs a decision, the fix did not stop the problem, the bug would not reproduce, or it needs something only you can do. [The worker prompt](../Triage/WORKER.md#why-the-worker-stops) lists every reason.
+
+- The card stays in To do, with an orange **Blocked** chip and a line saying why. It counts in **Needs your decision**.
+- The report shows **Why the work stopped**: what the worker needs from you, what it tried, and the branch where it kept its work.
+- The issue has a comment in the same words and the label `flag:blocked`.
+
+To send it back, write your answer in your note (or comment on the issue), then untick **Blocked** in Your changes. The next run of the worker reads your answer and tries again.
 
 ## Read a row
 

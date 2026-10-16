@@ -1,8 +1,8 @@
 # The pickup — a task prompt you give to Claude
 
-*Last updated: 2026-10-15*
+*Last updated: 2026-10-16*
 
-The pickup is the prompt for a Claude session, scheduled task or routine that collects reports from your Beacon page and works them. Nothing in it belongs to any particular account, so it works for anyone's setup.
+The pickup is the prompt for a Claude session or scheduled task that collects reports from your Beacon page and triages them: it files them, keeps the dashboard and the issues in step, and decides what goes into To do. It never builds anything. [The worker](WORKER.md) builds what is in To do. Nothing in either prompt belongs to any particular account, so they work for anyone's setup.
 
 1. Copy the prompt below.
 2. Fill in the four values in the `FILL IN` block at its top.
@@ -73,24 +73,20 @@ Part 1: file the page's reports (tracker "github")
 
 Part 1c: act on the owner's decisions
 Query reports where [["status","in",["approved","declined","duplicate","feedback-closed"]]] that have no approval.actedAt.
-- approved: unless its `flags` list holds "Waiting for human" (then leave it entirely alone: no build, no comment, no actedAt, no status change), the owner lifted the gates for THIS report (gate 4 and the feature-request rule included). Honour approval.note and ownerNote, and look at the owner's own images in the report's `ownerAttachments` subcollection (each has dataURL and filename), which belong with the note. An approval overrides any requirements document, spec or plan that describes the current behaviour: build the change, then update that document in the same commit. Never decline or hand back an approved report because a document says the current behaviour is intended. Build the fix or feature on beacon/<issue>-<slug> by the skill's build and proof steps, run the suite, merge to the default branch and push, comment on the issue naming the commit, label auto-fixed and close it. write_db update: status auto-fixed (or triaged for a feature that is built), column done, fixCommit, triageNote saying what was built, approval.actedAt. If the build cannot be finished safely: status needs-human with a decision saying exactly why, and approval.actedAt. Never leave it half-merged.
+- approved: nothing here. The report is in To do, and the worker (Triage/WORKER.md in BEACON_REPO) builds it.
 - declined: comment "Canceled by the owner" with the note, label wontfix (create it if missing), close as not planned, write approval.actedAt (status stays declined).
 - duplicate: comment "Canceled by the owner as a duplicate" with the note, label duplicate, close as a duplicate (gh issue close <n> --repo <repo> --duplicate-of <original> when the note names one), write approval.actedAt (status stays duplicate).
 - feedback-closed: comment "Closed by the owner: feedback received" with the note, label feedback-closed (create it if missing), close as completed, write approval.actedAt (status stays feedback-closed). No work is done: it records that the owner read the feedback and closed it.
 
 Part 2: work the queue
-1. To do first: reports whose column is "upnext" and status is "todo" (queued by triage) or "approved", skipping any whose `flags` list holds "Waiting for human": the owner put it in To do but needs to do something first (design, a decision), so never start or touch it. Highest impact first, then oldest. Skip one whose column is no longer "upnext" when you reach it: the owner withdrew it. When you start a fix, write status triaging, column "inprogress".
+1. To do and In progress belong to the worker. Never start, change or move a report in either column.
 2. Backfill: for every report with status needs-human and no `decision`, read its issue and finding and write `decision`; where you cannot name a real decision, write status triaged and column "todo".
-3. For every app with tracker "github": gh issue list --repo <repository> --label beacon --state open --search "-label:triaged -label:needs-info", impact:blocked first, then oldest. A repository may hold many issues written by the owner or their own sessions with everything in the body: for one that is not a bug, label it triaged and move on; do not investigate each. Real bugs (type:bug that reproduce) are worked in full by the skill:
-   - Reproduce against the commit in the metadata block.
-   - Fix on beacon/<issue>-<slug>, run the whole suite, prove the fix by running the app through the steps where feasible.
-   - Merge to the default branch (ask the repo which it is, never assume) and push; label and close with a comment naming the commit.
-   Triage puts a bug it will fix itself straight into To do (status todo, column upnext). Everything it does not put there is To Triage (column todo), with the flag that says why. Feature and change requests, usability, wording and design changes and feedback are plain triaged: they wait for the owner to move them to To do. Never build one the owner has not approved.
+3. For every app with tracker "github": gh issue list --repo <repository> --label beacon --state open --search "-label:triaged -label:needs-info", impact:blocked first, then oldest. A repository may hold many issues written by the owner or their own sessions with everything in the body: for one that is not a bug, label it triaged and move on; do not investigate each. Real bugs (type:bug) go through gates 1 to 4 by the skill: reproduce against the commit in the metadata block, and find the cause. Do not fix it here. A bug that passes gate 4 goes straight into To do for the worker: labels triaged and todo, status todo, column upnext, with the finding and the reproduction written onto the report so the worker starts from them. Everything it does not put there is To Triage (column todo), with the flag that says why. Feature and change requests, usability, wording and design changes and feedback are plain triaged: they wait for the owner to move them to To do. Never build one the owner has not approved.
 4. Set the outcome's label on the issue with gh (triaged, needs-info, cannot-reproduce, expectation-mismatch, needs-human, working-as-intended, auto-fixed), then run Part 0 again: the board follows the labels. For an issue you actually investigated also write onto its page report (find it by issueNumber): status, finding {intent, citations, verdict}, triageNote (two to four plain sentences for the owner: what was found and what happens next), fixCommit when there is one, triagedAt, column and columnAt.
 5. For every app with tracker "board": query its "new" reports and work each from its record the same way, writing the same fields onto it.
 
 Part 3: tell the owner, only if something happened
-If at least one report was filed, one issue worked or one decision acted on, send ONE message to NOTIFY: what was filed (links), what was fixed (commits), what waits on a person, and any pattern across reports. Otherwise send nothing.
+If at least one report was filed, one issue worked or one decision acted on, send ONE message to NOTIFY: what was filed (links), what went into To do, what waits on a person, and any pattern across reports. Otherwise send nothing.
 
-Never: work on a bug that would not reproduce; change infrastructure, secrets, CI or deployments; write anything to the page except the fields above; write approval or statusBeforeApproval; post anywhere except the app repositories' issues and NOTIFY.
+Never: build, fix or merge anything (the worker does); work on a bug that would not reproduce; change infrastructure, secrets, CI or deployments; write anything to the page except the fields above; write approval or statusBeforeApproval; post anywhere except the app repositories' issues and NOTIFY.
 ```

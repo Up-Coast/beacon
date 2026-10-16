@@ -704,7 +704,7 @@
   const waitsOnOwner = (r) => !r.approval && DECIDABLE.has(r.status) && r.kind !== "feedback";
   // The four counts at the top of the dashboard, and the filter each sets.
   const GROUPS = [
-    ["decide", "Needs your decision", (r) => needsDecision(r)],
+    ["decide", "Needs your decision", (r) => waitsOnYou(r)],
     ["new", "Inbox", (r) => r.status === "new" || r.status === "filed"],
     ["open", "In progress", (r) => BEING_WORKED.has(r.status)],
     ["fixed", "Done", (r) => r.status === "auto-fixed" || r.status === "deployed"],
@@ -1086,14 +1086,32 @@
     const part = (v) => (Array.isArray(v) ? v.map(part).join("; ") : v && typeof v === "object" ? Object.values(v).map(part).join(" ") : String(v));
     return Object.entries(d).map(([k, v]) => `${k.charAt(0).toUpperCase()}${k.slice(1).replace(/([A-Z])/g, " $1").toLowerCase()}: ${part(v)}`).join("\n");
   };
-  const decisionLine = (r) => (needsDecision(r)
+  // The worker's flag: it started the work and stopped, and `blocked` says why
+  // (Triage/WORKER.md). It skips the report until the owner clears the flag.
+  const BLOCK_FLAG = "Blocked";
+  const isBlocked = (r) => flagsOf(r).includes(BLOCK_FLAG);
+  const waitsOnYou = (r) => needsDecision(r) || isBlocked(r);
+  const BLOCK_REASON = {
+    "needs-decision": "Needs your decision", "still-happening": "Fix tried, still happening",
+    "cannot-reproduce": "Can't reproduce", "needs-you": "Needs something only you can do",
+    "unclear": "Not clear what to build", "too-risky": "Too risky to merge alone",
+    "checks-failing": "Checks won't pass", "conflict": "Conflicts with other work", other: "Stopped",
+  };
+  const blockedText = (r) => {
+    const b = r.blocked && typeof r.blocked === "object" ? r.blocked : {};
+    const reason = BLOCK_REASON[b.reason] || b.reason || "Stopped";
+    return b.note ? `${reason}: ${b.note}` : reason;
+  };
+  const decisionLine = (r) => (isBlocked(r)
+    ? el("div", { class: "decide-line", text: "Work stopped. " + blockedText(r) })
+    : needsDecision(r)
     ? el("div", { class: "decide-line" + (decisionText(r) ? "" : " missing"), text: decisionText(r) ? "Recommendation: " + decisionText(r) : "Recommendation not written yet: triage has to say whether to approve or decline, and why." })
     : null);
   // The owner's own flag: the report can sit in To do, but the pickup leaves it
   // alone until she clears the flag (it needs design or a decision first).
   const HOLD_FLAG = "Waiting for human";
-  const FLAGS = [...new Set([...Object.values(STATUS).map((v) => v[2]).filter(Boolean), HOLD_FLAG])];
-  const chips = (r) => flagsOf(r).map((l) => el("span", { class: "chip" + (l === "Needs your decision" ? " you" : ""), text: l }));
+  const FLAGS = [...new Set([...Object.values(STATUS).map((v) => v[2]).filter(Boolean), HOLD_FLAG, BLOCK_FLAG])];
+  const chips = (r) => flagsOf(r).map((l) => el("span", { class: "chip" + (l === "Needs your decision" || l === BLOCK_FLAG ? " you" : ""), text: l }));
   const pill = (r) => { const [cls, label] = STATUS[statusKey(r)] || ["hold", r.status || "—"]; return el("span", { class: "pill " + cls, text: label }); };
   const metaLine = (r) => [r.reference, KIND[r.kind] || r.kind,
     `${(r.app && r.app.name) || ""} ${(r.context && r.context.version) || ""}`.trim(),
@@ -1144,6 +1162,13 @@
     const decision = renderDecision(r);
     if (showDecision && needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
       el("h3", { text: "Recommendation" }), el("p", { text: decisionText(r) || "Not written yet. Triage has to say whether it recommends approving or declining, and why." })));
+    if (isBlocked(r)) {
+      const b = r.blocked && typeof r.blocked === "object" ? r.blocked : {};
+      detail.append(el("div", { class: "decide-text" },
+        el("h3", { text: "Why the work stopped" }), el("p", { text: blockedText(r) }),
+        ...[b.tried ? "Tried: " + b.tried : "", b.branch ? "Work kept on " + b.branch : "", b.at ? "Stopped " + fmtWhen(b.at) : "",
+          "Answer in your note, then clear Blocked to send it back to the worker."].filter(Boolean).map((t) => el("p", { class: "meta", text: t }))));
+    }
     // The Triage view keeps the editor beside the zones, not in the card.
     if (canMove() && !triage) detail.append(renderEditor(r));
     detail.append(facts, prose);
@@ -1424,7 +1449,7 @@
       return b;
     };
     const inScope = (id) => allReports.filter((r) => (!id || (r.app && r.app.id === id)) && !(hideDone && isFinished(r)));
-    const waitingFor = (id) => inScope(id).filter(needsDecision).length;
+    const waitingFor = (id) => inScope(id).filter(waitsOnYou).length;
     $("#tabs").replaceChildren(tab("", "All apps", "", inScope("").length, waitingFor("")), ...boardApps().map((a) => {
       const t = tab(a.id, a.name || a.id, a.platform || "", inScope(a.id).length, waitingFor(a.id));
       if (a.unlisted) { t.classList.add("unlisted"); t.title = "Not in the app list"; }
@@ -1504,7 +1529,7 @@
     const moves = canMove() ? movesFor(r) : [];
     const title = el("button", { type: "button", class: "open", text: r.title || r.reference });
     title.addEventListener("click", () => { if (suppressClick) { suppressClick = false; return; } openReport(r.reference); });
-    const c = el("article", { class: "card" + (needsDecision(r) ? " decide" : ""), "data-ref": r.reference },
+    const c = el("article", { class: "card" + (waitsOnYou(r) ? " decide" : ""), "data-ref": r.reference },
       el("div", { class: "titleline" }, impactIcon(r.impact), title),
       el("div", { class: "meta", text: [r.reference, KIND[r.kind] || r.kind, r.app && r.app.name].filter(Boolean).join(" · ") }),
       decisionLine(r),
@@ -1526,7 +1551,7 @@
       const shown = document.querySelector(`#triageMain [data-ref="${CSS.escape(r.reference)}"]`);
       if (shown) shown.scrollIntoView({ block: "start", behavior: "smooth" });
     });
-    const c = el("article", { class: "card triagecard" + (open ? " isopen" : "") + (needsDecision(r) ? " decide" : ""), "data-ref": r.reference },
+    const c = el("article", { class: "card triagecard" + (open ? " isopen" : "") + (waitsOnYou(r) ? " decide" : ""), "data-ref": r.reference },
       el("div", { class: "titleline" }, impactIcon(r.impact), title, el("span", { class: "pills" }, pill(r), ...chips(r))),
       el("div", { class: "meta", text: metaLine(r) }));
     if (open) {

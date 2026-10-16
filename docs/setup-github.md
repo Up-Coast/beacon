@@ -71,6 +71,7 @@ The Mac is the default, and the adoption script copies no workflows unless you a
 
 1. Copy the prompt from [the pickup prompt](../Triage/PICKUP.md) and fill in the four values at its top.
 2. In Claude Code on the Mac that has your app's source, ask Claude to create a scheduled task with the prompt, or paste it into a session when you want a run.
+3. Set up the worker the same way from [the worker prompt](../Triage/WORKER.md): an hourly scheduled task in Auto permission mode. It builds what is in To do and flags a report **Blocked** when it cannot finish.
 
 Only a Mac can reproduce a report and prove a fix by building and running a macOS or iOS app.
 

@@ -1,6 +1,6 @@
 # How Beacon reports get triaged
 
-*Last updated: 2026-10-13*
+*Last updated: 2026-10-16*
 
 This is Beacon's triage policy: the app files reports, and this document decides what happens to them. An agent follows it unattended, so every rule is a rule, not a preference. Where a judgement call cannot be avoided, the rule names it and states the safe answer.
 
@@ -14,7 +14,7 @@ Every issue labelled `beacon` goes through these gates **in order**. When a gate
 
 Set the report's status to `triaging` when work on it starts, so the owner's dashboard shows what is being looked at now.
 
-Each report also has a column on the dashboard, `column`, with `columnAt` written beside it whenever it changes. A report waiting on the owner (every gate that stops with a label below, and every feature request, change request and piece of feedback) goes to `todo`. A bug that passes gates 1 to 4 goes to `upnext` when its fix starts. A fix merged by gate 5 goes to `done`. `deployed` is for a fix known to be live. The owner moves reports from `todo` to `upnext` by approving them; those are worked like a fix, through gate 5. [The pickup prompt](PICKUP.md) has the exact writes.
+Each report also has a column on the dashboard, `column`, with `columnAt` written beside it whenever it changes. A report waiting on the owner (every gate that stops with a label below, and every feature request, change request and piece of feedback) goes to `todo`. A bug that passes gates 1 to 4 goes to `upnext` when its fix starts. A fix merged by gate 5 goes to `done`. `deployed` is for a fix known to be live. The owner moves reports from `todo` to `upnext` by approving them. Everything in `upnext` is built by [the worker](WORKER.md), through gate 5; the pickup never builds. [The pickup prompt](PICKUP.md) has the exact writes.
 
 1. **Is it complete?** If not: `needs-info`.
 2. **Is it actually a bug?** If not: `working-as-intended` or `expectation-mismatch`.

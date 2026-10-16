@@ -79,6 +79,7 @@ nav:
   - Triage:
       - The triage policy: Triage/TRIAGE.md
       - The pickup prompt: Triage/PICKUP.md
+      - The worker prompt: Triage/WORKER.md
   - Working on Beacon:
       - Developer guide: internal/DEVELOPER-GUIDE.md
       - Status: internal/STATUS.md

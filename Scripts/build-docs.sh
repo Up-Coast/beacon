@@ -16,7 +16,7 @@ staging=.docs-build
 rm -rf "$staging"
 mkdir -p "$staging"
 
-for path in README.md CONTRIBUTING.md docs internal Triage/TRIAGE.md Triage/PICKUP.md Inbox/README.md Examples/BeaconExample/README.md; do
+for path in README.md CONTRIBUTING.md docs internal Triage/TRIAGE.md Triage/PICKUP.md Triage/WORKER.md Inbox/README.md Examples/BeaconExample/README.md; do
     [ -e "$path" ] || { echo "build-docs: missing $path" >&2; exit 1; }
     mkdir -p "$staging/$(dirname "$path")"
     cp -R "$path" "$staging/$(dirname "$path")/"

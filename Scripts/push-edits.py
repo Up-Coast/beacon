@@ -32,6 +32,8 @@ Status and flags to labels:
   Can't reproduce           cannot-reproduce
   Confusing to users        expectation-mismatch
   any other flag            flag:<the flag, lowercase, hyphens>
+                            (Waiting for human is flag:waiting-for-human,
+                            the worker's Blocked is flag:blocked)
 """
 import argparse
 import glob
@@ -101,7 +103,8 @@ def main():
             continue
         have = {l["name"] for l in cur["labels"]}
         add = sorted(want - have)
-        remove = sorted((have & MANAGED) - want)
+        # flag:* labels are the board's own flags, so a cleared flag loses its label.
+        remove = sorted({l for l in have if l in MANAGED or l.startswith("flag:")} - want)
         if add or remove:
             if not a.dry_run:
                 for label in add:

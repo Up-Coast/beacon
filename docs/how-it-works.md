@@ -11,7 +11,7 @@ A report goes from a button in your app, to a record on your Beacon page or an i
 3. **The page stores the report.** It gets a reference such as `BN-8EA6C3` and the status `new`. The tester sees the reference on a receipt, and their part is done.
 4. **The page rings the doorbell.** It publishes a new version of itself, which tells a Claude session watching the page that a report arrived. If the publish fails, the report is still stored and waits for the next scheduled pickup.
 5. **The pickup files the report.** A Claude session, or a scheduled task, runs the prompt in [PICKUP.md](../Triage/PICKUP.md). For an app whose `tracker` is `github`, the report becomes an issue in the app's repository, and its status becomes `filed`. If the same problem is already filed, the report is added to that issue as a comment, and a closed issue is reopened. For an app whose `tracker` is `board`, the report stays on the page and is worked there.
-6. **The pickup works the report.** It follows the triage policy in [TRIAGE.md](../Triage/TRIAGE.md): is it complete, is it a bug, does it reproduce, is the fix simple, then fix it and prove the fix by running the app. [What happens to a report](what-happens-to-a-report.md) summarizes the policy.
+6. **The pickup triages the report.** It follows the triage policy in [TRIAGE.md](../Triage/TRIAGE.md): is it complete, is it a bug, does it reproduce, is the fix simple. A bug that passes goes into To do. [The worker](../Triage/WORKER.md), an hourly task, builds what is in To do, proves it by running the app and merges it, or flags it **Blocked** and says why. [What happens to a report](what-happens-to-a-report.md) summarizes the policy.
 7. **The outcome goes back onto the report.** The pickup writes the status, the finding, a short note for you, and the fixing commit when there is one. The [dashboard](the-board.md) shows all of it.
 
 Before it investigates, the pickup reads what earlier reports for the same app already found. A report that repeats one already worked gets that report's status, finding and note, and is not worked again.
@@ -48,7 +48,8 @@ A flag says more about a report than its status does. A report has one status an
 | Needs more info | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
 | Can't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
 | Confusing to users | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |
-| Waiting for human | `flags` list only | Yours to set in Your changes. The report can sit in To do, but the pickup leaves it completely alone until you clear the flag, for example while it needs design work. It is the one thing that holds an approved report back. |
+| Waiting for human | `flags` list only | Yours to set in Your changes. The report can sit in To do, but the pickup leaves it completely alone until you clear the flag, for example while it needs design work. It is one of two things that hold an approved report back. |
+| Blocked | `flags` list, with `blocked` | Set by the worker when it cannot finish a report: it comments on the issue and writes the reason on the report. The report stays in To do and the worker skips it until you clear the flag. |
 
 A status value the page does not know shows as the value itself. You set To do, Backlog, Canceled, Duplicate and Closed: feedback on the dashboard (the Status menu, or Move to). The mirror script sets Canceled and Duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
 
@@ -62,8 +63,8 @@ The dashboard's board layout puts each report in a column. The report stores it 
 | Inbox | `reported` | Every new report starts here. |
 | To Triage | `todo` | The pickup, for everything it does not queue. You, by withdrawing an approval. |
 | To do | `upnext` | The pickup, for a bug it will fix on its own. You, by approving. |
-| In progress | `inprogress` | The pickup, when it starts the work. |
-| Done | `done` | The pickup, when the fix is merged to the main branch. |
+| In progress | `inprogress` | The worker, when it starts the work. |
+| Done | `done` | The worker, when the change is merged to the main branch. |
 | Deployed | `deployed` | You, when the fix is live. The pickup, when it can tell. |
 
 (The ids are older than the names: `todo` is the To Triage column and `upnext` is To do.)

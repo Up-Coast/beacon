@@ -98,6 +98,12 @@ that, and that "Run now" on the task applies a change at once. On the
 GitHub path there is also the copied workflow, which needs the Claude GitHub
 App and one secret — both theirs to add; say so and point at the setup page.
 
+**The worker, any path.** Copy the prompt from `Triage/WORKER.md`, fill in the
+same values, and offer it as a second scheduled task in Claude Code: hourly,
+permission mode Auto. The pickup triages and fills To do; the worker builds
+what is in To do and flags a report **Blocked** (with a comment on the issue)
+when it cannot finish. Ask before creating either task.
+
 ## 3. Prove it
 
 Build the app, press the button, send a test report, and show them where it

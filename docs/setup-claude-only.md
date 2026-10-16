@@ -1,6 +1,6 @@
 # Setup: the Claude-only path
 
-*Last updated: 2026-10-13*
+*Last updated: 2026-10-16*
 
 Reports go to a Beacon page that your Claude organization owns. A Claude session works them, and the dashboard on the page is your whole tracker, for every app you add. No GitHub is needed.
 
@@ -11,7 +11,8 @@ You end up with:
 | Your Beacon page | A Claude artifact published from `Inbox/index.html`. Testers use its form. You use its dashboard. |
 | Your app list | One entry per app, added in the page's **Apps** view. |
 | The Beacon button | In each app. It opens the page with the app's details filled in. |
-| The pickup | A Claude session or scheduled task that reads new reports and works them. |
+| The pickup | A daily scheduled task that reads new reports, triages them and decides what goes into To do. |
+| The worker | An hourly scheduled task that builds what is in To do, or flags it **Blocked** and says why. |
 
 ## 1. Get Beacon
 
@@ -53,9 +54,17 @@ A page with a database is internal to your Claude organization and cannot be sha
 
 The pickup needs `gh` signed in to your GitHub account and `python3`. Each run copies the issues onto the dashboard and copies what you changed on the dashboard back to the issues, so run it daily. Pressing **Run now** applies a change at once.
 
-Run the pickup on a Mac. Reproducing a report and proving a fix means building and running a macOS or iOS app, and that needs a Mac. What the pickup does with each report is in [What happens to a report](what-happens-to-a-report.md).
+## 5. Set up the worker
 
-## 5. Tell your testers
+1. Copy the prompt from [the worker prompt](../Triage/WORKER.md).
+2. Fill in the values at its top. They are the same as the pickup's.
+3. In the Claude desktop app, ask Claude to create a scheduled task with the prompt, running hourly, with the permission mode set to Auto.
+
+When the worker cannot finish a report, it comments on the issue, flags the report **Blocked** and writes why on the dashboard. Answer in your note, then untick **Blocked** to send it back. [The worker prompt](../Triage/WORKER.md) lists the reasons it stops.
+
+Run the pickup and the worker on a Mac. Reproducing a report and proving a fix means building and running a macOS or iOS app, and that needs a Mac. What the pickup does with each report is in [What happens to a report](what-happens-to-a-report.md).
+
+## 6. Tell your testers
 
 Send them [For testers](for-testers.md), and tell them where the button is in your app.
 

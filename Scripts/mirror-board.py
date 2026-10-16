@@ -37,7 +37,7 @@ What it decides, from the issue's state and labels alone (no judgement):
 A board document is only moved up: a document already at a more specific
 status than the labels say, or one the owner has decided on (it carries an
 `approval`), has edited by hand (`editedAt`) or the pickup is working
-(approved, triaging), is left alone.
+(todo, approved, triaging), is left alone.
 """
 import argparse
 import datetime
@@ -60,7 +60,7 @@ OPEN_LABELS = [
     ("triaged", ("triaged", "todo")),
 ]
 RANK = {"filed": 0, "new": 0, "triaged": 1}  # anything else is 2
-HELD = {"approved", "triaging", "declined", "feedback-closed"}
+HELD = {"approved", "todo", "triaging", "declined", "feedback-closed"}
 BATCH = 50
 BODY_LIMIT = 6000
 
