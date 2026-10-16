@@ -1126,7 +1126,8 @@
     if (status && r.status !== status) return false;
     if (k && r.kind !== k) return false;
     if (impact && r.impact !== impact) return false;
-    if (who && (r.reporter || "Unknown") !== who) return false;
+    if (who === USERS) { if (isOwnerReport(r)) return false; }
+    else if (who && (r.reporter || "Unknown") !== who) return false;
     if (needle && !JSON.stringify([r.title, r.body, r.reporter, r.area, r.reference]).toLowerCase().includes(needle)) return false;
     return true;
   };
@@ -1167,18 +1168,25 @@
   });
   // Everyone who sent a report in the selected app, with how many, so the
   // owner can find what one person submitted.
+  // "User submitted" is everything not sent by the owner: the owner's own
+  // reports (her sessions' tasks, her tries of the sheet) are named abbey...
+  const USERS = "__users__";
+  const isOwnerReport = (r) => /^abbey(\s|jackson|$)|abbey@/i.test(r.reporter || "");
   let reporterKey = "";
   const renderReporters = () => {
     const counts = new Map();
-    for (const r of allReports.filter(inApp)) { const w = r.reporter || "Unknown"; counts.set(w, (counts.get(w) || 0) + 1); }
+    const scoped = allReports.filter(inApp);
+    for (const r of scoped) { const w = r.reporter || "Unknown"; counts.set(w, (counts.get(w) || 0) + 1); }
     const names = [...counts.keys()].sort((x, y) => x.localeCompare(y));
-    const key = names.map((n) => n + "\u0000" + counts.get(n)).join("\u0001");
+    const users = scoped.filter((r) => !isOwnerReport(r)).length;
+    const key = users + "\u0002" + names.map((n) => n + "\u0000" + counts.get(n)).join("\u0001");
     if (key === reporterKey) return;
     reporterKey = key;
     const select = $("#fReporter"), keep = select.value;
     select.replaceChildren(el("option", { value: "", text: "Everyone" }),
+      el("option", { value: USERS, text: `User submitted (${users})` }),
       ...names.map((n) => el("option", { value: n, text: `${n} (${counts.get(n)})` })));
-    select.value = names.includes(keep) ? keep : "";
+    select.value = keep === USERS || names.includes(keep) ? keep : "";
   };
   const renderTabs = () => {
     const tab = (id, name, platform, waiting) => {

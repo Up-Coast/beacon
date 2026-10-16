@@ -166,7 +166,7 @@ Anyone who can edit the page can click these, so share edit access only with peo
 | Status | Every status, or one status. |
 | Kind | Every kind, Bugs, Requests, Change requests or Feedback. |
 | Impact | Every impact, or one level. |
-| Who sent it | Everyone, or one reporter, with how many reports each has sent in the selected app. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |
+| Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey), or one reporter, with how many reports each has sent in the selected app. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |
 | Order | Newest first, oldest first, or highest impact first (oldest first within a level). The list starts on newest first and the board on highest impact first; each remembers the choice on this browser. |
 | Search words | Matches the title, the tester's words, the reporter, the area and the reference. |
 
