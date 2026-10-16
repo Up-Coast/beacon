@@ -66,12 +66,12 @@ The **List** and **Board** switch beside the filters changes how the dashboard l
 - **List**: reports waiting on your decision first, then everything else, newest first or highest impact first.
 - **Board**: one column per stage, left to right. Within a column, the highest impact comes first, then the oldest.
 
-![The dashboard's board layout: the Backlog, Inbox, Triaged, To do, In progress, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
+![The dashboard's board layout: the Backlog, To Triage, To do, In progress, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
 
 | Column | What is in it |
 |---|---|
 | **Inbox** | Received, not triaged yet. |
-| **Triaged** | Triage read it and it is not going to To do. A flag can say why: needs more info, can't reproduce, confusing to users, or needs your decision. Feature and change requests and feedback wait here until you move them. |
+| **To Triage** | Triage read it and it is not going to To do. A flag can say why: needs more info, can't reproduce, confusing to users, or needs your decision. Feature and change requests and feedback wait here until you move them. |
 | **Backlog** | Kept open, not being worked on now. You park a card here; moving it out puts it back where it was. |
 | **To do** | Queued for the next run: bugs triage will fix on its own, and anything you approved. |
 | **In progress** | Being worked on now. |
@@ -93,7 +93,7 @@ With a mouse, drag the card itself. With a finger, drag it by its grip, the dott
 | To do | Approves it, exactly as **Approve the fix** or **Approve building it** does, unless it is already approved or being worked. The next pickup works it. Feedback can go here too: the pickup acts on it. |
 | Out of To do, before work starts | Withdraws your approval and puts back the status it had. |
 | Canceled: not doing, or Canceled: duplicate | Cancels it, with the reason. The next run closes the issue and says why. These are in the **Move to** menu and as the **Cancel** buttons on an opened report; they are not columns. |
-| Any other column | Moves the card and nothing else. The pickup leaves a card where you put it; the only cards it moves are the ones it triages out of Inbox (into Triaged for you, or To do for bugs it fixes) and the ones it finishes (into Done). |
+| Any other column | Moves the card and nothing else. The pickup leaves a card where you put it; the only cards it moves are the ones it triages out of Inbox (into To Triage for you, or To do for bugs it fixes) and the ones it finishes (into Done). |
 | Back from Closed | Reopens it as triaged, in the column you chose. |
 
 ## Choose an app
@@ -117,9 +117,15 @@ Four counts sit under the tabs, for the selected app or for all apps:
 
 Click a count to show only those reports. Click it again to show everything.
 
+The board has no Inbox column; Inbox reports show in the list.
+
+## The Triage view
+
+The third layout, **Triage**, is for working through what Claude has triaged. The To Triage column takes the left 60% of the page, each card showing the whole report with its recommendation. The other statuses stack on the right as drop zones that show only their count: drag a card onto one to move it, and the count goes up. There are two Canceled zones, one for not doing it and one for a duplicate.
+
 ## Read a row
 
-The list groups reports by the same stages as the board, in the same order: Backlog, Inbox, Triaged, To do, In progress, Done, Deployed, and Closed. A stage with nothing in it is left out. Only a report that truly needs your call has the flag **Needs your decision**.
+The list groups reports by the same stages as the board, in the same order: Backlog, Inbox, To Triage, To do, In progress, Done, Deployed, and Closed. A stage with nothing in it is left out. Only a report that truly needs your call has the flag **Needs your decision**.
 
 Each row shows an impact icon, the report's title, its status, and one line with the reference, kind, app and version, who sent it, when, and how many images it has.
 

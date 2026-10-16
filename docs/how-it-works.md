@@ -28,7 +28,7 @@ A status is a step in a report's life. A column and its status share a name, so 
 |---|---|---|
 | Backlog | `backlog` | Kept open and not being worked on now. You park a report here by moving it to the Backlog column; moving it out puts back what it was. An issue labelled `backlog` shows here too. |
 | Inbox | `new`, `filed` | Sent, and nobody has triaged it. `new` is not yet an issue; `filed` has an issue in the app's repository. The next daily check triages it. |
-| Triaged | `triaged`, `needs-human`, `needs-info`, `cannot-reproduce`, `expectation-mismatch` | Triage read it and it is not going to To do: it needs something first, or it is yours to move. A flag beside it can say why (below). |
+| To Triage | `triaged`, `needs-human`, `needs-info`, `cannot-reproduce`, `expectation-mismatch` | Triage read it and it is not going to To do: it needs something first, or it is yours to move. A flag beside it can say why (below). |
 | To do | `todo`, `approved` | Queued for the next run. Triage puts a bug it can fix itself here automatically (`todo`); you put anything else here by approving it or dragging it to To do (`approved`). |
 | In progress | `triaging` | A session is working on it now. |
 | Done | `auto-fixed` | Fixed, proven by running the app, and merged. Also an issue a session closed as finished. |
@@ -39,7 +39,7 @@ A status is a step in a report's life. A column and its status share a name, so 
 
 ### Flags
 
-A flag says more about a report than its status does. A report has one status and any number of flags. Flags show beside the status and can be filtered on. They come from the report's stored value, and a session can add its own in a `flags` list. **Needs your decision** is only for a report that truly needs your call; a report that is just Triaged is not asking for one.
+A flag says more about a report than its status does. A report has one status and any number of flags. Flags show beside the status and can be filtered on. They come from the report's stored value, and a session can add its own in a `flags` list. **Needs your decision** is only for a report that truly needs your call; a report that is just To Triage is not asking for one.
 
 | The dashboard shows | Value | Meaning |
 |---|---|---|
@@ -58,15 +58,15 @@ The dashboard's board layout puts each report in a column. The report stores it 
 |---|---|---|
 | Backlog | `backlog` | You, by parking it. |
 | Inbox | `reported` | Every new report starts here. |
-| Triaged | `todo` | The pickup, for everything it does not queue. You, by withdrawing an approval. |
+| To Triage | `todo` | The pickup, for everything it does not queue. You, by withdrawing an approval. |
 | To do | `upnext` | The pickup, for a bug it will fix on its own. You, by approving. |
 | In progress | `inprogress` | The pickup, when it starts the work. |
 | Done | `done` | The pickup, when the fix is merged to the main branch. |
 | Deployed | `deployed` | You, when the fix is live. The pickup, when it can tell. |
 
-(The ids are older than the names: `todo` is the Triaged column and `upnext` is To do.)
+(The ids are older than the names: `todo` is the To Triage column and `upnext` is To do.)
 
-A report with no `column`, such as one sent before columns existed, is placed by its status: received and filed in Inbox, anything waiting on your decision in Triaged, approved and being looked at in Up next, fixed in Done. The status also wins when it and the column disagree: a fixed report is never shown before Done, an approved or worked one never before Up next, and one waiting on your decision is always in Triaged. Declined reports, reports closed as not planned, and reports that work as designed are shown under Closed, not in a column.
+A report with no `column`, such as one sent before columns existed, is placed by its status: received and filed in Inbox, anything waiting on your decision in To Triage, approved and being looked at in Up next, fixed in Done. The status also wins when it and the column disagree: a fixed report is never shown before Done, an approved or worked one never before Up next, and one waiting on your decision is always in To Triage. Declined reports, reports closed as not planned, and reports that work as designed are shown under Closed, not in a column.
 
 
 ## What Beacon needs to run

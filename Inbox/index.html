@@ -250,6 +250,15 @@
   .kcol h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; }
   .kcol h2 span { font-variant-numeric: tabular-nums; color: var(--ink-3); }
   .kcol > header p { margin: 0; color: var(--ink-3); font-size: 12px; }
+  /* ---- The Triage view: To Triage wide (60%), every other status a drop zone. ---- */
+  .triage { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; align-items: start; }
+  @media (max-width: 800px) { .triage { grid-template-columns: minmax(0, 1fr); } }
+  .triagezones { display: grid; gap: 8px; align-content: start; position: sticky; top: 12px; }
+  .zone { min-height: 0; padding: 14px 16px; }
+  .zone h2 { font-size: 15px; }
+  .zone h2 span { font-size: 20px; font-weight: 700; color: var(--ink); }
+  .triagecard .detail { padding: 0; }
+  .triagecard { padding: 14px; gap: 10px; }
   .kcol.target { border-style: dashed; border-color: var(--accent); }
   .kcol.over { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
   .kcol .empty { padding: 10px; font-size: 13px; }
@@ -335,6 +344,7 @@
       <div class="seg" role="group" aria-label="Layout">
         <button type="button" data-layout="list" aria-pressed="true">List</button>
         <button type="button" data-layout="board" aria-pressed="false">Board</button>
+        <button type="button" data-layout="triage" aria-pressed="false">Triage</button>
       </div>
       <select id="fStatus" aria-label="Status"><option value="">Every status</option></select>
       <select id="fFlag" aria-label="Flag"><option value="">Any flag</option></select>
@@ -353,6 +363,10 @@
     <div class="group" id="restGroup">
       <h2 id="restTitle">Everything else</h2>
       <div class="list" id="queue"><div class="empty">No reports yet.</div></div>
+    </div>
+    <div id="triageView" class="triage" hidden>
+      <section class="kcol triagecol" data-col="todo" data-key="todo" aria-label="To Triage" id="triageMain"></section>
+      <div class="triagezones" id="triageZones"></div>
     </div>
     <div id="kanbanView" hidden>
       <p class="problem" id="boardMsg" role="alert" hidden></p>
@@ -639,13 +653,13 @@
     backlog:               ["hold", "Backlog"],
     new:                   ["new", "Inbox"],
     filed:                 ["hold", "Inbox"],
-    triaged:               ["hold", "Triaged"],
-    // These four are not steps in the flow: the report is Triaged, and the
+    triaged:               ["hold", "To Triage"],
+    // These four are not steps in the flow: the report is To Triage, and the
     // third word says why it waits. They show as a flag beside the status.
-    "needs-human":         ["hold", "Triaged", "Needs your decision"],
-    "needs-info":          ["hold", "Triaged", "Needs more info"],
-    "cannot-reproduce":    ["hold", "Triaged", "Can't reproduce"],
-    "expectation-mismatch":["hold", "Triaged", "Confusing to users"],
+    "needs-human":         ["hold", "To Triage", "Needs your decision"],
+    "needs-info":          ["hold", "To Triage", "Needs more info"],
+    "cannot-reproduce":    ["hold", "To Triage", "Can't reproduce"],
+    "expectation-mismatch":["hold", "To Triage", "Confusing to users"],
     todo:                  ["triaging", "To do"],
     approved:              ["triaging", "To do"],
     triaging:              ["triaging", "In progress"],
@@ -676,10 +690,10 @@
   // working-as-intended reports are closed, under the board, not a column. ----
   const COLUMNS = [
     // A column and its status share a name. The ids are older than the names:
-    // `todo` is the Triaged column and `upnext` is To do.
+    // `todo` is the To Triage column and `upnext` is To do.
     ["backlog", "Backlog", "Kept, not being worked on now."],
     ["reported", "Inbox", "Received, not triaged yet."],
-    ["todo", "Triaged", "Read and routed, not queued."],
+    ["todo", "To Triage", "Claude has read and routed it; waiting for you."],
     ["upnext", "To do", "Queued for the next run."],
     ["inprogress", "In progress", "Being worked on now."],
     ["done", "Done", "Fixed and merged."],
@@ -746,7 +760,7 @@
     $("#board").hidden = view !== "board";
     $("#formView").hidden = view !== "form";
     $("#appsView").hidden = view !== "apps";
-    $("main").classList.toggle("wide", view === "board" && layout === "board");
+    $("main").classList.toggle("wide", view === "board" && layout !== "list");
     $("#identity").hidden = view !== "form";
     document.querySelectorAll(".switch button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
     document.title = view === "board" ? "Beacon reports" : view === "apps" ? "Beacon apps" : "Beacon";
@@ -1035,7 +1049,7 @@
     return [...new Set([own, ...(Array.isArray(r.flags) ? r.flags : [])].filter(Boolean))];
   };
   // Only a report that truly needs the owner's call carries this flag; a
-  // report that is just Triaged is not asking for one.
+  // report that is just To Triage is not asking for one.
   const needsDecision = (r) => flagsOf(r).includes("Needs your decision");
   // What the decision is, in the triager's words. A report that asks for one
   // has to say it (`decision`); one that does not shows plainly that it is missing.
@@ -1164,7 +1178,7 @@
   // ---- Editing a report directly: its status and its flags. ----
   // Each status the owner can pick, in flow order, and the fields that set it.
   const STATUS_CHOICES = [
-    ["backlog", "Backlog"], ["filed", "Inbox"], ["triaged", "Triaged"], ["todo", "To do"], ["triaging", "In progress"],
+    ["backlog", "Backlog"], ["filed", "Inbox"], ["triaged", "To Triage"], ["todo", "To do"], ["triaging", "In progress"],
     ["auto-fixed", "Done"], ["deployed", "Deployed"], ["working-as-intended", "Works as designed"], ["declined", "Canceled"], ["duplicate", "Duplicate"],
   ];
   const choiceOf = (r) => {
@@ -1389,17 +1403,17 @@
     group = group === b.dataset.group ? "" : b.dataset.group; resetCaps(); renderBoard();
   });
   // ---- List or board, remembered on this browser. ----
-  let layout = remembered("layout") === "board" ? "board" : "list";
+  let layout = ["board", "triage"].includes(remembered("layout")) ? remembered("layout") : "list";
   // Hide done: finished reports (Done, Deployed and everything under Closed) out of the way.
   let hideDone = remembered("hide-done") === "1";
   $("#fHideDone").checked = hideDone;
   $("#fHideDone").addEventListener("change", (e) => { hideDone = e.target.checked; remember("hide-done", hideDone ? "1" : "0"); resetCaps(); renderBoard(); });
   const isFinished = (r) => ["done", "deployed", "closed"].includes(columnOf(r));
-  $("#fSort").value = remembered("sort-" + layout) || (layout === "board" ? "impact" : "newest");
+  $("#fSort").value = remembered("sort-" + layout) || (layout === "list" ? "newest" : "impact");
   document.querySelectorAll(".seg [data-layout]").forEach((b) => b.addEventListener("click", () => {
     remember("sort-" + layout, $("#fSort").value);
     layout = b.dataset.layout; remember("layout", layout);
-    $("#fSort").value = remembered("sort-" + layout) || (layout === "board" ? "impact" : "newest");
+    $("#fSort").value = remembered("sort-" + layout) || (layout === "list" ? "newest" : "impact");
     renderBoard();
   }));
   // The orders a list or column can take. "Highest impact first" keeps the
@@ -1412,6 +1426,23 @@
   };
   const sortBy = () => ORDERS[$("#fSort").value] || ORDERS.newest;
   const GRIP = '<svg viewBox="0 0 14 14" aria-hidden="true"><g fill="currentColor"><circle cx="4.5" cy="3" r="1.3"/><circle cx="9.5" cy="3" r="1.3"/><circle cx="4.5" cy="7" r="1.3"/><circle cx="9.5" cy="7" r="1.3"/><circle cx="4.5" cy="11" r="1.3"/><circle cx="9.5" cy="11" r="1.3"/></g></svg>';
+  // A card that can be moved: a grip, a "Move to" menu and a drag. A mouse or
+  // pen drags the whole card; a finger drags by the grip, so a swipe anywhere
+  // else on a card still scrolls the page.
+  const makeMovable = (c, r, moves) => {
+    const grip = el("span", { class: "grip", title: "Drag to move", "aria-hidden": "true" });
+    grip.innerHTML = GRIP;
+    c.classList.add("movable");
+    c.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "touch" || e.target.closest(".grip, select, a, textarea, input, button:not(.open), label")) return;
+      startDrag(e, r, c, moves);
+    });
+    grip.addEventListener("pointerdown", (e) => startDrag(e, r, c, moves));
+    const menu = el("select", { "aria-label": `Move ${r.title || r.reference} to` },
+      el("option", { value: "", text: "Move to…" }), ...moves.map((m) => el("option", { value: m.key, text: m.label })));
+    menu.addEventListener("change", () => { const m = moves.find((x) => x.key === menu.value); if (m) applyMove(r, m); });
+    c.append(el("div", { class: "move" }, grip, menu));
+  };
   const card = safely((r) => {
     const moves = canMove() ? movesFor(r) : [];
     const title = el("button", { type: "button", class: "open", text: r.title || r.reference });
@@ -1421,34 +1452,52 @@
       el("div", { class: "meta", text: [r.reference, KIND[r.kind] || r.kind, r.app && r.app.name].filter(Boolean).join(" · ") }),
       decisionLine(r),
       el("div", { class: "pills" }, pill(r), ...chips(r)));
-    if (moves.length) {
-      const grip = el("span", { class: "grip", title: "Drag to move", "aria-hidden": "true" });
-      grip.innerHTML = GRIP;
-      c.classList.add("movable");
-      // A mouse or pen drags the whole card. A finger drags by the grip, so
-      // a swipe anywhere else on a card still scrolls the page.
-      c.addEventListener("pointerdown", (e) => {
-        if (e.pointerType === "touch" || e.target.closest(".grip, select, a, textarea, input")) return;
-        startDrag(e, r, c, moves);
-      });
-      grip.addEventListener("pointerdown", (e) => startDrag(e, r, c, moves));
-      const menu = el("select", { "aria-label": `Move ${r.title || r.reference} to` },
-        el("option", { value: "", text: "Move to…" }), ...moves.map((m) => el("option", { value: m.key, text: m.label })));
-      menu.addEventListener("change", () => { const m = moves.find((x) => x.key === menu.value); if (m) applyMove(r, m); });
-      c.append(el("div", { class: "move" }, grip, menu));
-    }
+    if (moves.length) makeMovable(c, r, moves);
     return c;
   });
+  // ---- The Triage view: the To Triage column wide on the left, every other
+  // status on the right as a drop zone that shows only its count. ----
+  const triageCard = safely((r) => {
+    const moves = canMove() ? movesFor(r) : [];
+    const c = el("article", { class: "card triagecard" + (needsDecision(r) ? " decide" : ""), "data-ref": r.reference },
+      el("div", { class: "titleline" }, impactIcon(r.impact), el("span", { class: "title", text: r.title || r.reference }), el("span", { class: "pills" }, pill(r), ...chips(r))),
+      el("div", { class: "meta", text: metaLine(r) }));
+    const detail = renderDetail(r);
+    c.append(detail);
+    detail.querySelectorAll(".pictures").forEach(loadPictures);
+    if (moves.length) makeMovable(c, r, moves);
+    return c;
+  });
+  const TRIAGE_ZONES = [
+    ["backlog", "Backlog"], ["upnext", "To do"], ["inprogress", "In progress"], ["done", "Done"], ["deployed", "Deployed"],
+    ["cancel-declined", "Canceled: not doing"], ["cancel-duplicate", "Canceled: duplicate"],
+  ];
+  const zoneOf = (r) => {
+    const c = columnOf(r);
+    if (c !== "closed") return c;
+    return r.status === "duplicate" || r.duplicateOf ? "cancel-duplicate" : "cancel-declined";
+  };
+  const renderTriage = (shown) => {
+    const list = shown.filter((r) => columnOf(r) === "todo");
+    $("#triageMain").replaceChildren(
+      el("header", {}, el("h2", {}, document.createTextNode("To Triage"), el("span", { text: String(list.length) })), el("p", { text: "Claude has read and routed these. Drag each one to where it goes." })),
+      ...(list.length ? capped("col:triage", list, triageCard) : [el("div", { class: "empty", text: "Nothing to triage." })]));
+    const counts = new Map();
+    for (const r of allReports.filter(inApp)) counts.set(zoneOf(r), (counts.get(zoneOf(r)) || 0) + 1);
+    $("#triageZones").replaceChildren(...TRIAGE_ZONES.map(([key, name]) =>
+      el("section", { class: "kcol zone", "data-col": key, "data-key": key, "aria-label": name },
+        el("h2", {}, document.createTextNode(name), el("span", { text: String(counts.get(key) || 0) })))));
+  };
   const renderKanban = (shown) => {
     const cols = new Map(COLUMNS.map(([id]) => [id, []]));
     const closed = [];
     for (const r of shown) { const c = columnOf(r); (c === "closed" ? closed : cols.get(c)).push(r); }
     // Hide done also takes the Done and Deployed columns and the Closed area away.
-    const visible = COLUMNS.filter(([id]) => !(hideDone && (id === "done" || id === "deployed")));
+    const visible = COLUMNS.filter(([id]) => id !== "reported" && !(hideDone && (id === "done" || id === "deployed")));
     $("#kanban").style.setProperty("--cols", String(visible.length));
     $("#kanban").replaceChildren(...visible.map(([id, name, blurb]) => {
       const list = cols.get(id).sort(sortBy());
-      return el("section", { class: "kcol", "data-col": id, "aria-label": name },
+      return el("section", { class: "kcol", "data-col": id, "data-key": id, "aria-label": name },
         el("header", {}, el("h2", {}, document.createTextNode(name), el("span", { text: String(list.length) })), el("p", { text: blurb })),
         ...(list.length ? capped("col:" + id, list, card) : [el("div", { class: "empty", text: "Nothing here." })]));
     }));
@@ -1483,12 +1532,12 @@
       drag.ghost.classList.add("ghost"); drag.ghost.style.width = box.width + "px";
       document.body.append(drag.ghost);
       drag.cardEl.classList.add("dragging");
-      document.querySelectorAll(".kcol").forEach((col) => col.classList.toggle("target", drag.moves.some((m) => m.to === col.dataset.col)));
+      document.querySelectorAll(".kcol").forEach((col) => col.classList.toggle("target", drag.moves.some((m) => m.key === col.dataset.key)));
     }
     drag.ghost.style.left = (e.clientX - drag.dx) + "px";
     drag.ghost.style.top = (e.clientY - drag.dy) + "px";
     const col = columnAt(e.clientX, e.clientY);
-    const ok = col && drag.moves.some((m) => m.to === col.dataset.col) ? col : null;
+    const ok = col && drag.moves.some((m) => m.key === col.dataset.key) ? col : null;
     if (ok !== drag.over) { if (drag.over) drag.over.classList.remove("over"); if (ok) ok.classList.add("over"); drag.over = ok; }
   };
   const finishDrag = () => {
@@ -1503,7 +1552,7 @@
     const done = drag; drag = null;
     return over ? done : null;
   };
-  const endDrag = () => { if (drag && drag.ghost) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); } const d = finishDrag(); if (d) { const m = d.moves.find((x) => x.to === d.over.dataset.col); if (m) applyMove(d.r, m); } };
+  const endDrag = () => { if (drag && drag.ghost) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); } const d = finishDrag(); if (d) { const m = d.moves.find((x) => x.key === d.over.dataset.key); if (m) applyMove(d.r, m); } };
   const cancelDrag = () => { finishDrag(); };
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && drag) { drag.over = null; finishDrag(); } });
 
@@ -1544,14 +1593,15 @@
     const shown = allReports.filter((r) => passes(r));
     shown.sort(sortBy());
     $("#fCount").textContent = `${shown.length} of ${allReports.filter(inApp).length}`;
-    const onBoard = layout === "board";
+    const onBoard = layout !== "list";
     document.querySelectorAll(".seg [data-layout]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.layout === layout)));
-    $("main").classList.toggle("wide", onBoard && view === "board");
-    $("#kanbanView").hidden = bare || !onBoard;
+    $("main").classList.toggle("wide", layout !== "list" && view === "board");
+    $("#kanbanView").hidden = bare || layout !== "board";
+    $("#triageView").hidden = bare || layout !== "triage";
     if (dialogRef) renderDialog();
     if (onBoard) {
       $("#decideGroup").hidden = true; $("#restGroup").hidden = true;
-      if (!bare) renderKanban(shown);
+      if (!bare) (layout === "triage" ? renderTriage : renderKanban)(shown);
       return;
     }
     // The list groups reports by the same stages as the board, in the same order.

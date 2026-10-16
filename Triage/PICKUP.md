@@ -40,7 +40,7 @@ THE WORDS. A column and its status share a name. In the order a report moves:
   column id (name)        status values
   backlog (Backlog)       backlog
   reported (Inbox)        new, filed
-  todo (Triaged)          triaged
+  todo (To Triage)          triaged
   upnext (To do)          todo (queued by triage), approved (queued by the owner)
   inprogress (In progress) triaging
   done (Done)             auto-fixed
@@ -48,7 +48,7 @@ THE WORDS. A column and its status share a name. In the order a report moves:
 and three ways out with no column: working-as-intended (Works as designed), declined or closed (Canceled), duplicate (Duplicate).
 Whenever you write a report's column, write columnAt (ISO time) with it. A report with no column is placed by its status.
 
-FLAGS say why a report waits, beside its status: needs-info (Needs more info), cannot-reproduce (Can't reproduce), expectation-mismatch (Confusing to users), needs-human (Needs your decision). All four show as status Triaged. needs-human is only for something that truly needs the owner's call: a fix past the blast-radius list, or a product or business choice that is theirs. A needs-human report MUST carry `decision` on its page report, written as one plain-text string and never an object: the recommendation, written as one or two plain sentences: approve or decline, and the reason the report itself does not already give. Never a question, a list of choices or an "if nothing is decided" line: approving or declining the report is the choice, so restating it asks nothing. It tells the owner what triage found that the ticket does not say, so they can answer without opening the issue. If you cannot write that, it is not a decision: use triaged.
+FLAGS say why a report waits, beside its status: needs-info (Needs more info), cannot-reproduce (Can't reproduce), expectation-mismatch (Confusing to users), needs-human (Needs your decision). All four show as status To Triage. needs-human is only for something that truly needs the owner's call: a fix past the blast-radius list, or a product or business choice that is theirs. A needs-human report MUST carry `decision` on its page report, written as one plain-text string and never an object: the recommendation, written as one or two plain sentences: approve or decline, and the reason the report itself does not already give. Never a question, a list of choices or an "if nothing is decided" line: approving or declining the report is the choice, so restating it asks nothing. It tells the owner what triage found that the ticket does not say, so they can answer without opening the issue. If you cannot write that, it is not a decision: use triaged.
 
 THE OWNER'S CHANGES. Every change the owner makes on the board is stamped editedAt. They can put a report in any column; set its status and flags by hand (stored in `flags`, a list); write a note (`ownerNote`); approve (status approved, approval {decision "approved", note, at}, column upnext); or cancel (status declined or duplicate, approval {decision "declined" or "duplicate", note, at}). Never move a report the owner placed and never undo a change they made. Never write approval or statusBeforeApproval. A report with hidden true is a test submission: ignore it; an issue labelled test is skipped by the mirror.
 
@@ -84,7 +84,7 @@ Part 2: work the queue
    - Reproduce against the commit in the metadata block.
    - Fix on beacon/<issue>-<slug>, run the whole suite, prove the fix by running the app through the steps where feasible.
    - Merge to the default branch (ask the repo which it is, never assume) and push; label and close with a comment naming the commit.
-   Triage puts a bug it will fix itself straight into To do (status todo, column upnext). Everything it does not put there is Triaged (column todo), with the flag that says why. Feature and change requests, usability, wording and design changes and feedback are plain triaged: they wait for the owner to move them to To do. Never build one the owner has not approved.
+   Triage puts a bug it will fix itself straight into To do (status todo, column upnext). Everything it does not put there is To Triage (column todo), with the flag that says why. Feature and change requests, usability, wording and design changes and feedback are plain triaged: they wait for the owner to move them to To do. Never build one the owner has not approved.
 4. Set the outcome's label on the issue with gh (triaged, needs-info, cannot-reproduce, expectation-mismatch, needs-human, working-as-intended, auto-fixed), then run Part 0 again: the board follows the labels. For an issue you actually investigated also write onto its page report (find it by issueNumber): status, finding {intent, citations, verdict}, triageNote (two to four plain sentences for the owner: what was found and what happens next), fixCommit when there is one, triagedAt, column and columnAt.
 5. For every app with tracker "board": query its "new" reports and work each from its record the same way, writing the same fields onto it.
 
