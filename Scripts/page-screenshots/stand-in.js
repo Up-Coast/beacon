@@ -12,10 +12,12 @@
 //   form        the report form, opened as the Beacon button in an app opens it
 //   kanban      the dashboard in its board layout
 //   card        the board layout with a card opened
+//   triage      the Triage view
+//   triage-zone the Triage view with the To do bar opened
 (() => {
   const shot = new URLSearchParams(location.search).get("shot") || "dashboard";
   // The page remembers its layout on the browser; the board shots ask for the board.
-  try { localStorage.setItem("beacon.page.layout", shot === "kanban" || shot === "card" ? "board" : "list"); } catch {}
+  try { localStorage.setItem("beacon.page.layout", shot === "kanban" || shot === "card" ? "board" : shot.startsWith("triage") ? "triage" : "list"); } catch {}
   const store = new Map();
   const put = (path, doc) => store.set(path, JSON.parse(JSON.stringify(doc)));
   // A fixed clock, so every run draws the same dates.
@@ -40,7 +42,7 @@
 
     report("BN-4A1C07", notes, "bug", "needs-human", "Exported notes lose their headings",
       { expected: "The exported file keeps each heading as a heading.", whatHappened: "Every heading comes out as plain text in the exported file.", steps: ["Open a note with two headings", "Choose File, then Export as Markdown", "Open the exported file in another editor"], reproducibility: "every-time" },
-      { filedAt: day(12, 16), area: "Export", impact: "blocked", triageNote: "The exporter drops heading levels when a note has a cover image. The fix touches the shared Markdown writer used by sync too, so it waits for a decision before it is merged.", finding: { verdict: "Bug: reproduced on the second try.", intent: "Export keeps the note's structure, as the export help page says." } });
+      { filedAt: day(12, 16), area: "Export", impact: "blocked", decision: "Recommend approving: the fix is small, but it changes the Markdown writer that sync also uses.", triageNote: "The exporter drops heading levels when a note has a cover image. The fix touches the shared Markdown writer used by sync too, so it waits for a decision before it is merged.", finding: { verdict: "Bug: reproduced on the second try.", intent: "Export keeps the note's structure, as the export help page says." } });
     report("BN-77E2D9", weather, "feature-request", "triaged", "Show tomorrow's forecast on the lock screen widget",
       { whatIWant: "See tomorrow's high and low on the lock screen without opening the app.", why: "I check the widget each evening to plan the next day.", idea: "A second line under today's temperature." },
       { filedAt: day(12, 9), context: phone, reporter: "Tester Two <tester.two@example.com>", impact: "noticed", issueNumber: 42, issueURL: "https://github.com/example-org/sample-weather/issues/42" });
@@ -49,7 +51,7 @@
       { filedAt: day(13, 8), impact: "irritating" });
     report("BN-C0A515", timer, "change-request", "needs-human", "Make the lap button larger",
       { whatToChange: "The lap button is small and sits close to the stop button.", instead: "A larger lap button with more space between the two.", why: "I press stop by mistake while running." },
-      { filedAt: day(11, 18), context: phone, reporter: "Tester Three <tester.three@example.com>", impact: "slowed" });
+      { filedAt: day(11, 18), context: phone, reporter: "Tester Three <tester.three@example.com>", impact: "slowed", decision: "Recommend approving: it is a layout change with no risk to data." });
     report("BN-3D6E88", notes, "bug", "auto-fixed", "Search misses words with accents",
       { expected: "Searching for cafe finds notes that say café.", whatHappened: "Only notes spelled exactly as typed are found.", steps: ["Write a note containing café", "Search for cafe"], reproducibility: "every-time" },
       { filedAt: day(9, 14), fixCommit: "4be91c2", triageNote: "Search now ignores accents. The fix was proven by running the app and merged." });
@@ -101,10 +103,11 @@
   window.addEventListener("load", () => setTimeout(() => {
     const click = (selector) => { const n = document.querySelector(selector); if (n) n.click(); };
     if (shot === "decision") {
-      const row = document.querySelector("#decideList details");
+      const row = [...document.querySelectorAll("#queue details")].find((d) => d.querySelector(".decide-line"));
       if (row) row.open = true;
     }
     if (shot === "apps") click('.switch [data-view="apps"]');
+    if (shot === "triage-zone") click('.zone[data-key="upnext"] .zonebar');
     if (shot === "card") click('.kcol[data-col="todo"] .card .open');
   }, 300));
 })();

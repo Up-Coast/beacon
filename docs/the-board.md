@@ -83,7 +83,7 @@ Canceled and duplicate reports, reports closed as feedback, and reports that wor
 
 Click a card's title to open the whole report, the same detail a list row shows, Approve and Cancel included.
 
-![A card opened from the board: the report's detail in a panel over the board, with Approve the fix and Decline](assets/page-kanban-card.png)
+![A card opened from the board: the report's detail in a panel over the board, with Approve the fix and the Cancel links](assets/page-kanban-card.png)
 
 ### Move a card
 
@@ -128,6 +128,10 @@ The third layout, **Triage**, is for working through what Claude has triaged: re
 - **Drag a ticket onto a bar** to move it. A small tag with the ticket's title follows the pointer and says where it would land ("Move to Done"), and the bar under the pointer turns blue. Drop it and the bar's count goes up; the next ticket opens. The ticket's **Move to** menu does the same from the keyboard.
 - **Look inside a status.** Click a bar to open it: it shows its five most recently moved tickets, newest first, and **Show 10 more** adds ten at a time. An opened bar takes the whole row. Each ticket is a list row, so opening one shows Your changes inline, Approve and Cancel included, as in the List. Several bars can be open at once.
 
+![The Triage view: the To Triage column on the left with one ticket open, and on the right the status bars with their counts and Your changes underneath](assets/page-triage.png)
+
+![The To do bar opened in the Triage view, showing its most recent ticket](assets/page-triage-zone.png)
+
 The drop targets and counts follow the app tab you chose; the counts on the bars ignore the filters.
 
 ## Closed: feedback
@@ -150,7 +154,7 @@ Each row shows an impact icon, the report's title, its status, and one line with
 
 Open a row to see the whole report:
 
-![A report that waits on a decision, opened: the Your decision box with Approve the fix and Decline, then the facts and the tester's words](assets/page-decision.png)
+![A report that waits on a decision, opened: triage's recommendation and Your changes with Approve the fix and Cancel, then the facts and the tester's words](assets/page-decision.png)
 
 | Part | What it shows |
 |---|---|
