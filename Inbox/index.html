@@ -256,7 +256,7 @@
   @media (max-width: 800px) { .triage { grid-template-columns: minmax(0, 1fr); } }
   .triageside { display: grid; gap: 8px; align-content: start; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
   /* Backlog and To do take a row each; the next three and the closed three share a row. An opened zone takes the whole row. */
-  .triagezones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-content: start; }
+  .triagezones { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; align-content: start; }
   .triagezones .zone[data-key="backlog"], .triagezones .zone[data-key="upnext"], .triagezones .zone.expanded { grid-column: 1 / -1; }
   .triagezones .zone:not([data-key="backlog"]):not([data-key="upnext"]) .zonebar { font-size: 12px; letter-spacing: .03em; }
   .triagezones .zone:not([data-key="backlog"]):not([data-key="upnext"]) .zonebar .n { font-size: 18px; }
@@ -264,8 +264,9 @@
   .zone { min-height: 0; padding: 14px 16px; }
   .zonebar { display: flex; align-items: baseline; gap: 8px; width: 100%; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
   .zonebar .chev { width: 1em; color: var(--ink-3); }
-  .zonebar .zname { flex: 1; }
-  .zonebar .n { font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  .zonebar .zname { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .zonebar .n { flex: none; font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  .zonebar .chev { flex: none; }
   .zone.expanded { gap: 10px; }
   .zonelist { text-transform: none; letter-spacing: 0; font-weight: 400; }
   .triagecard { scroll-margin-top: 12px; }
