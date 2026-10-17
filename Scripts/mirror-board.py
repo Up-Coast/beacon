@@ -39,6 +39,11 @@ What it decides, from the issue's state and labels alone (no judgement):
   closed, working-as-intended                        status working-as-intended
   closed, anything else                              status auto-fixed, column done
 
+Every run also copies the current title and text of each issue written on
+GitHub (a GH-<repo>-<n> document) onto the board, whatever its status: they
+are edited on GitHub, and the owner only adds a note of her own on the board.
+A report sent from Beacon keeps the reporter's words as sent.
+
 A board document is only moved up: a document already at a more specific
 status than the labels say, or one the owner has decided on (it carries an
 `approval`), has edited by hand (`editedAt`) or the pickup is working
@@ -75,10 +80,12 @@ BODY_LIMIT = 6000
 
 def gh_issues(repo):
     out = subprocess.run(
-        ["gh", "issue", "list", "--repo", repo, "--label", "beacon", "--state", "all",
+        ["gh", "issue", "list", "--repo", repo, "--state", "all",
          "--limit", "2000", "--json", "number,title,state,stateReason,labels,body,url,createdAt,author"],
         check=True, capture_output=True, text=True).stdout
-    return json.loads(out)
+    # Filtered here, not with --label: that goes through GitHub's search
+    # index, which has returned no issues at all for a repository that has them.
+    return [i for i in json.loads(out) if any(l["name"] == "beacon" for l in i["labels"])]
 
 
 def app_prefix(app):
@@ -275,16 +282,21 @@ def words_of(kind, sec, body):
     return {"kind": kind, "message": body}
 
 
+def issue_text(issue, kind):
+    """The issue's text as the board holds it: (words, sections, body)."""
+    body = (issue.get("body") or "")
+    body = re.sub(r"<!--\s*beacon-metadata.*?-->", "", body, flags=re.S).strip()[:BODY_LIMIT]
+    # The relay quotes the reporter's words in the issue; the board shows them plain.
+    sec = {k: re.sub(r"(?m)^>\s?", "", v).strip() for k, v in sections(body).items()}
+    return words_of(kind, sec, body), sec, body
+
+
 def new_document(app, issue, status, column):
     repo = app["repository"]
     labels = [l["name"] for l in issue["labels"]]
     meta = metadata(issue.get("body"))
     kind = label_value(labels, "type:") or "feedback"
-    body = (issue.get("body") or "")
-    body = re.sub(r"<!--\s*beacon-metadata.*?-->", "", body, flags=re.S).strip()[:BODY_LIMIT]
-    # The relay quotes the reporter's words in the issue; the board shows them plain.
-    sec = {k: re.sub(r"(?m)^>\s?", "", v).strip() for k, v in sections(body).items()}
-    words = words_of(kind, sec, body)
+    words, sec, body = issue_text(issue, kind)
     ctx = meta.get("context") if isinstance(meta.get("context"), dict) else {}
     reference = meta.get("reference") if isinstance(meta.get("reference"), str) else \
         "GH-%s-%d" % (repo.split("/")[1], issue["number"])
@@ -362,6 +374,16 @@ def main():
             # The number a person says out loud, written once so every reader
             # of the board (the worker, the pickup) uses the same one.
             extra = {"ticket": ticket} if d.get("ticket") != ticket else {}
+            # An issue written on GitHub (no Beacon reference) is edited there:
+            # its title and text follow the issue even on a report the owner
+            # has decided on, since she only adds her own note on the board. A
+            # report sent from Beacon keeps the reporter's words as sent.
+            if ref.startswith("GH-"):
+                words = issue_text(issue, d.get("kind") or "feedback")[0]
+                if d.get("body") != words:
+                    extra["body"] = words
+                if d.get("title") != issue["title"]:
+                    extra["title"] = issue["title"]
             linked = link_change(d, issue, work.get(issue["number"]))
             linked.update(extra) if linked else None
             if linked:

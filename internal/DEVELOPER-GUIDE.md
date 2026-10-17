@@ -218,7 +218,8 @@ reports/<BN-reference>             written by the page on send
     blocked {reason, note, tried, branch, at, commentURL} with the flag "Blocked" in flags,
     claudeReply {text, at} when answering the flag "Ask Claude"
   Change status and flags: the status in its plain form, flags [..], ownerNote
-  Every owner write also sets editedAt (mirror-board.py leaves the report alone;
+  Every owner write also sets editedAt (mirror-board.py leaves its status and
+    column alone but still copies title and body from a GH-* issue;
     push-edits.py copies it to the issue).
   column is one of "backlog", "reported", "todo", "upnext", "inprogress", "done", "deployed"
 

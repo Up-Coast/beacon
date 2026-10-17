@@ -234,7 +234,7 @@ The page could update the issue the moment you change something, through a GitHu
 
 ## Change a report's status and flags
 
-Every opened report has **Your changes** (for people who can edit the page): the status, the flags, your note, and **Save changes**. Pick the status, tick the flags, add any of your own separated by commas, write a note, and **Save changes**. The note is on every report and is the instruction for the work once you choose To do. Choosing To do approves it; Closed: canceled, Closed: duplicate, Closed: feedback and Closed: works as designed close its issue on the next run. Everything you change on the board is copied to the GitHub issue by the daily check (`Scripts/push-edits.py`): the labels for the status and flags, and open or closed. A report you have changed by hand is left alone by the mirror script, so GitHub's labels never put it back.
+Every opened report has **Your changes** (for people who can edit the page): the status, the flags, your note, and **Save changes**. Pick the status, tick the flags, add any of your own separated by commas, write a note, and **Save changes**. The note is on every report and is the instruction for the work once you choose To do. Choosing To do approves it; Closed: canceled, Closed: duplicate, Closed: feedback and Closed: works as designed close its issue on the next run. Everything you change on the board is copied to the GitHub issue by the daily check (`Scripts/push-edits.py`): the labels for the status and flags, and open or closed. A report you have changed by hand keeps its status and column, so GitHub's labels never put it back. Its title and description still follow the GitHub issue when it was written there, since you only add your note on the board.
 
 ## Filter
 
