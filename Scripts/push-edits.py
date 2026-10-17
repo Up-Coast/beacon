@@ -23,9 +23,10 @@ Status and flags to labels:
   In progress               in-progress
   Done                      auto-fixed, closed as completed
   Deployed                  auto-fixed and deployed, closed as completed
-  Works as designed         working-as-intended, closed as completed
-  Canceled                  wontfix, closed as not planned
-  Duplicate                 duplicate, closed as a duplicate
+  Closed: works as designed working-as-intended, closed as completed
+  Closed: canceled          wontfix, closed as not planned
+  Closed: duplicate         duplicate, closed as a duplicate
+  Closed: feedback          feedback-closed, closed as completed
 
   Needs your decision       needs-human
   Needs more info           needs-info

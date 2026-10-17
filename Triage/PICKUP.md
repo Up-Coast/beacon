@@ -45,7 +45,7 @@ THE WORDS. A column and its status share a name. In the order a report moves:
   inprogress (In progress) triaging
   done (Done)             auto-fixed
   deployed (Deployed)     deployed
-and three ways out with no column: working-as-intended (Works as designed), declined or closed (Canceled), duplicate (Duplicate), feedback-closed (Closed: feedback).
+and one way out with no column, Closed, which has four reasons: working-as-intended (Closed: works as designed), declined or closed (Closed: canceled), duplicate (Closed: duplicate), feedback-closed (Closed: feedback). All four are closed issues and none is a column.
 Whenever you write a report's column, write columnAt (ISO time) with it. A report with no column is placed by its status.
 
 FLAGS say why a report waits, beside its status: needs-info (Needs more info), cannot-reproduce (Can't reproduce), expectation-mismatch (Confusing to users), needs-human (Needs your decision). All four show as status To Triage. needs-human is only for something that truly needs the owner's call: a fix past the blast-radius list, or a product or business choice that is theirs. A needs-human report MUST carry `decision` on its page report, written as one plain-text string and never an object: the recommendation, written as one or two plain sentences: approve or decline, and the reason the report itself does not already give. Never a question, a list of choices or an "if nothing is decided" line: approving or declining the report is the choice, so restating it asks nothing. It tells the owner what triage found that the ticket does not say, so they can answer without opening the issue. If you cannot write that, it is not a decision: use triaged.

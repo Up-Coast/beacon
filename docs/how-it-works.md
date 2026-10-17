@@ -33,9 +33,11 @@ A status is a step in a report's life. A column and its status share a name, so 
 | In progress | `triaging` | A session is working on it now. |
 | Done | `auto-fixed` | Fixed, proven by running the app, and merged. Also an issue a session closed as finished. |
 | Deployed | `deployed` | The fix is live. |
-| Works as designed | `working-as-intended` | The app behaves as designed. The explanation is on the issue, which is closed. |
-| Canceled | `declined`, `closed` | Not doing it. `declined` is you canceling it; `closed` is an issue closed as not planned. |
-| Duplicate | `duplicate` | A copy of another report. A report that names another with `duplicateOf` shows as Duplicate too. |
+| Closed: works as designed | `working-as-intended` | The app behaves as designed. The explanation is on the issue, which is closed. |
+| Closed: canceled | `declined`, `closed` | Not doing it. `declined` is you canceling it; `closed` is an issue closed as not planned. |
+| Closed: duplicate | `duplicate` | A copy of another report. A report that names another with `duplicateOf` shows as Closed: duplicate too. |
+
+Closed is one thing with four reasons: works as designed, canceled, duplicate and feedback. None is a column, all four close the issue, and everything that treats a report as closed (Hide done, the Closed section, the mirror and push scripts) treats them the same.
 | Closed: feedback | `feedback-closed` | Feedback you read and closed without work. The issue is closed as completed and labelled `feedback-closed`. |
 
 ### Flags
@@ -55,7 +57,7 @@ A flag says more about a report than its status does. A report has one status an
 
 A report that has a GitHub issue shows its ticket number, such as `UCP-163`, stored as `ticket`. [Ticket numbers](the-board.md#ticket-numbers) says how it is built.
 
-A status value the page does not know shows as the value itself. You set To do, Backlog, Canceled, Duplicate and Closed: feedback on the dashboard (the Status menu, or Move to). The mirror script sets Canceled and Duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
+A status value the page does not know shows as the value itself. You set To do, Backlog and the four Closed reasons on the dashboard (the Status menu, or Move to). The mirror script sets Closed: canceled and Closed: duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
 
 ## Columns
 

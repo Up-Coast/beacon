@@ -689,11 +689,13 @@
     triaging:              ["triaging", "In progress"],
     "auto-fixed":          ["fixed", "Done"],
     deployed:              ["fixed", "Deployed"],
-    "working-as-intended": ["hold", "Works as designed"],
-    declined:              ["hold", "Canceled"],
+    // Closed is one thing with four reasons. Every one is a way out with no
+    // column, and the page, the scripts and the docs all treat them alike.
+    "working-as-intended": ["hold", "Closed: works as designed"],
+    declined:              ["hold", "Closed: canceled"],
     "feedback-closed":     ["hold", "Closed: feedback"],
-    closed:                ["hold", "Canceled"],
-    duplicate:             ["hold", "Duplicate"],
+    closed:                ["hold", "Closed: canceled"],
+    duplicate:             ["hold", "Closed: duplicate"],
   };
   const KIND = { bug: "Bug", "feature-request": "Request", "change-request": "Change request", feedback: "Feedback" };
   const KIND_FILTER = { bug: "Bugs", "feature-request": "Requests", "change-request": "Change requests", feedback: "Feedback" };
@@ -725,12 +727,15 @@
     ["deployed", "Deployed", "Live for the people using it."],
   ];
   const COLUMN_IDS = new Set(COLUMNS.map((c) => c[0]));
+  // The statuses that are Closed, each with its reason. The one definition: a report
+  // that names another with `duplicateOf` is Closed: duplicate whatever its status.
   const CLOSED_STATUSES = new Set(["declined", "working-as-intended", "closed", "duplicate", "feedback-closed"]);
+  const isClosed = (r) => CLOSED_STATUSES.has(r.status) || !!r.duplicateOf;
   // Where a card stands. The stored `column` wins: the owner can put any card
   // anywhere, and the pickup writes a column whenever it changes a status.
   // Only a report with no column falls back to its status.
   const columnOf = (r) => {
-    if (CLOSED_STATUSES.has(r.status) || r.duplicateOf) return "closed";
+    if (isClosed(r)) return "closed";
     // Being worked is In progress, whatever an older `upnext` says.
     if (r.status === "triaging" && (!r.column || r.column === "upnext" || r.column === "inprogress")) return "inprogress";
     if (COLUMN_IDS.has(r.column)) return r.column;
@@ -1252,8 +1257,8 @@
       }
       return { to, key: to, label: COLUMN_NAME[to], fields };
     }).concat(from === "closed" ? [] : [
-      { to: "closed", key: "cancel-declined", label: "Canceled: not doing", fields: cancelFields(r, "declined", "") },
-      { to: "closed", key: "cancel-duplicate", label: "Canceled: duplicate", fields: cancelFields(r, "duplicate", "") },
+      { to: "closed", key: "cancel-declined", label: "Closed: canceled", fields: cancelFields(r, "declined", "") },
+      { to: "closed", key: "cancel-duplicate", label: "Closed: duplicate", fields: cancelFields(r, "duplicate", "") },
       { to: "closed", key: "close-feedback", label: "Closed: feedback", fields: cancelFields(r, "feedback", "") },
     ]);
   };
@@ -1261,7 +1266,7 @@
   // Each status the owner can pick, in flow order, and the fields that set it.
   const STATUS_CHOICES = [
     ["backlog", "Backlog"], ["filed", "Inbox"], ["triaged", "To Triage"], ["todo", "To do"], ["triaging", "In progress"],
-    ["auto-fixed", "Done"], ["deployed", "Deployed"], ["working-as-intended", "Works as designed"], ["declined", "Canceled"], ["duplicate", "Duplicate"], ["feedback-closed", "Closed: feedback"],
+    ["auto-fixed", "Done"], ["deployed", "Deployed"], ["working-as-intended", "Closed: works as designed"], ["declined", "Closed: canceled"], ["duplicate", "Closed: duplicate"], ["feedback-closed", "Closed: feedback"],
   ];
   const choiceOf = (r) => {
     const s = statusKey(r);
@@ -1371,7 +1376,7 @@
   // Decline; the pickup builds approved ones on its next run.
   const renderDecision = (r) => {
     if (!r.approval) return null;
-    const verb = r.approval.decision === "approved" ? "Approved" : r.approval.decision === "duplicate" ? "Canceled as a duplicate" : r.approval.decision === "feedback" ? "Closed as feedback" : "Canceled";
+    const verb = r.approval.decision === "approved" ? "Approved" : r.approval.decision === "duplicate" ? "Closed as a duplicate" : r.approval.decision === "feedback" ? "Closed as feedback" : "Closed as canceled";
     return words("Your decision", `${verb} on ${fmtWhen(r.approval.at)}${r.approval.note ? ": " + r.approval.note : ""}`);
   };
   // Click a picture to see it full size; click again, or Escape, to close.
@@ -1590,7 +1595,7 @@
   });
   const TRIAGE_ZONES = [
     ["backlog", "Backlog"], ["upnext", "To do"], ["inprogress", "In progress"], ["done", "Done"], ["deployed", "Deployed"],
-    ["cancel-declined", "Canceled: not doing"], ["cancel-duplicate", "Canceled: duplicate"], ["close-feedback", "Closed: feedback"],
+    ["cancel-declined", "Closed: canceled"], ["cancel-duplicate", "Closed: duplicate"], ["close-feedback", "Closed: feedback"],
   ];
   const zoneOf = (r) => {
     const c = columnOf(r);
@@ -1772,7 +1777,7 @@
     else if (!allReports.filter(inApp).length) queue.replaceChildren(el("div", { class: "empty", text: reached ? "No reports yet." : "Loading reports…" }));
     else if (!shown.length) queue.replaceChildren(el("div", { class: "empty", text: "Nothing matches those filters." }));
     else {
-      const stages = [...COLUMNS, ["closed", "Closed", "Canceled, duplicate, or works as designed."]];
+      const stages = [...COLUMNS, ["closed", "Closed", "Works as designed, canceled, duplicate or feedback."]];
       const byStage = new Map(stages.map(([id]) => [id, []]));
       for (const r of shown) byStage.get(columnOf(r)).push(r);
       queue.replaceChildren(...stages.filter(([id]) => byStage.get(id).length).map(([id, name, blurb]) =>

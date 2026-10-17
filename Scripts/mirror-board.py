@@ -66,6 +66,9 @@ OPEN_LABELS = [
 ]
 RANK = {"filed": 0, "new": 0, "triaged": 1}  # anything else is 2
 HELD = {"approved", "todo", "triaging", "declined", "feedback-closed"}
+# Closed is one thing with four reasons (works as designed, canceled, duplicate,
+# feedback); a report in any of these statuses is closed and has no column.
+CLOSED_STATUSES = ("declined", "duplicate", "closed", "feedback-closed", "working-as-intended", "deployed")
 BATCH = 50
 BODY_LIMIT = 6000
 
@@ -128,7 +131,7 @@ def link_change(d, issue, work):
     branch with no pull request: In progress. A report the owner flagged
     Blocked or Waiting for human keeps its status; only the link is recorded.
     """
-    if not work or d.get("status") in ("declined", "duplicate", "closed", "feedback-closed", "working-as-intended", "deployed"):
+    if not work or d.get("status") in CLOSED_STATUSES:
         return {}
     prs = sorted(work["prs"], key=lambda p: (p["state"] != "MERGED", p["state"] != "OPEN", -p["number"]))
     pr = prs[0] if prs else None
