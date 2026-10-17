@@ -166,6 +166,10 @@ Write a question in your note and tick **Ask Claude** when you want an answer wi
 
 Tick **Needs PR approval** in Your changes when you want to check the work before it merges. The worker still does the work, but it opens a pull request instead of merging, and the pull request link shows at the top of the report. You merge it, and the report moves to Done by itself. A line in your note or a comment on the issue saying not to merge has the same effect.
 
+## Safari bugs
+
+A bug that shows only in Safari can be proved only in Safari. The worker can drive Safari on your Mac when you have run `safaridriver --enable` once (it asks for your Mac password) and the worker prompt says `SAFARI = yes`. It then reproduces the bug and takes a screenshot before and after the fix, in a visible Safari window. Without it, the worker builds the fix from the code and says Safari could not be checked.
+
 ## Blocked
 
 The worker flags a report **Blocked** when it started the work and cannot finish it: it needs a decision, the fix did not stop the problem, the bug would not reproduce, or it needs something only you can do. [The worker prompt](../Triage/WORKER.md#why-the-worker-stops) lists every reason.

@@ -54,6 +54,7 @@ FILL IN:
   CODE_ROOT     = <the folder under which each app's `folder` (from the apps list) is found>
   NOTIFY        = <how to tell the owner when the worker itself is stuck: a chat channel
                    through a connector, an email, or "nowhere">
+  SAFARI        = <"yes" once you have run `safaridriver --enable` on this Mac, otherwise "no">
   STATE_FILE    = <a local JSON file the worker keeps between runs, e.g. ~/.beacon-worker-state.json>
   MAX_PER_RUN   = 2
 
@@ -97,6 +98,15 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
    - The issue: gh issue view <n> --repo <repository> --comments. The report on the page: its body, finding, triageNote, ownerNote, approval.note, and the owner's images in "reports/<reference>/ownerAttachments" (decode each dataURL to a file and look at it).
    - If the report carries `blocked` from an earlier stop, the owner has cleared the flag: their answer is in ownerNote, approval.note, or an issue comment newer than blocked.at. Act on it. If there is no answer, use what you have and try again once.
    - An approved report is the owner's decision: build what the ticket and the note ask, even where a spec says otherwise, and update that spec in the same commit (TRIAGE.md, gate 2). A report queued by triage (status todo, no approval) is a bug: gate 4's blast-radius list still applies to it.
+
+3c. Safari
+   When SAFARI is "yes", you can reproduce and prove Safari-only bugs here. Do it with the W3C WebDriver HTTP API that safaridriver serves:
+     - start it on a free port: safaridriver -p <port> (in the background)
+     - POST /session with {"capabilities":{"alwaysMatch":{"browserName":"safari"}}} and keep the sessionId
+     - POST /session/<id>/url to load a page, then POST /session/<id>/element and /element/<id>/click, or POST /session/<id>/execute/sync, to follow the steps
+     - GET /session/<id>/screenshot returns a base64 PNG: save it and look at it
+     - DELETE /session/<id>, then stop safaridriver, every time, even on failure
+   This opens a visible Safari window on the owner's Mac, so keep each session short and never leave one open. A Safari-only bug (a repaint, a layout or a WebKit behaviour) is proved in Safari: take the screenshot before the fix and after it. When SAFARI is "no", build from the code and say in the issue comment that Safari could not be checked.
 
 4. Do the work
    a. Find the app's checkout at CODE_ROOT/<folder>. Ask it for the default branch (gh repo view --json defaultBranchRef), fetch, and make a new worktree from the up-to-date default branch on work.branch (or reuse that branch when resuming). Never work in a checkout another session may be using.
