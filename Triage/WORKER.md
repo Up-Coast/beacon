@@ -72,6 +72,10 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
 0b. Link branches and pull requests to the board (a script, no judgement)
    Do Part 0 of BEACON_REPO/Triage/PICKUP.md: read_db list "reports" and "apps" with out_dir, run Scripts/mirror-board.py, write_db each batch. It moves a report to In progress when a beacon/<issue>-* branch or an open pull request names its issue, and to Done with the merge commit when a pull request is merged. Do not run Part 0b (push-edits) here: that is the pickup's.
 
+0c. Answer questions (before any building)
+   read_db query collection "reports" where [["flags","array-contains","Ask Claude"]]. For each: the owner has written a question in `ownerNote` (and may have attached images in `ownerAttachments`). Read the ticket, the issue, the note and the relevant code. Do not build, change code or merge anything. Answer the question directly and honestly: if you do not know, say so.
+   Post the answer as a comment on the issue ("**Claude's reply:** ..."), and write onto the report, pinned: claudeReply {text: <the answer>, at: <ISO>}, and flags = the existing flags without "Ask Claude" and with "Waiting for human" (the report goes back to the owner). Do not write editedAt. Never answer a question by building the thing.
+
 1. Find the work
    read_db query collection "reports" where [["column","in",["upnext","inprogress"]]], and collection "apps".
    a. Resume first: a report in column inprogress whose `work.by` is "beacon-worker" was left by a run that stopped part way. Resume it on its `work.branch`. A report in inprogress without `work` was put there by the owner: leave it alone.
@@ -141,5 +145,5 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
 GitHub only (BEACON_PAGE "none")
    The queue is the open issues labelled todo, without flag:blocked or flag:waiting-for-human, in every repository you work. Do steps 2 to 7 with labels and comments only: in-progress when you start, auto-fixed and closed when done, flag:blocked and the comment when you stop. To send one back, the owner removes flag:blocked.
 
-Never: message the owner about a finished or blocked report; decide what goes into To do; touch a report flagged "Waiting for human" or "Blocked"; change infrastructure, secrets, CI, signing or deployments; merge with a failing check; force-push a default branch; write to a tester; write approval, statusBeforeApproval or editedAt; work on two reports at once.
+Never: build anything for a report whose only request is a question (flag "Ask Claude"); message the owner about a finished or blocked report; decide what goes into To do; touch a report flagged "Waiting for human" or "Blocked"; change infrastructure, secrets, CI, signing or deployments; merge with a failing check; force-push a default branch; write to a tester; write approval, statusBeforeApproval or editedAt; work on two reports at once.
 ```

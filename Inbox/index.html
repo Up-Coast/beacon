@@ -1110,7 +1110,7 @@
   // The owner's own flag: the report can sit in To do, but the pickup leaves it
   // alone until she clears the flag (it needs design or a decision first).
   const HOLD_FLAG = "Waiting for human";
-  const FLAGS = [...new Set([...Object.values(STATUS).map((v) => v[2]).filter(Boolean), HOLD_FLAG, BLOCK_FLAG, "Needs PR approval"])];
+  const FLAGS = [...new Set([...Object.values(STATUS).map((v) => v[2]).filter(Boolean), HOLD_FLAG, BLOCK_FLAG, "Needs PR approval", "Ask Claude"])];
   const chips = (r) => flagsOf(r).map((l) => el("span", { class: "chip" + (l === "Needs your decision" || l === BLOCK_FLAG ? " you" : ""), text: l }));
   const pill = (r) => { const [cls, label] = STATUS[statusKey(r)] || ["hold", r.status || "—"]; return el("span", { class: "pill " + cls, text: label }); };
   // The number a person says out loud: the app's 2-3 letter prefix and the
@@ -1185,6 +1185,9 @@
         ...[b.tried ? "Tried: " + b.tried : "", b.branch ? "Work kept on " + b.branch : "", b.at ? "Stopped " + fmtWhen(b.at) : "",
           "Answer in your note, then clear Blocked to send it back to the worker."].filter(Boolean).map((t) => el("p", { class: "meta", text: t }))));
     }
+    if (r.claudeReply && r.claudeReply.text) detail.append(el("div", { class: "decide-text" },
+      el("h3", { text: "Claude's reply" }), el("p", { text: String(r.claudeReply.text) }),
+      r.claudeReply.at ? el("p", { class: "meta", text: fmtWhen(r.claudeReply.at) }) : null));
     // Where the work is: the pull request while one is open, and the commit once merged.
     const workLinks = [];
     const repo = r.app && r.app.repository;

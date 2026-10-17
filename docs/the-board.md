@@ -158,6 +158,10 @@ No one has to move a card for work that exists on GitHub. A branch named `beacon
 
 A script does this (`Scripts/mirror-board.py`), with no AI judgement. It writes to the dashboard when the worker's hourly run starts, so a card moves within the hour. The page cannot read GitHub itself.
 
+## Ask Claude
+
+Write a question in your note and tick **Ask Claude** when you want an answer without a build. The next hourly run of the worker reads the ticket, your note and the code, and answers in a comment on the issue and under **Claude's reply** at the top of the report. It builds nothing. It then unticks **Ask Claude** and ticks **Waiting for human**, so the report is back with you. Untick **Waiting for human** when you want the worker to build it.
+
 ## Needs PR approval
 
 Tick **Needs PR approval** in Your changes when you want to check the work before it merges. The worker still does the work, but it opens a pull request instead of merging, and the pull request link shows at the top of the report. You merge it, and the report moves to Done by itself. A line in your note or a comment on the issue saying not to merge has the same effect.
