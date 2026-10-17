@@ -1172,6 +1172,10 @@
     } else {
       prose.append(...[words(FIELD_LABELS.message, b.message)].filter(Boolean));
     }
+    // An issue written by hand on GitHub carries its whole text in `message`
+    // whatever its kind; without this a request or bug imported that way
+    // shows no description at all.
+    if (b.message && !prose.childElementCount) prose.append(words("Details", b.message));
     if (Array.isArray(r.attachmentLinks) && r.attachmentLinks.length) {
       prose.append(el("div", {}, el("h3", { text: "What they attached" }), el("ul", { class: "links" },
         ...r.attachmentLinks.map((l) => el("li", {}, el("a", { href: String(l.url || ""), target: "_blank", rel: "noopener", text: String(l.name || l.url) }),
@@ -1589,7 +1593,11 @@
       const detail = renderDetail(r, true, true);
       c.append(detail);
       detail.querySelectorAll(".pictures").forEach(loadPictures);
-    } else c.append(decisionLine(r));
+    } else {
+      // append(null) would print the word "null" on the card.
+      const line = decisionLine(r);
+      if (line) c.append(line);
+    }
     if (moves.length) makeMovable(c, r, moves);
     return c;
   });
