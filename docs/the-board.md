@@ -174,7 +174,7 @@ The worker flags a report **Blocked** when it started the work and cannot finish
 - The report shows **Why the work stopped**: what the worker needs from you, what it tried, and the branch where it kept its work.
 - The issue has a comment in the same words and the label `flag:blocked`.
 
-To send it back, write your answer in your note (or comment on the issue), then untick **Blocked** in Your changes. The next run of the worker reads your answer and tries again.
+To send it back, write your answer in your note (or comment on the issue). The next run of the worker sees that you have touched the report since it stopped and reads your note: if it is a question, the worker answers it under **Claude's reply** and leaves **Blocked** on; if it is an answer, the worker removes **Blocked** itself and tries again. You can still untick **Blocked** yourself.
 
 ## Read a row
 

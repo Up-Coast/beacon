@@ -29,7 +29,7 @@ Branches and pull requests move reports by themselves: each hourly run starts by
 
 The report's detail shows a link at the top: the **Pull request** while the worker has one open for kept work, and **Merged: commit** once it merges.
 
-To send a blocked report back to the worker, answer in your note on the report (or in a comment on the issue), then untick **Blocked** in Your changes. The next run reads your answer and tries again.
+To send a blocked report back to the worker, write your answer or question in your note on the report. The next run sees that you have touched the report since it stopped and reads the note: it answers a question and leaves Blocked on, or takes an answer, removes Blocked and tries again. You do not need to tick anything.
 
 ## Why the worker stops
 
@@ -73,7 +73,8 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
    Do Part 0 of BEACON_REPO/Triage/PICKUP.md: read_db list "reports" and "apps" with out_dir, run Scripts/mirror-board.py, write_db each batch. It moves a report to In progress when a beacon/<issue>-* branch or an open pull request names its issue, and to Done with the merge commit when a pull request is merged. Do not run Part 0b (push-edits) here: that is the pickup's.
 
 0c. Answer questions (before any building)
-   read_db query collection "reports" where [["flags","array-contains","Ask Claude"]]. For each: the owner has written a question in `ownerNote` (and may have attached images in `ownerAttachments`). Read the ticket, the issue, the note and the relevant code. Do not build, change code or merge anything. Answer the question directly and honestly: if you do not know, say so.
+   Two kinds of report get this step. (1) Flagged "Ask Claude". (2) Flagged "Blocked" whose `editedAt` is later than `blocked.at`: the owner has touched it since you stopped, so read her note without waiting for her to tick anything. For kind 2: if the note asks a question, answer it as below and leave Blocked on. If the note is an answer or an instruction, take it as the answer to your stop: remove "Blocked" from `flags` (keep `blocked` for the record) and work the report in step 1.
+   read_db query collection "reports" where [["flags","array-contains","Ask Claude"]], and where [["flags","array-contains","Blocked"]] (then keep those edited after blocked.at). For each: the owner has written a question in `ownerNote` (and may have attached images in `ownerAttachments`). Read the ticket, the issue, the note and the relevant code. Do not build, change code or merge anything. Answer the question directly and honestly: if you do not know, say so.
    Post the answer as a comment on the issue ("**Claude's reply:** ..."), and write onto the report, pinned: claudeReply {text: <the answer>, at: <ISO>}, and flags = the existing flags without "Ask Claude" and with "Waiting for human" (the report goes back to the owner). Do not write editedAt. Never answer a question by building the thing.
 
 1. Find the work
