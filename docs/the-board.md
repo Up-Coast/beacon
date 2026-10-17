@@ -238,7 +238,7 @@ Every opened report has **Your changes** (for people who can edit the page): the
 |---|---|
 | App | The tabs. |
 | Status | Every status, or one status. |
-| Flag | Any flag, or one: Needs your decision, Needs more info, Can't reproduce, Confusing to users. |
+| Flag | Any flag, or one: Needs your decision, Needs more info, Can't reproduce, Confusing to users, Waiting for human, Blocked, Needs PR approval, Ask Claude. |
 | Kind | Every kind, Bugs, Requests, Change requests or Feedback. |
 | Impact | Every impact, or one level. |
 | Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey), or one reporter, with how many reports each has sent in the selected app. The numbers follow your other filters, including Hide done, so each is what picking that person would show. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |

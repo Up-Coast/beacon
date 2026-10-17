@@ -26,9 +26,9 @@ Only for a bug that reproduces, has a cause that fits in one sentence, stays wit
 
 No. Feature requests are labelled, routed and left for a person. See [What happens to a report](what-happens-to-a-report.md).
 
-**Can the pickup run when my Mac is off?**
+**Can the pickup or the worker run when my Mac is off?**
 
-With the GitHub setup, triage can run in a scheduled GitHub Actions workflow, and reproduction can run on a GitHub-hosted macOS runner. Reports on the Beacon page need a Claude session to pick them up. See [Setup: the GitHub path](setup-github.md).
+With the GitHub setup, triage can run in a scheduled GitHub Actions workflow, and reproduction can run on a GitHub-hosted macOS runner. Reports on the Beacon page need a Claude session to pick them up. The worker builds and proves fixes on your Mac, so it runs only while the Claude app is open and the Mac is awake; a cloud routine cannot reach your apps' source or run Xcode. See [Setup: the GitHub path](setup-github.md).
 
 **What is read from the tester's device?**
 

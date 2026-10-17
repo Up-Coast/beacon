@@ -339,7 +339,8 @@ The Beacon page keeps its apps in the `apps` collection in the page's database, 
 | `name` | Page | The name testers see in the app picker, and the app's tab on the dashboard. Apps are listed in `name` order. |
 | `platform` | Page | `macOS`, `iOS`, `Web` or `Other`. Shown on the app's tab and copied onto each report. |
 | `repository` | Page, pickup | `owner/name` of the repository where issues are filed and fixes are made. Required when `tracker` is `github`. |
-| `folder` | Pickup | Where the app's source is, relative to the `CODE_ROOT` value in the pickup prompt. |
+| `prefix` | Page, pickup | Optional. Two or three capital letters for the app's ticket numbers, such as `UCP`. Without it, the initials of `name`, or the first three letters of a one-word name. |
+| `folder` | Pickup, worker | Where the app's source is, relative to the `CODE_ROOT` value in the pickup prompt. |
 | `tracker` | Pickup | `github`: the pickup files each report as an issue and works the issue. `board`: the pickup works the report on the page, and the dashboard is the whole tracker. In the Apps view these are **As GitHub issues** and **On this page**. |
 
 The page itself needs the `db` and `artifact` capabilities when it is published. See [Setup: the Claude-only path](setup-claude-only.md) step 2.

@@ -49,7 +49,7 @@ The page is `Inbox/index.html` in this repository: [the dashboard](docs/the-boar
 
 2. Ask Claude to "set up Beacon in my app".
 
-The plugin adds two skills: `beacon-setup` puts Beacon into your app and sets up the pickup, and `beacon-triage` works the reports. It carries the whole repository, so nothing else needs cloning.
+The plugin adds two skills: `beacon-setup` puts Beacon into your app and sets up the pickup and the worker, and `beacon-triage` triages the reports. It carries the whole repository, so nothing else needs cloning.
 
 To add the Swift package yourself, or work from a clone, see [Getting Beacon](docs/README.md#getting-beacon).
 
@@ -85,7 +85,7 @@ The [Quickstart](docs/quickstart.md) has the full steps. The two setup paths, Cl
 | `Tests/` | The package's tests. |
 | `Inbox/` | The Beacon page: a Claude artifact with the owner's dashboard for every app, the report form testers use, and the app list. See [Inbox/README.md](Inbox/README.md). |
 | `Web/` | Beacon for websites: the Report a problem button and sheet, with its tests and built files. See [Web/README.md](Web/README.md). |
-| `Triage/` | The triage policy and the pickup prompt. |
+| `Triage/` | The triage policy, the pickup prompt (triage) and the worker prompt (builds what is in To do). |
 | `Scripts/` | `beacon-adopt-github.sh`, which puts the GitHub pieces into an app's repository, and `beacon-labels.sh`, which creates the labels. `mirror-board.py` keeps the dashboard in step with the GitHub issues, and `push-edits.py` copies the owner's changes on the dashboard to the issues. |
 | `.claude/skills/` | The `beacon-setup` and `beacon-triage` skills. |
 | `.claude-plugin/` | The plugin manifest and marketplace entry. |

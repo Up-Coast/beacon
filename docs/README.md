@@ -68,5 +68,5 @@ On every path a Claude session picks reports up, works them by [the triage polic
 
 - An app for macOS 26 or iOS 26 or later.
 - Xcode with the macOS 26 and iOS 26 SDKs, and Swift 6.2 or later.
-- Claude Code, to run the pickup and, on the Claude-only path, to publish the page.
+- Claude Code, to run the pickup and the worker and, on the Claude-only path, to publish the page.
 - On the GitHub path: a GitHub repository you administer, and the `gh` command-line tool signed in with access to it.

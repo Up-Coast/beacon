@@ -48,8 +48,12 @@ A flag says more about a report than its status does. A report has one status an
 | Needs more info | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
 | Can't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
 | Confusing to users | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |
-| Waiting for human | `flags` list only | Yours to set in Your changes. The report can sit in To do, but the pickup leaves it completely alone until you clear the flag, for example while it needs design work. It is one of two things that hold an approved report back. |
+| Waiting for human | `flags` list only | Yours to set in Your changes, and set by triage on a ticket only a person can do. The report can sit in To do, but the worker leaves it completely alone until you clear the flag. It is one of two things that hold an approved report back. |
+| Needs PR approval | `flags` list only | Yours to set in Your changes. The worker does the work but opens a pull request instead of merging, and you merge it. |
+| Ask Claude | `flags` list only | Yours to set with a question in your note. The worker answers it in `claudeReply` and on the issue, builds nothing, then unticks it and ticks Waiting for human. |
 | Blocked | `flags` list, with `blocked` | Set by the worker when it cannot finish a report: it comments on the issue and writes the reason on the report. The report stays in To do and the worker skips it until you clear the flag. |
+
+A report that has a GitHub issue shows its ticket number, such as `UCP-163`, stored as `ticket`. [Ticket numbers](the-board.md#ticket-numbers) says how it is built.
 
 A status value the page does not know shows as the value itself. You set To do, Backlog, Canceled, Duplicate and Closed: feedback on the dashboard (the Status menu, or Move to). The mirror script sets Canceled and Duplicate from an issue closed as not planned or as a duplicate (Triage/PICKUP.md, Part 0).
 

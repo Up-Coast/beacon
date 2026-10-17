@@ -1,13 +1,12 @@
 # What happens to a report
 
-*Last updated: 2026-10-13*
+*Last updated: 2026-10-16*
 
-A Claude session works every report by a written triage policy, without waiting for you. It fixes and merges only what it cannot get badly wrong, and leaves everything else labelled and explained. This page is a summary. The full policy, which the session follows as written, is [TRIAGE.md](../Triage/TRIAGE.md).
+Two Claude tasks handle every report, without waiting for you. **Triage** (the pickup, daily) reads each report by a written policy, labels and explains it, and queues the bugs that are safe to fix. **The worker** (hourly) builds what is in To do, proves it and merges it, or comments on the issue and flags the report **Blocked**. This page is a summary. The full policy is [TRIAGE.md](../Triage/TRIAGE.md), and the worker's rules are [WORKER.md](../Triage/WORKER.md).
 
 ## The gates
 
-Each report goes through five gates in order. A report that fails a gate stops there and gets that gate's label.
-
+Triage takes each report through gates 1 to 4. The worker does gate 5. A report that fails a gate stops there and gets that gate's label. 
 | Gate | Passes when | Otherwise |
 |---|---|---|
 | 1. Is it complete? | What they expected, what happened, and the steps all say something. | `needs-info`, with at most two specific questions on the issue. |
@@ -16,9 +15,17 @@ Each report goes through five gates in order. A report that fails a gate stops t
 | 4. Is it simple? | Three files or fewer, 40 changed lines or fewer outside tests, no dependency change, nothing on the blast-radius list, and a cause that fits in one sentence. | `needs-human`, with a written diagnosis. |
 | 5. Prove it, then merge | The whole test suite passes, and running the app through the tester's steps no longer shows the problem. | A pull request labelled `needs-human`, instead of a merge. |
 
-A fix that passes gate 5 is merged, the commit is named on the issue, the issue is closed, and it is labelled `auto-fixed`.
+A fix that passes gate 5 is merged, the commit is named on the issue, the issue is closed, and it is labelled `auto-fixed`. If you ticked **Needs PR approval**, the worker opens a pull request instead and you merge it. The report's link to the pull request or the commit shows at the top of the report.
 
 The blast-radius list covers data schemas and stored user data, authentication and credentials, payments, networking, concurrency, public library APIs, build and signing configuration, and generated or vendored files. The exact list is in [TRIAGE.md](../Triage/TRIAGE.md).
+
+## Tasks only a person can do
+
+Triage adds the flag **Waiting for human** to a ticket that asks for something Claude is not allowed or able to do, such as a live purchase or refund, a sign-in or a physical device. The worker never starts a flagged ticket. See [Waiting for human](the-board.md#waiting-for-human).
+
+## When the worker cannot finish
+
+The worker comments on the issue, flags the report **Blocked**, and writes why on the dashboard: what it needs from you and what it tried. Answer in your note and untick **Blocked** to send it back. See [Blocked](the-board.md#blocked). The worker messages you only when it is stuck itself.
 
 ## Feature requests and feedback
 

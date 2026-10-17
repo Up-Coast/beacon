@@ -57,6 +57,7 @@ Nothing here is known to be broken. None of it has been proven right either.
 | Screen recording on either platform | The macOS path has never recorded a real window, and the first run needs Screen Recording permission granted by hand. On iOS the simulator's recorder starts and stops but writes an empty file, so a physical device is needed |
 | The on-device check against the real model | It ran once on the iOS Simulator and asked nothing about a short, complete bug. What it says about a thin report is unknown, and the prompt will need tuning |
 | `RelayTransport` and the reference relay | The app's payload and receipt are tested, and the relay's checks are tested with a pretend GitHub. No relay has been deployed, so no report has gone through one to a real repository. `deno test` has not been run: the relay's tests were run under Node with a stand-in for `Deno.test` |
+| The worker (`Triage/WORKER.md`): Blocked, Needs PR approval, Ask Claude, the stuck-itself message and the branch and pull-request moves | One scheduled run has built a fix and merged it to `main` (ticket 162) and blocked two reports. The rules written after that run, the PR flag, Ask Claude, the five-run message count and the script's branch and pull-request moves have not run on a real report |
 | The triage policy and skill | Written and copied into app repositories. Reports have been filed as issues, and no run of the policy over an open issue is recorded |
 | `beacon-reproduce.yml` | Ships failing at the run step until it is pointed at a host app's UI test scheme |
 

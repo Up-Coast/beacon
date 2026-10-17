@@ -188,7 +188,7 @@ The artifact's database holds JSON documents at slash paths. A document is at mo
 
 ```
 apps/<id>                          seeded with write_db; the page never writes it
-  name, platform, repository, folder, tracker ("github" | "board")
+  name, platform, repository, folder, tracker ("github" | "board"), prefix (optional)
 
 reports/<BN-reference>             written by the page on send
   reference, kind, filedAt (ISO 8601), status ("new"), title, reporter (string),
@@ -211,6 +211,12 @@ reports/<BN-reference>             written by the page on send
     statusBeforeApproval null, column "todo", columnAt
   Any other move: status for the column (Backlog backlog, Inbox filed, Triaged triaged,
     In progress triaging, Done auto-fixed, Deployed deployed), column, columnAt
+  written by mirror-board.py: ticket ("UCP-163", the app's prefix and the issue number),
+    pullRequest {number, url, state "draft"|"open"|"merged"}, fixCommit, and status/column when a
+    beacon/<issue>-* branch or open PR (triaging, inprogress) or a merged PR (auto-fixed, done) names the issue
+  written by the worker (Triage/WORKER.md): work {by "beacon-worker", startedAt, branch, attempts, statusBefore, finishedAt},
+    blocked {reason, note, tried, branch, at, commentURL} with the flag "Blocked" in flags,
+    claudeReply {text, at} when answering the flag "Ask Claude"
   Change status and flags: the status in its plain form, flags [..], ownerNote
   Every owner write also sets editedAt (mirror-board.py leaves the report alone;
     push-edits.py copies it to the issue).
@@ -283,9 +289,11 @@ Order of work, as the prompt states it:
 2. Compare it with earlier reports for the same app that carry a finding. On a match, set `duplicateOf`, copy the status, finding and note, and comment on the existing issue.
 3. Otherwise search the repository's `beacon` issues. On a match, comment and reopen if closed. With no match, create the issue. Commit images to the `beacon-attachments` branch under `.beacon/attachments/<reference>/` and link them.
 4. Write `status: "filed"`, `issueNumber`, `issueURL` and `issueFiledAt` back to the report.
-5. Work the open `beacon` issues by the triage skill, `impact:blocked` first. Write every outcome back to the page report: status, finding, triageNote, fixCommit, triagedAt.
+5. Triage the open `beacon` issues by the triage skill (gates 1 to 4), `impact:blocked` first, and queue passing bugs in To do. Write every outcome back to the page report: status, finding, triageNote, triagedAt, column. Building is the worker's.
 6. For apps with `tracker: "board"`, skip GitHub and work each new report from its record.
-7. Send one message to `NOTIFY` only if something was filed or worked.
+7. Send one line to `NOTIFY` with counts only when new user reports were triaged.
+
+The worker (`Triage/WORKER.md`, an hourly scheduled task) is a second prompt. Per run: link branches and pull requests (`mirror-board.py`), answer reports flagged Ask Claude, then work reports in column `upnext` (status todo or approved, not flagged Waiting for human or Blocked), at most `MAX_PER_RUN`. It claims a report with a pinned write (`work`), builds on `beacon/<issue>-<slug>`, merges or opens a pull request (flag Needs PR approval), and on failure writes `blocked`. It messages the owner only when it is stuck itself, tracked in a local state file.
 
 ## The native sheet
 
