@@ -150,6 +150,8 @@ Every report with a GitHub issue shows as the app's prefix and the issue number,
 
 Tick **Waiting for human** in Your changes to keep a report in To do without the worker building it, for example when it needs design work first. The worker skips it until you untick the box. The flag shows as a chip on the card and in the Any flag filter, and also as the label `flag:waiting-for-human` on the issue.
 
+Triage also sets it by itself on a ticket that only a person can do, such as a live purchase and refund, a sign-in or a physical device, so you can move that ticket to Backlog or To do without ticking the box.
+
 ## Branches and pull requests move a report by themselves
 
 No one has to move a card for work that exists on GitHub. A branch named `beacon/<issue number>-<words>`, or an open pull request that names the issue (in its branch, or as `Closes #<number>` in its title or body), moves the report to **In progress** and shows the pull request link at the top of the report. A merged pull request moves it to **Done** with the merge commit. A report flagged **Blocked** or **Waiting for human** keeps its status and only gets the link.

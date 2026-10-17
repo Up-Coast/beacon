@@ -156,6 +156,10 @@ Choose one level higher when any of these is true:
 
 Impact and severity often disagree, and the disagreement is worth noticing. Several `impact:blocked` reports on a `severity:low` issue usually mean the workaround is harder to find than somebody thought.
 
+## Tasks only a person can do
+
+Triage reads every ticket for work an agent is not allowed or able to do: a live purchase or refund, moving money, signing in or creating an account, entering a secret, using a physical device, or a legal or business sign-off. Such a ticket is triaged as usual, and it also gets the flag `Waiting for human` (the label `flag:waiting-for-human` on the issue). The flag marks the ticket as the owner's, so it can be moved to Backlog or To do without ticking anything, and the worker never starts it.
+
 ## The labels
 
 Set by the app: `beacon`, `type:bug|feature-request|change-request|feedback`, `impact:blocked|slowed|irritating|noticed`, `area:<id>`.
