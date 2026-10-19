@@ -106,10 +106,18 @@ export function launchBottom(bottomOffset?: number): number {
   return 24 + offset;
 }
 
+/** Keeps the button fully inside the window, wherever it was dragged or saved. */
+export function clampToViewport(x: number, y: number, size: number, width: number, height: number): { x: number; y: number } {
+  return {
+    x: Math.min(Math.max(0, x), Math.max(0, width - size)),
+    y: Math.min(Math.max(0, y), Math.max(0, height - size)),
+  };
+}
+
 const CSS = `
 :host{all:initial;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2937}
 *{box-sizing:border-box}
-.launch{position:fixed;z-index:2147483000;width:48px;height:48px;padding:0;border:0;background:none;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));border-radius:12px}
+.launch{touch-action:none;position:fixed;z-index:2147483000;width:48px;height:48px;padding:0;border:0;background:none;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));border-radius:12px}
 .launch svg{display:block;width:100%;height:100%}
 .launch.right{right:24px}.launch.left{left:24px}
 .launch:hover{filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))}
@@ -189,7 +197,14 @@ export class BeaconSheet {
       b.setAttribute("aria-label", UI.button);
       b.title = UI.button;
       b.innerHTML = opts.icon ?? BEACON_ICON_SVG;
-      b.addEventListener("click", () => this.open());
+      b.addEventListener("click", () => {
+        if (this.dragged) {
+          this.dragged = false;
+          return;
+        }
+        this.open();
+      });
+      this.makeDraggable(b);
       this.launch = b;
       this.root.append(b);
     }
@@ -197,8 +212,69 @@ export class BeaconSheet {
   }
 
   destroy() {
+    window.removeEventListener("resize", this.keepInView);
     this.host.remove();
   }
+
+  /** True from the end of a drag until the click that follows it, so letting go never opens the sheet. */
+  private dragged = false;
+
+  /** Lets the reporter drag the button out of the way. Where they leave it is remembered. */
+  private makeDraggable(b: HTMLButtonElement) {
+    const place = (x: number, y: number) => {
+      const at = clampToViewport(x, y, b.offsetWidth || 48, window.innerWidth, window.innerHeight);
+      b.style.left = `${at.x}px`;
+      b.style.top = `${at.y}px`;
+      b.style.right = "auto";
+      b.style.bottom = "auto";
+      return at;
+    };
+    try {
+      const saved = JSON.parse(get("buttonAt") ?? "null") as { x?: number; y?: number } | null;
+      if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) place(saved.x as number, saved.y as number);
+    } catch {
+      /* a bad saved position just means the usual spot */
+    }
+    b.addEventListener("pointerdown", (down) => {
+      if (down.button !== 0) return;
+      const box = b.getBoundingClientRect();
+      const dx = down.clientX - box.left;
+      const dy = down.clientY - box.top;
+      let moved = false;
+      const move = (e: PointerEvent) => {
+        if (!moved && Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY) < 5) return;
+        if (!moved) {
+          moved = true;
+          b.setPointerCapture?.(down.pointerId);
+        }
+        place(e.clientX - dx, e.clientY - dy);
+      };
+      const end = () => {
+        b.removeEventListener("pointermove", move);
+        b.removeEventListener("pointerup", end);
+        b.removeEventListener("pointercancel", end);
+        if (!moved) return;
+        this.dragged = true;
+        setTimeout(() => (this.dragged = false), 0);
+        const at = b.getBoundingClientRect();
+        set("buttonAt", JSON.stringify({ x: Math.round(at.left), y: Math.round(at.top) }));
+      };
+      b.addEventListener("pointermove", move);
+      b.addEventListener("pointerup", end);
+      b.addEventListener("pointercancel", end);
+    });
+    window.addEventListener("resize", this.keepInView);
+  }
+
+  /** After the window shrinks, a dragged button is pulled back on screen. */
+  private keepInView = () => {
+    const b = this.launch;
+    if (!b || !b.style.left) return;
+    const box = b.getBoundingClientRect();
+    const at = clampToViewport(box.left, box.top, box.width, window.innerWidth, window.innerHeight);
+    b.style.left = `${at.x}px`;
+    b.style.top = `${at.y}px`;
+  };
 
   open() {
     this.startedAt = new Date();

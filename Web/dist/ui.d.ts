@@ -25,6 +25,11 @@ export interface BeaconOptions {
 }
 /** The floating button's distance from the bottom of the window: the usual 24px, raised by `bottomOffset`. */
 export declare function launchBottom(bottomOffset?: number): number;
+/** Keeps the button fully inside the window, wherever it was dragged or saved. */
+export declare function clampToViewport(x: number, y: number, size: number, width: number, height: number): {
+    x: number;
+    y: number;
+};
 export declare class BeaconSheet {
     private opts;
     private host;
@@ -44,6 +49,12 @@ export declare class BeaconSheet {
     private startedAt;
     constructor(opts: BeaconOptions);
     destroy(): void;
+    /** True from the end of a drag until the click that follows it, so letting go never opens the sheet. */
+    private dragged;
+    /** Lets the reporter drag the button out of the way. Where they leave it is remembered. */
+    private makeDraggable;
+    /** After the window shrinks, a dragged button is pulled back on screen. */
+    private keepInView;
     open(): void;
     close(): void;
     private onClosed;

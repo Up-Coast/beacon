@@ -26,7 +26,7 @@ Beacon.mount({
 });
 ```
 
-`Beacon.mount` adds the button and the sheet. `Beacon.open()` opens the sheet from your own control (pass `button: false` to hide the floating button). `Beacon.unmount()` takes it off the page.
+`Beacon.mount` adds the button and the sheet. `Beacon.open()` opens the sheet from your own control (pass `button: false` to hide the floating button). Reporters can drag the button out of the way, and it stays where they leave it. `Beacon.unmount()` takes it off the page.
 
 | Option | What it does |
 |---|---|

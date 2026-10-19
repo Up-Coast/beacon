@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Beacon } from "../src/index";
-import { launchBottom } from "../src/ui";
+import { clampToViewport, launchBottom } from "../src/ui";
 
 describe("the sheet", () => {
   afterEach(() => {
@@ -19,6 +19,34 @@ describe("the sheet", () => {
     expect(launch.style.bottom).toBe("64px");
     expect(launchBottom()).toBe(24);
     expect(launchBottom(-10)).toBe(24);
+  });
+
+  it("keeps a dragged button inside the window", () => {
+    expect(clampToViewport(-20, 5000, 48, 800, 600)).toEqual({ x: 0, y: 552 });
+    expect(clampToViewport(900, 100, 48, 800, 600)).toEqual({ x: 752, y: 100 });
+  });
+
+  it("moves the button when it is dragged, remembers where, and does not open the sheet on release", () => {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute("open", "");
+    };
+    Beacon.mount({
+      app: { id: "ca.upcoast.portal", name: "Up Coast" },
+      relay: { url: "https://r.test/f", token: "t" },
+    });
+    const root = document.querySelector("[data-beacon]")!.shadowRoot!;
+    const launch = root.querySelector("button.launch") as HTMLButtonElement;
+    const fire = (type: string, x: number, y: number) =>
+      launch.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button: 0, bubbles: true }));
+    fire("pointerdown", 10, 10);
+    fire("pointermove", 100, 120);
+    fire("pointerup", 100, 120);
+    launch.click();
+    expect(launch.style.left).toBe("90px");
+    expect(launch.style.top).toBe("110px");
+    expect(launch.style.right).toBe("auto");
+    expect(root.querySelector("dialog")!.hasAttribute("open")).toBe(false);
+    expect(localStorage.getItem("beacon.buttonAt") ?? JSON.stringify(Object.entries(localStorage))).toContain("buttonAt");
   });
 
   it("puts a Report a problem button on the page and opens the kind picker", () => {
