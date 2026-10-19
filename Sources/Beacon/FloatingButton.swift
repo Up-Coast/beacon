@@ -211,9 +211,9 @@ final class FloatingReportButton {
         }
         let overlay = PassThroughWindow(windowScene: scene)
         overlay.windowLevel = .alert + 1
-        let host = UIHostingController(rootView: FloatingOverlay { [weak self] in
-            self?.openReport()
-        })
+        let host = UIHostingController(rootView: FloatingOverlay(
+            action: { [weak self] in self?.openReport() },
+            onFrame: { [weak overlay] in overlay?.buttonFrame = $0 }))
         host.view.backgroundColor = .clear
         overlay.rootViewController = host
         overlay.isHidden = isReporting
@@ -259,17 +259,23 @@ final class FloatingReportButton {
 }
 
 #if os(iOS)
-/// A window that lets every touch through except on the button.
+/// A window that lets every touch through except on the button. SwiftUI draws the whole overlay in one
+/// view, so the window cannot ask the view what is under the finger: the overlay reports where the button
+/// is, and only touches inside that rectangle are kept.
 private final class PassThroughWindow: UIWindow {
+    var buttonFrame: CGRect = .zero
+
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        let hit = super.hitTest(point, with: event)
-        return hit === rootViewController?.view ? nil : hit
+        guard buttonFrame.insetBy(dx: -8, dy: -8).contains(point) else { return nil }
+        return super.hitTest(point, with: event)
     }
 }
 
 /// The button, draggable anywhere on the screen.
 private struct FloatingOverlay: View {
     var action: () -> Void
+    /// Where the button is, in the window's coordinates, kept current while it is dragged.
+    var onFrame: (CGRect) -> Void
     @State private var position: CGPoint?
     @GestureState private var drag: CGSize = .zero
 
@@ -280,6 +286,11 @@ private struct FloatingOverlay: View {
                 y: proxy.size.height - FloatingReportBadge.diameter / 2 - FloatingReportButton.margin * 3
                     - CGFloat(FloatingReportButton.configuredBottomOffset))
             FloatingReportBadge(title: FloatingReportButton.title, action: action)
+                .background(GeometryReader { badge in
+                    Color.clear
+                        .onAppear { onFrame(badge.frame(in: .global)) }
+                        .onChange(of: badge.frame(in: .global)) { _, frame in onFrame(frame) }
+                })
                 .position(x: resting.x + drag.width, y: resting.y + drag.height)
                 .gesture(DragGesture()
                     .updating($drag) { value, state, _ in state = value.translation }
