@@ -172,6 +172,8 @@
 
   .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .filters select, .filters input { flex: 1 1 150px; width: auto; min-width: 0; min-height: 38px; padding: 6px 10px; background: var(--surface); }
+  /* The search box always takes its own line, at every width. */
+  .filters #fSearch { flex-basis: 100%; }
   .filters .count { color: var(--ink-3); font-size: 13px; margin-left: auto; font-variant-numeric: tabular-nums; }
   .group { display: grid; gap: 8px; }
   .group > h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
