@@ -63,8 +63,8 @@ The pickup reads the same app list, so it knows each app's repository, folder an
 
 The **List**, **Board** and **Triage** switch beside the filters changes how the dashboard lays out the reports. The page remembers the choice on this browser. The tabs, counts and filters work the same in both.
 
-- **List**: reports waiting on your decision first, then everything else, newest first or highest impact first.
-- **Board**: one column per stage, left to right: Backlog, To Triage, To do, In progress, Done and Deployed. The board has no Inbox column; Inbox reports show in the List. Within a column, the highest impact comes first, then the oldest.
+- **List**: reports waiting on your decision first, then everything else, newest first or highest priority first.
+- **Board**: one column per stage, left to right: Backlog, To Triage, To do, In progress, Done and Deployed. The board has no Inbox column; Inbox reports show in the List. Within a column, the highest priority comes first (worst impact, then what waits on your decision), then the oldest.
 - **Triage**: for working through what Claude has triaged. [The Triage view](#the-triage-view) says how.
 
 ![The dashboard's board layout: the Backlog, To Triage, To do, In progress, Done and Deployed columns, each card with its impact icon, status and a Move to menu](assets/page-kanban.png)
@@ -213,7 +213,7 @@ Every report carries the tester's answer to "How much is this affecting you?". T
 | An outlined circle with an exclamation mark | `irritating` | It bothers me, but I can keep working |
 | A small open circle | `noticed` | I noticed it — it doesn't really affect me |
 
-To see the worst first, choose **Highest impact first** in the order menu. To see one level only, choose it in the impact menu.
+To see the worst first, choose **Highest priority first** in the order menu. To see one level only, choose it in the impact menu.
 
 ## Approve or cancel
 
@@ -246,7 +246,7 @@ Every opened report has **Your changes** (for people who can edit the page): the
 | Kind | Every kind, Bugs, Requests, Change requests or Feedback. |
 | Impact | Every impact, or one level. |
 | Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey), or one reporter, with how many reports each has sent in the selected app. The numbers follow your other filters, including Hide done, so each is what picking that person would show. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |
-| Order | Newest first, oldest first, or highest impact first (oldest first within a level). The list starts on newest first and the board on highest impact first; each remembers the choice on this browser. |
+| Order | Newest first, oldest first, or highest priority first (worst impact first, then what waits on your decision, then oldest). The list starts on newest first and the board on highest priority first; each remembers the choice on this browser. |
 | Hide done | A switch beside the search box. On, it hides everything finished: the Done and Deployed columns, and everything under Closed (canceled, duplicate, works as designed). The page remembers it on this browser. |
 | Search words | Matches the title, the tester's words, the reporter, the area and the reference. |
 
