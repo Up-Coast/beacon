@@ -32,6 +32,7 @@ let package = Package(
         .library(name: "Beacon", targets: ["Beacon"]),
         .library(name: "BeaconCore", targets: ["BeaconCore"]),
         .executable(name: "beacon-index", targets: ["beacon-index"]),
+        .executable(name: "beacon-private", targets: ["beacon-private"]),
     ],
     targets: [
         .target(name: "BeaconCore"),
@@ -50,6 +51,10 @@ let package = Package(
         // reads the host's own source tree and writes BeaconIndex.json, which
         // is what makes the module/area pickers real instead of hand-typed.
         .executableTarget(name: "beacon-index", dependencies: ["BeaconCore"]),
+
+        // The owner's end of private delivery, run on their own Mac: makes the
+        // keypair and reads back what apps sealed to it.
+        .executableTarget(name: "beacon-private", dependencies: ["BeaconCore"]),
 
         .testTarget(name: "BeaconCoreTests", dependencies: ["BeaconCore"]),
         .testTarget(name: "BeaconDiagnosticsTests", dependencies: ["BeaconDiagnostics"]),

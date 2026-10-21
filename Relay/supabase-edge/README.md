@@ -1,6 +1,6 @@
 # The Beacon relay, as a Supabase Edge Function
 
-*Last updated: 2026-10-06*
+*Last updated: 2026-10-21*
 
 The relay lets people report from your app without a GitHub account. The app sends each report here with `RelayTransport`. The relay checks the app's token, checks the report, and files it as an issue in your private repository with a GitHub App. The person reporting is told only that the team has it.
 
@@ -57,7 +57,7 @@ Filenames are made safe before they become a path, the same way the app's saved 
 
 ## The private store: `beacon-private`
 
-A report becomes a GitHub issue, and everyone in a GitHub organization can read its repositories. Data that must never reach a repository, such as a client's project details sent from a beta build, goes to `beacon-private` instead. The app seals the data on the device to the owner's public key, so the function and the storage only ever hold ciphertext, and there is no way to read it back through the relay.
+`beacon-private` stores details an app sealed on the device to its owner's public key, so they never become an issue. It only ever holds ciphertext and offers no way to read a message back. [Setup: private delivery](https://github.com/Up-Coast/beacon/blob/main/docs/setup-private.md) explains the whole feature; `setup-private.sh` in this folder sets the store up.
 
 | File | What it is |
 |---|---|
@@ -65,9 +65,25 @@ A report becomes a GitHub issue, and everyone in a GitHub organization can read 
 | `supabase/functions/beacon-private/index.ts` | The entry point. |
 | `supabase/functions/beacon-private/private_test.ts` | Tests with no network. |
 
-It accepts a `POST` with `{"eventID": "<lowercase uuid>", "ciphertext": "<base64>"}`, from a caller whose `Authorization: Bearer` value is `BEACON_PRIVATE_TOKEN`. It refuses a wrong token, an address over its hourly count (`PRIVATE_RATE_LIMIT_PER_IP`, default 30), a body or sealed message over 64 KiB, and anything that is not a well-formed id and base64. It writes the bytes to the private `coast-fault-data` bucket as `<eventID>.bin` and never replaces an existing object: an id already stored answers `409`. The settings are `BEACON_PRIVATE_TOKEN` (you set it) and `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (Supabase supplies them). The bucket is private, 64 KiB per object, `application/octet-stream` only, with no policies, so only the function's secret key reaches it. Deploy it with `--no-verify-jwt`, like the relay.
+It accepts a `POST` of `{"id": "<lowercase uuid>", "app": "<bundle id>", "ciphertext": "<base64>"}` from a caller whose `Authorization: Bearer` value is `BEACON_PRIVATE_TOKEN`. It writes the bytes to `<app>/<id>.bin` in the private bucket and answers `200`. It never replaces a stored object: an id already stored answers `409`.
 
-The token is a door key the app ships, like the relay's. It cannot read anything.
+It refuses:
+
+- a wrong token (`401`) and anything but `POST` (`405`),
+- an app not in `PRIVATE_APPS`, when that is set (`403`),
+- an address over its hourly count (`429`),
+- a body or sealed message over 64 KiB (`413`),
+- an id, app or ciphertext that is not well formed (`400`).
+
+| Setting | Required | What it is |
+|---|---|---|
+| `BEACON_PRIVATE_TOKEN` | Yes | The value the app sends. A door key the app ships: it can store messages and cannot read any. |
+| `PRIVATE_APPS` | No | Bundle identifiers allowed to store, separated by commas. Empty allows any app with the token. |
+| `PRIVATE_BUCKET` | No | The bucket. Default `beacon-private`. |
+| `PRIVATE_RATE_LIMIT_PER_IP` | No | Messages one address may store in an hour. Default 30. |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Supplied by Supabase | The project's address and secret key. The key stays inside the function. |
+
+The bucket is private, 64 KiB per object, `application/octet-stream` only, with no policies, so only the function's secret key reaches it. Deploy it with `--no-verify-jwt`, like the relay.
 
 ## Tests
 

@@ -113,6 +113,11 @@ public struct BeaconConfiguration: Sendable {
     /// a failed send never loses someone's work.
     public var reportArchiveDirectory: URL
 
+    /// Sending sealed details privately, away from GitHub. Nil, the default,
+    /// means nothing is ever sent this way: a developer turns it on, because
+    /// it sends without the person pressing anything. See `PrivateDelivery`.
+    public var privateDelivery: PrivateDelivery?
+
     public init(app: AppIdentity,
                 organizationName: String,
                 currentReporter: @escaping @Sendable () -> Reporter?,
@@ -129,7 +134,8 @@ public struct BeaconConfiguration: Sendable {
                 identityStore: any ReporterIdentityStoring = UserDefaultsReporterIdentityStore(),
                 reportArchiveDirectory: URL? = nil,
                 showsFloatingButton: Bool = true,
-                floatingButtonBottomOffset: Double = 0) {
+                floatingButtonBottomOffset: Double = 0,
+                privateDelivery: PrivateDelivery? = nil) {
         self.app = app
         self.organizationName = organizationName
         self.currentReporter = currentReporter
@@ -146,6 +152,7 @@ public struct BeaconConfiguration: Sendable {
         self.identityStore = identityStore
         self.showsFloatingButton = showsFloatingButton
         self.floatingButtonBottomOffset = max(0, floatingButtonBottomOffset)
+        self.privateDelivery = privateDelivery
         self.reportArchiveDirectory = reportArchiveDirectory
             ?? BeaconConfiguration.defaultArchiveDirectory(appName: app.name)
     }
@@ -170,8 +177,24 @@ public struct BeaconConfiguration: Sendable {
     }
 
     /// The privacy notice this reporter reads: it depends on where reports
-    /// go and on whether the reporter is anonymous.
+    /// go, on whether the reporter is anonymous, and on whether the app sends
+    /// details privately, which the notice then says.
     public func consentNotice(for reporter: Reporter?) -> ConsentNotice {
-        reporterWords.notice(for: reporter, organizationName: organizationName)
+        let notice = reporterWords.notice(for: reporter, organizationName: organizationName)
+        return privateDelivery == nil ? notice : notice.withPrivateDelivery().naming(organizationName)
+    }
+
+    /// What allows sending privately right now: the notice version the person
+    /// accepted, or nil when the developer's named agreement covers it.
+    /// Throws `.notEnabled` when private delivery is off, and `.notConsented`
+    /// while the person has not accepted the notice that says it happens.
+    public func privateDeliveryNoticeVersion() throws -> String? {
+        guard let privateDelivery else { throw PrivateDelivery.Failure.notEnabled }
+        guard privateDelivery.consent == .beaconNotice else { return nil }
+        guard let reporter = currentReporter() else { throw PrivateDelivery.Failure.notConsented }
+        let notice = consentNotice(for: reporter)
+        guard !consentStore.needsAcceptance(accountID: reporter.accountID, notice: notice)
+        else { throw PrivateDelivery.Failure.notConsented }
+        return notice.version
     }
 }

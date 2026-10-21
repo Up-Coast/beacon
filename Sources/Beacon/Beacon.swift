@@ -83,6 +83,34 @@ public enum Beacon {
 
     public static var isConfigured: Bool { stored != nil }
 
+    /// Sends `fields` privately: swept for secrets, sealed on this device to
+    /// the owner's public key, and stored away from GitHub, where only the
+    /// owner can read them. Use it for details the app sends on its own that
+    /// must never become an issue. Returns the message's id, which a public
+    /// report may cite; pass your own `id` (a UUID) to make a retry land on
+    /// the same message instead of a second one.
+    ///
+    /// Throws `PrivateDelivery.Failure.notEnabled` unless the app turned
+    /// private delivery on, and `.notConsented` until the person accepted the
+    /// notice that says this happens (when that is what covers it). Nothing
+    /// leaves the device in either case.
+    @discardableResult
+    public static func sendPrivately(_ fields: [String: String],
+                                     id: String = UUID().uuidString) async throws -> String {
+        let configuration = configuration
+        guard let delivery = configuration.privateDelivery else { throw PrivateDelivery.Failure.notEnabled }
+        guard let uuid = UUID(uuidString: id) else { throw PrivateDelivery.Failure.invalidID }
+        let id = uuid.uuidString.lowercased()
+        let noticeVersion = try configuration.privateDeliveryNoticeVersion()
+        let details = try delivery.details(
+            id: id, fields: fields, app: configuration.app, hostSecrets: configuration.hostSecrets(),
+            noticeVersion: noticeVersion)
+        let sealed = try PrivateSealing.seal(details, to: delivery.ownerPublicKey)
+        try await delivery.send(sealed, id: id, app: configuration.app.bundleIdentifier)
+        BeaconLog.shared.info("sent details privately (\(details.fields.count) fields)", category: "beacon")
+        return id
+    }
+
     /// The log the host writes to. Its last few hundred lines ride on
     /// every report automatically.
     public nonisolated static var log: BeaconLog { .shared }

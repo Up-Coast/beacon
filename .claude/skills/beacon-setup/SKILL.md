@@ -42,6 +42,7 @@ Ask, in one message, unless the answer is already clear from what they said:
   (`docs/setup-relay.md`): reporters stay anonymous and never see GitHub,
   and a relay the owner runs files the issues.
 - **Which app, where is its source, and which platform** (macOS, iOS, both)?
+- **Private delivery stays off unless they ask for it.** Do not offer to turn it on as part of a normal setup. If they say the app should send details about problems on its own, explain that it sends without the person pressing anything, then follow `docs/setup-private.md`, and ask which consent covers it: Beacon's notice, or an agreement they hold (name it).
 - **Where should they be told when something happened?** A Slack channel
   through a connector, an email, or nowhere.
 

@@ -1,6 +1,6 @@
 # What is collected
 
-*Last updated: 2026-10-13*
+*Last updated: 2026-10-21*
 
 A report reaches your team one of two ways: the Beacon page, a web page the app opens with a link, or the in-app sheet that the GitHub and relay setups add. This page lists what each one carries, what neither collects, and where a report goes. Use it to tell your testers what a report contains.
 
@@ -144,6 +144,7 @@ After sending, the sheet lists what was removed and where, never the value. The 
 
 - Acceptance is kept per account, in `UserDefaults` under `beacon.consent.<account>` unless the app sets `consentStore`. An anonymous tester's account is `anonymous-<install id>`.
 - An anonymous tester's name and email, when they give them, are kept in `UserDefaults` under `beacon.reporter-identity` unless the app sets `identityStore`. They are sent only in the report. The tester can edit or clear them on the first screen and on the form.
+- When the app turns on [private delivery](setup-private.md), the notice gains one sentence saying the app may send details on its own, readable only by `organizationName`. Its version gains `+private.1`, so every tester is asked again.
 - When the wording changes, the version changes and every tester is asked again.
 - Each report records the accepted version as `consent_version` in its metadata block.
 - When the app's `currentReporter` returns `nil`, the sheet stops at "You'll need to be signed in first".
@@ -176,6 +177,10 @@ Only to the transport the app configures. The transports and their settings are 
 A tester who can read the repository but not write to it still gets their report filed. GitHub refuses their attachments, so the issue says the files stayed on the tester's device, and the saved copy on the device keeps them. GitHub also drops the labels from an issue filed by someone without write access, which is why [Setup: the GitHub path](setup-github.md) asks for write access for every tester.
 
 Beacon makes network calls only to send through the transport and, for the GitHub transports, to sign the tester in to GitHub.
+
+## Private delivery
+
+Off unless the app turns it on. When it is on, the app may send named details on its own, such as an error's text. Each field is swept for secrets, cut to a set length, and sealed on the device so that only the app's owner can read it. It never becomes an issue. Each message also carries the app's bundle identifier, version and build, the time it was sealed, and the notice version or agreement that allowed it. [Setup: private delivery](setup-private.md) has the details.
 
 ## Never collected
 

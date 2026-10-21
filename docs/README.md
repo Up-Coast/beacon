@@ -1,6 +1,6 @@
 # Beacon documentation
 
-*Last updated: 2026-10-13*
+*Last updated: 2026-10-21*
 
 Beacon puts a report button in your macOS or iOS app. Testers use it to send bugs, feature requests and feedback, and a Claude session works each report by a written triage policy.
 
@@ -55,6 +55,7 @@ On every path a Claude session picks reports up, works them by [the triage polic
 | [Setup: the Claude-only path](setup-claude-only.md) | You have a Claude organization and do not use GitHub. |
 | [Setup: the GitHub path](setup-github.md) | You track work in GitHub and want issues and the in-app sheet. |
 | [Setup: the relay](setup-relay.md) | You track work in GitHub, and the people reporting have no GitHub account. |
+| [Setup: private delivery](setup-private.md) | Your app should send details about problems on its own, to a store only you can read. Off unless you turn it on. |
 | [Setup: a website](setup-web.md) | You want the Report a problem button on a website or web app. |
 | [How it works](how-it-works.md) | You want to know what happens after a tester presses send. |
 | [The dashboard](the-board.md) | You want to see every report from every app, and its outcome, or add an app. |

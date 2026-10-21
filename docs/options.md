@@ -1,6 +1,6 @@
 # Options
 
-*Last updated: 2026-10-13*
+*Last updated: 2026-10-21*
 
 Every setting Beacon reads, and where it is set.
 
@@ -67,6 +67,7 @@ Pass it to `Beacon.configure(_:gitHubAccount:audience:)` once at launch, before 
 | `identityStore` | `any ReporterIdentityStoring` | `UserDefaultsReporterIdentityStore()` | Where an anonymous tester's name and email are kept, so they are asked once. Stored under the key `beacon.reporter-identity`. |
 | `reportArchiveDirectory` | `URL?` | see below | Where each report is saved on the device before it is sent. |
 | `showsFloatingButton` | `Bool` | `true` | Whether Beacon shows a round report button that floats above the app's windows. Set it to `false` when testers should report only from your own button or settings. |
+| `privateDelivery` | `PrivateDelivery?` | `nil` | Sends sealed details privately, away from GitHub, when the app calls `Beacon.sendPrivately`. Off unless set. See [`PrivateDelivery`](#privatedelivery). |
 | `floatingButtonBottomOffset` | `Double` | `0` | How many points higher than its usual spot the floating button sits, so it clears a bar along the bottom of the app's window or screen. A negative value counts as `0`. |
 
 The default archive directory is `BeaconConfiguration.defaultArchiveDirectory(appName:)`: `Application Support/<app name>/Beacon/reports`, or `Application Support/Beacon/Beacon/reports` when the app name is empty. Each report is a folder named `<yyyy-MM-dd-HHmmss>-<reference>` holding `report.json`, `issue.md` and an `attachments` folder. `ReportArchive(directory:).saved()` lists the folders, newest first.
@@ -134,6 +135,31 @@ The privacy notice depends on the reporter and the transport:
 Conform to `ConsentStoring` to keep consent in your own account store. It has two requirements: `record(for accountID: String) -> ConsentRecord?` and `save(_ record: ConsentRecord)`. The tester is asked again whenever the privacy notice's version changes.
 
 `UserDefaultsConsentStore(defaults:keyPrefix:)` defaults to `UserDefaults.standard` and the key prefix `beacon.consent.`, followed by the account id.
+
+### `PrivateDelivery`
+
+Turns on private delivery: details the app sends on its own, sealed on the device to the owner's public key and stored where only the owner can read them. Setup, consent and reading back are in [Setup: private delivery](setup-private.md).
+
+`PrivateDelivery(endpoint:appToken:ownerPublicKey:consent:maximumFieldLength:)` throws `PrivateDelivery.Failure.invalidPublicKey` when the key is not valid.
+
+| Field | Type | Default | What it does |
+|---|---|---|---|
+| `endpoint` | `URL` | required | The `beacon-private` function's address. |
+| `appToken` | `String` | required | The token the function checks. It can store messages and cannot read any. |
+| `ownerPublicKey` | `String` | required | The public key `beacon-private keygen` printed, in base64. |
+| `consent` | `PrivateDelivery.Consent` | `.beaconNotice` | `.beaconNotice` sends only after the person accepted Beacon's notice, which then says this happens. `.hostAgreement("<name>")` relies on an agreement you hold and seals its name into every message. |
+| `maximumFieldLength` | `Int` | `8000` | The longest any one field may be, in characters, after the secret sweep. |
+
+`Beacon.sendPrivately(_ fields: [String: String], id:)` sweeps, seals and sends the fields, and returns the message's id. It throws:
+
+| Failure | When |
+|---|---|
+| `.notEnabled` | `privateDelivery` is `nil`. |
+| `.notConsented` | `consent` is `.beaconNotice` and the person has not accepted the current notice. |
+| `.invalidID` | `id` is not a UUID. |
+| `.empty` | Every field was empty. |
+| `.tooLarge(bytes:)` | The sealed message is over 64 KiB. |
+| `.notStored(status:)` | The function refused it or could not be reached. A `409`, already stored, counts as sent. |
 
 ### The log
 

@@ -12,10 +12,11 @@ export const MAX_SEALED_BYTES = 64 * 1024;
 /** The request body limit: the sealed bytes as base64, plus the JSON around them. */
 export const MAX_REQUEST_BYTES = Math.ceil(MAX_SEALED_BYTES * 4 / 3) + 512;
 
-/** The bucket sealed messages go to. */
-export const BUCKET = "coast-fault-data";
+/** The bucket sealed messages go to when `PRIVATE_BUCKET` is not set. */
+export const DEFAULT_BUCKET = "beacon-private";
 
-const EVENT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const APP = /^[A-Za-z0-9][A-Za-z0-9.-]{0,254}$/;
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 
 export const ANSWERS = {
@@ -38,6 +39,10 @@ export interface Config {
   secretKey: string;
   /** Messages one address may store in an hour. */
   perIp: number;
+  /** The private bucket. */
+  bucket: string;
+  /** The apps allowed to store here (bundle identifiers); empty allows any. */
+  apps: Set<string>;
 }
 
 export function loadConfig(env: (name: string) => string | undefined): Config {
@@ -52,6 +57,8 @@ export function loadConfig(env: (name: string) => string | undefined): Config {
     supabaseUrl: need("SUPABASE_URL").replace(/\/+$/, ""),
     secretKey: need("SUPABASE_SERVICE_ROLE_KEY"),
     perIp: Number.isFinite(perIp) && perIp > 0 ? perIp : 30,
+    bucket: env("PRIVATE_BUCKET") || DEFAULT_BUCKET,
+    apps: new Set((env("PRIVATE_APPS") ?? "").split(",").map((app) => app.trim()).filter(Boolean)),
   };
 }
 
@@ -61,13 +68,13 @@ export type StoreResult = "stored" | "exists";
 export interface Dependencies {
   config: Config;
   limiter: RateLimiter;
-  store: (eventID: string, bytes: Uint8Array) => Promise<StoreResult>;
+  store: (path: string, bytes: Uint8Array) => Promise<StoreResult>;
 }
 
-/** Writes the bytes to the private bucket; never replaces an existing object. */
+/** Writes the bytes to the private bucket at `path`; never replaces an existing object. */
 export function storeInBucket(config: Config, fetchFn: typeof fetch = fetch) {
-  return async (eventID: string, bytes: Uint8Array): Promise<StoreResult> => {
-    const response = await fetchFn(`${config.supabaseUrl}/storage/v1/object/${BUCKET}/${eventID}.bin`, {
+  return async (path: string, bytes: Uint8Array): Promise<StoreResult> => {
+    const response = await fetchFn(`${config.supabaseUrl}/storage/v1/object/${config.bucket}/${path}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${config.secretKey}`,
@@ -111,13 +118,15 @@ export async function handle(request: Request, deps: Dependencies): Promise<Resp
   const text = await readCapped(request, MAX_REQUEST_BYTES);
   if (text === null) return json(413, ANSWERS.tooLarge);
 
-  let body: { eventID?: unknown; ciphertext?: unknown };
+  let body: { id?: unknown; app?: unknown; ciphertext?: unknown };
   try {
     body = JSON.parse(text);
   } catch {
     return json(400, ANSWERS.invalid);
   }
-  if (typeof body.eventID !== "string" || !EVENT_ID.test(body.eventID)) return json(400, ANSWERS.invalid);
+  if (typeof body.id !== "string" || !ID.test(body.id)) return json(400, ANSWERS.invalid);
+  if (typeof body.app !== "string" || !APP.test(body.app)) return json(400, ANSWERS.invalid);
+  if (deps.config.apps.size > 0 && !deps.config.apps.has(body.app)) return json(403, ANSWERS.unauthorized);
   if (typeof body.ciphertext !== "string") return json(400, ANSWERS.invalid);
   const bytes = decode(body.ciphertext);
   // A sealed message is at least the 32-byte encapsulated key and a 16-byte tag.
@@ -125,7 +134,7 @@ export async function handle(request: Request, deps: Dependencies): Promise<Resp
   if (bytes.length > MAX_SEALED_BYTES) return json(413, ANSWERS.tooLarge);
 
   try {
-    const result = await deps.store(body.eventID, bytes);
+    const result = await deps.store(`${body.app}/${body.id}.bin`, bytes);
     return result === "stored" ? json(200, ANSWERS.stored) : json(409, ANSWERS.exists);
   } catch (error) {
     console.error(`beacon-private: ${error instanceof Error ? error.message : String(error)}`);
