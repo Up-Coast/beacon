@@ -384,6 +384,10 @@ def main():
                     extra["body"] = words
                 if d.get("title") != issue["title"]:
                     extra["title"] = issue["title"]
+                # Impact is set on the issue's impact: label, so the board follows it.
+                impact = label_value([l["name"] for l in issue["labels"]], "impact:")
+                if impact and d.get("impact") != impact:
+                    extra["impact"] = impact
             linked = link_change(d, issue, work.get(issue["number"]))
             linked.update(extra) if linked else None
             if linked:
