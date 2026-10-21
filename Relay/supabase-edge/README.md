@@ -55,10 +55,24 @@ Filenames are made safe before they become a path, the same way the app's saved 
 - **The app token ships inside the app**, so treat it as a door key, not a secret. Anyone who pulls it from the app can send reports. Change it, and ship an app update, if you see reports nobody sent.
 - **Supabase's limits apply.** Supabase lists 256 MB of memory and 2 seconds of CPU time per request. The relay holds about three copies of a request at once (the bytes, the text and the parsed report), which is why it accepts 31 MiB, and why `RelayTransport` refuses a report whose attachments come to more than 30 MiB of base64 even though the sheet lets them total 60 MiB. It passes attachments to GitHub in the base64 the app sent, without decoding them.
 
+## The private store: `beacon-private`
+
+A report becomes a GitHub issue, and everyone in a GitHub organization can read its repositories. Data that must never reach a repository, such as a client's project details sent from a beta build, goes to `beacon-private` instead. The app seals the data on the device to the owner's public key, so the function and the storage only ever hold ciphertext, and there is no way to read it back through the relay.
+
+| File | What it is |
+|---|---|
+| `supabase/functions/beacon-private/private.ts` | Everything it does. It reuses the relay's token check, rate limiter, address and capped body reader. |
+| `supabase/functions/beacon-private/index.ts` | The entry point. |
+| `supabase/functions/beacon-private/private_test.ts` | Tests with no network. |
+
+It accepts a `POST` with `{"eventID": "<lowercase uuid>", "ciphertext": "<base64>"}`, from a caller whose `Authorization: Bearer` value is `BEACON_PRIVATE_TOKEN`. It refuses a wrong token, an address over its hourly count (`PRIVATE_RATE_LIMIT_PER_IP`, default 30), a body or sealed message over 64 KiB, and anything that is not a well-formed id and base64. It writes the bytes to the private `coast-fault-data` bucket as `<eventID>.bin` and never replaces an existing object: an id already stored answers `409`. The settings are `BEACON_PRIVATE_TOKEN` (you set it) and `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (Supabase supplies them). The bucket is private, 64 KiB per object, `application/octet-stream` only, with no policies, so only the function's secret key reaches it. Deploy it with `--no-verify-jwt`, like the relay.
+
+The token is a door key the app ships, like the relay's. It cannot read anything.
+
 ## Tests
 
 With [Deno](https://deno.com) installed, run this in `Relay/supabase-edge`:
 
 ```bash
-deno test supabase/functions/beacon-relay/
+deno test supabase/functions/
 ```
