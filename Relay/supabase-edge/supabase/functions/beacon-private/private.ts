@@ -71,21 +71,46 @@ export interface Dependencies {
   store: (path: string, bytes: Uint8Array) => Promise<StoreResult>;
 }
 
-/** Writes the bytes to the private bucket at `path`; never replaces an existing object. */
+/** The bucket's settings: private, one sealed message per object, no other kinds of file. */
+export const BUCKET_SETTINGS = {
+  public: false,
+  file_size_limit: MAX_SEALED_BYTES,
+  allowed_mime_types: ["application/octet-stream"],
+};
+
+/**
+ * Writes the bytes to the private bucket at `path`; never replaces an existing
+ * object. The first write creates the bucket with `BUCKET_SETTINGS`, so setting
+ * the store up needs no access to the project's keys.
+ */
 export function storeInBucket(config: Config, fetchFn: typeof fetch = fetch) {
-  return async (path: string, bytes: Uint8Array): Promise<StoreResult> => {
-    const response = await fetchFn(`${config.supabaseUrl}/storage/v1/object/${config.bucket}/${path}`, {
+  const authorization = `Bearer ${config.secretKey}`;
+  const put = (path: string, bytes: Uint8Array) =>
+    fetchFn(`${config.supabaseUrl}/storage/v1/object/${config.bucket}/${path}`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.secretKey}`,
-        "Content-Type": "application/octet-stream",
-        "x-upsert": "false",
-      },
+      headers: { Authorization: authorization, "Content-Type": "application/octet-stream", "x-upsert": "false" },
       body: bytes.slice(),
     });
+  const createBucket = () =>
+    fetchFn(`${config.supabaseUrl}/storage/v1/bucket`, {
+      method: "POST",
+      headers: { Authorization: authorization, "Content-Type": "application/json" },
+      body: JSON.stringify({ id: config.bucket, name: config.bucket, ...BUCKET_SETTINGS }),
+    });
+  return async (path: string, bytes: Uint8Array): Promise<StoreResult> => {
+    let response = await put(path, bytes);
+    let text = response.ok ? "" : await response.text();
+    if (!response.ok && /bucket not found/i.test(text)) {
+      const created = await createBucket();
+      // Another request may have created it first, which answers 400 or 409.
+      if (!created.ok && created.status !== 400 && created.status !== 409) {
+        throw new Error(`creating the bucket answered ${created.status}`);
+      }
+      response = await put(path, bytes);
+      text = response.ok ? "" : await response.text();
+    }
     if (response.ok) return "stored";
     // The storage API answers 400 or 409 for an object that is already there.
-    const text = await response.text();
     if (response.status === 409 || /already exists|Duplicate/i.test(text)) return "exists";
     throw new Error(`storage answered ${response.status}`);
   };

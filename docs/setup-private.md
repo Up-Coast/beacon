@@ -19,21 +19,20 @@ Nothing readable reaches the relay, the bucket, Supabase or GitHub. The token th
 
 ## 1. Set up the store
 
-You need the relay's Supabase project (see [Setup: the relay](setup-relay.md)) and the Supabase CLI signed in. From a clone of Beacon, run:
+You need the relay's Supabase project (see [Setup: the relay](setup-relay.md)) and the Supabase CLI signed in with permission to set secrets and deploy functions. From a clone of Beacon, run:
 
 ```bash
-Relay/supabase-edge/setup-private.sh <project-ref> <name> <bundle-id>
+bash Relay/supabase-edge/setup-private.sh <project-ref> <name> <bundle-id>
 ```
 
 `<name>` labels your keypair and token, such as your app's name. List one or more bundle identifiers to let only those apps store messages.
 
 The script:
 
-1. Makes your keypair. The private key goes into this Mac's keychain and is never printed. It refuses if a key for `<name>` already exists, because a new key would make every stored message unreadable.
-2. Creates the private bucket `beacon-private`: 64 KiB per message, `application/octet-stream` only, no access policies.
-3. Makes a random token, keeps it in this Mac's keychain (account `<name>`, service `beacon-private-app-token`), and gives it to the function.
-4. Deploys the `beacon-private` function.
-5. Prints the endpoint and your public key.
+1. Makes your keypair. The private key goes into this Mac's keychain and is never printed. When a key for `<name>` already exists, the script keeps it and reuses it, because a new key would make every stored message unreadable.
+2. Makes a random token, keeps it in this Mac's keychain (account `<name>`, service `beacon-private-app-token`), and gives it to the function. Running the script again replaces the token, so rebuild the app afterwards.
+3. Deploys the `beacon-private` function. The function creates the private bucket `beacon-private` on its first write: 64 KiB per message, `application/octet-stream` only, no access policies.
+4. Prints the endpoint and your public key.
 
 Keep the Mac that holds the private key backed up. Without the key, stored messages cannot be read.
 
@@ -76,6 +75,14 @@ let id = try await Beacon.sendPrivately(
 - It throws `PrivateDelivery.Failure.notEnabled` when private delivery is off, and `.notConsented` until the person has accepted the notice. Nothing leaves the device in either case. Keep the details and try again later.
 
 ## 5. Read what was sent
+
+Reading uses the project's secret key. Save it in this Mac's keychain once: in the Supabase dashboard, open Project Settings, then API Keys, and copy the secret key. Then run:
+
+```bash
+security add-generic-password -a <name> -s beacon-private-store-key -w "$(pbpaste)" -U
+```
+
+Without it, the tool asks the Supabase CLI, which works only when your sign-in may read the project's keys. Then read:
 
 ```bash
 swift run beacon-private read <name> --project-ref <project-ref>

@@ -106,6 +106,31 @@ Deno.test("the bucket write never upserts and treats an existing object as store
   assert((call!.init.headers as Record<string, string>)["x-upsert"] === "false");
 });
 
+Deno.test("the first write creates the private bucket, then stores", async () => {
+  const calls: { url: string; body: string }[] = [];
+  let bucketExists = false;
+  const fake = (url: string | URL | Request, init?: RequestInit) => {
+    const target = String(url);
+    calls.push({ url: target, body: typeof init?.body === "string" ? init.body : "" });
+    if (target.endsWith("/storage/v1/bucket")) {
+      bucketExists = true;
+      return Promise.resolve(new Response("{}", { status: 200 }));
+    }
+    return Promise.resolve(
+      bucketExists
+        ? new Response("{}", { status: 200 })
+        : new Response('{"error":"Bucket not found"}', { status: 404 }),
+    );
+  };
+  const result = await storeInBucket(config, fake as typeof fetch)(`${APP}/${EVENT}.bin`, new Uint8Array(60));
+  assert(result === "stored");
+  assert(calls.length === 3);
+  const settings = JSON.parse(calls[1].body);
+  assert(settings.id === "beacon-private" && settings.public === false);
+  assert(settings.file_size_limit === MAX_SEALED_BYTES);
+  assert(JSON.stringify(settings.allowed_mime_types) === JSON.stringify(["application/octet-stream"]));
+});
+
 Deno.test("refuses an app not on the list when a list is set", async () => {
   const d = { ...deps(), config: { ...config, apps: new Set(["com.example.other"]) } };
   assert((await handle(post({ id: EVENT, app: APP, ciphertext: sealed() }), d)).status === 403);

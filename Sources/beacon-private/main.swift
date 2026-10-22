@@ -9,13 +9,18 @@
 //       <name> already exists, because replacing it would make everything
 //       sent so far unreadable.
 //
+//   beacon-private pubkey <name>
+//       Prints the public key of <name>'s existing keypair.
+//
 //   beacon-private read <name> --project-ref <ref> [--bucket <bucket>] [--keep]
 //       Downloads every sealed message from the private bucket, opens each
 //       with <name>'s private key, writes it to
 //       ~/Library/Application Support/Beacon/private/<name>/<app>/<id>.json
 //       and deletes it from the bucket (unless --keep), so the bucket holds
-//       only what has not been read. The bucket's secret key comes from the
-//       Supabase CLI's own sign-in each time and is never written anywhere.
+//       only what has not been read. It reads the bucket with the project's
+//       secret key, taken from this Mac's keychain (account <name>, service
+//       beacon-private-store-key) when you saved it there, or else from the
+//       Supabase CLI's own sign-in. It never writes the key anywhere.
 //       What it writes is the owner's to read; it does not belong in an
 //       issue, a pull request or a commit.
 
@@ -56,7 +61,27 @@ func keygen(_ name: String) {
     print(key.publicKey.rawRepresentation.base64EncodedString())
 }
 
-func projectAccess(_ projectRef: String) -> String {
+func pubkey(_ name: String) {
+    guard let key = storedKey(name) else { fail("No key for \(name) in this Mac's keychain.") }
+    print(key.publicKey.rawRepresentation.base64EncodedString())
+}
+
+/// The project's secret key: the copy saved in this Mac's keychain for
+/// <name>, else the one the Supabase CLI's sign-in can read.
+func projectAccess(_ projectRef: String, name: String) -> String {
+    var query: [String: Any] = [
+        kSecClass as String: kSecClassGenericPassword,
+        kSecAttrService as String: "beacon-private-store-key",
+        kSecAttrAccount as String: name,
+        kSecReturnData as String: true,
+    ]
+    var item: CFTypeRef?
+    if SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess, let data = item as? Data,
+        let saved = String(data: data, encoding: .utf8), !saved.isEmpty
+    {
+        return saved.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    query.removeAll()
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = ["supabase", "projects", "api-keys", "--project-ref", projectRef, "-o", "json"]
@@ -67,7 +92,12 @@ func projectAccess(_ projectRef: String) -> String {
     process.waitUntilExit()
     guard let keys = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
         let value = keys.first(where: { ($0["name"] as? String) == "service_role" })?["api_key"] as? String
-    else { fail("Could not read the project's keys. Is the Supabase CLI signed in?") }
+    else {
+        fail(
+            "Could not read the project's secret key. Save it in this Mac's keychain (Supabase dashboard, "
+                + "Project Settings, API Keys, copy the secret key, then run: security add-generic-password "
+                + "-a \(name) -s beacon-private-store-key -w \"$(pbpaste)\" -U).")
+    }
     return value
 }
 
@@ -102,7 +132,7 @@ struct Store {
 func read(_ name: String, projectRef: String, bucket: String, keep: Bool) async {
     guard let key = storedKey(name) else { fail("No key for \(name) in this Mac's keychain.") }
     let store = Store(
-        base: URL(string: "https://\(projectRef).supabase.co")!, bucket: bucket, access: projectAccess(projectRef))
+        base: URL(string: "https://\(projectRef).supabase.co")!, bucket: bucket, access: projectAccess(projectRef, name: name))
     let folder = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Application Support/Beacon/private/\(name)")
     var saved = 0
@@ -139,10 +169,12 @@ func option(_ flag: String) -> String? {
 switch (arguments.first, arguments.dropFirst().first) {
 case ("keygen", let name?):
     keygen(name)
+case ("pubkey", let name?):
+    pubkey(name)
 case ("read", let name?):
     guard let projectRef = option("--project-ref") else { fail("read needs --project-ref <ref>.") }
     await read(name, projectRef: projectRef, bucket: option("--bucket") ?? "beacon-private",
                keep: arguments.contains("--keep"))
 default:
-    fail("usage: beacon-private keygen <name> | read <name> --project-ref <ref> [--bucket <bucket>] [--keep]")
+    fail("usage: beacon-private keygen <name> | pubkey <name> | read <name> --project-ref <ref> [--bucket <bucket>] [--keep]")
 }
