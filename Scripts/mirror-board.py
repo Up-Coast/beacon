@@ -29,6 +29,7 @@ What it decides, from the issue's state and labels alone (no judgement):
 
   open, needs-human / needs-info / cannot-reproduce /
         expectation-mismatch / working-as-intended   status of that name
+  open, todo (filed already approved by the owner)   status approved, column upnext (To do)
   open, triaged                                      status triaged, column todo
   open, backlog                                      status backlog, column backlog
   open, none of those                                left alone: it still has
@@ -66,6 +67,8 @@ OPEN_LABELS = [
     ("expectation-mismatch", ("expectation-mismatch", "todo")),
     ("working-as-intended", ("working-as-intended", None)),
     ("auto-fixed", ("auto-fixed", "done")),
+    # Filed already approved by the owner: straight to To do, no triage.
+    ("todo", ("approved", "upnext")),
     ("backlog", ("backlog", "backlog")),
     ("triaged", ("triaged", "todo")),
 ]

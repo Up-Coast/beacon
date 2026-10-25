@@ -158,6 +158,8 @@ No one has to move a card for work that exists on GitHub. A branch named `beacon
 
 A script does this (`Scripts/mirror-board.py`), with no AI judgement. It writes to the dashboard when the worker's hourly run starts, so a card moves within the hour. The page cannot read GitHub itself.
 
+An open issue labelled `todo` goes straight to **To do**, approved: the owner filed it already approved, so it skips triage and the worker builds it on its next run.
+
 ## Ask Claude
 
 Write a question in your note and tick **Ask Claude** when you want an answer without a build. The next hourly run of the worker reads the ticket, your note and the code, and answers in a comment on the issue and under **Claude's reply** at the top of the report. It builds nothing. It then unticks **Ask Claude** and ticks **Waiting for human**, so the report is back with you. Untick **Waiting for human** when you want the worker to build it.
