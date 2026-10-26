@@ -40,7 +40,6 @@ To send a blocked report back to the worker, write your answer or question in yo
 | `cannot-reproduce` | Can't reproduce | Three tries did not show the bug, so there is nothing to prove a fix against. |
 | `needs-you` | Needs something only you can do | A sign-in, an account, a secret, a physical device, infrastructure or a payment. |
 | `unclear` | Not clear what to build | The ticket can be read two ways, or the intended behaviour or UX is not clear, and the readings differ enough that the wrong one wastes the work. |
-| `too-risky` | Too risky to merge alone | A bug triage queued that turns out to touch the blast-radius list in [TRIAGE.md](TRIAGE.md#gate-4--is-it-simple). |
 | `checks-failing` | Checks won't pass | The test suite or build fails, and the failure is not one this change can fix. |
 | `conflict` | Conflicts with other work | The default branch moved and the change no longer merges cleanly. |
 | `other` | Stopped | Anything else. The note says what. |
@@ -97,7 +96,7 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
 3b. Read everything before you change anything
    - The issue: gh issue view <n> --repo <repository> --comments. The report on the page: its body, finding, triageNote, ownerNote, approval.note, and the owner's images in "reports/<reference>/ownerAttachments" (decode each dataURL to a file and look at it).
    - If the report carries `blocked` from an earlier stop, the owner has cleared the flag: their answer is in ownerNote, approval.note, or an issue comment newer than blocked.at. Act on it. If there is no answer, use what you have and try again once.
-   - An approved report is the owner's decision: build what the ticket and the note ask, even where a spec says otherwise, and update that spec in the same commit (TRIAGE.md, gate 2). A report queued by triage (status todo, no approval) is a bug: gate 4's blast-radius list still applies to it.
+   - An approved report is the owner's decision: build what the ticket and the note ask, even where a spec says otherwise, and update that spec in the same commit (TRIAGE.md, gate 2). A report queued by triage (status todo, no approval) is a reproduced bug: build it the same way; nothing about its size or area stops it, and gate 5 is the proof.
 
 3c. Safari
    When SAFARI is "yes", you can reproduce and prove Safari-only bugs here. Do it with the W3C WebDriver HTTP API that safaridriver serves:
@@ -131,7 +130,6 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
      cannot-reproduce  three tries did not show the bug
      needs-you         it needs a sign-in, account, secret, physical device, infrastructure change or payment that you cannot do or make yourself
      unclear           the intended behaviour or UX is not clear and the readings differ enough that the wrong one wastes the work
-     too-risky         a bug queued by triage touches the blast-radius list (TRIAGE.md, gate 4)
      checks-failing    the suite or build fails for a reason this change cannot fix
      conflict          the change no longer merges cleanly with the default branch
      other             anything else, said in the note

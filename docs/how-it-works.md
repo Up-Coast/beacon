@@ -46,7 +46,7 @@ A flag says more about a report than its status does. A report has one status an
 
 | The dashboard shows | Value | Meaning |
 |---|---|---|
-| Needs your decision | `needs-human` | Triage cannot go on without your call: the fix is past what may be done unattended, or it is a product or business choice. The report must carry triage's recommendation in its `decision` field: approve or decline, in one or two plain sentences, with the reason the report does not already give. No question and no list of choices: approving or declining the report is the choice. The dashboard shows it under the title, and says plainly when it is missing. |
+| Needs your decision | `needs-human` | Triage cannot go on without your call: it is a product or business choice. Whether to fix a bug is never one; a reproduced bug goes to To do. The report must carry triage's recommendation in its `decision` field: approve or decline, in one or two plain sentences, with the reason the report does not already give. No question and no list of choices: approving or declining the report is the choice. The dashboard shows it under the title, and says plainly when it is missing. |
 | Needs more info | `needs-info` | Something the report needs is missing. The question is recorded on the issue, for you to ask the tester or not. |
 | Can't reproduce | `cannot-reproduce` | Three attempts failed. What was tried is written down. Nobody may work on it. |
 | Confusing to users | `expectation-mismatch` | The app did what it should, but the tester expected something else. A separate report about the gap is opened. |

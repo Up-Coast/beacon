@@ -7,8 +7,8 @@ description: >
   bug queue", "triage feedback", or when a scheduled run fires. Reads every
   open issue labelled `beacon` that isn't yet `triaged`, checks each one is
   complete, checks it against what the product is actually supposed to do,
-  reproduces it, fixes and merges only the ones that meet the simple bar,
-  and leaves everything else labelled and explained.
+  reproduces it, queues every real bug for the worker to fix, and leaves
+  everything else labelled and explained.
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write, WebFetch
 ---
 
@@ -97,12 +97,14 @@ nothing → `cannot-reproduce`, comment with exactly what was tried (build,
 steps as run, what happened instead), write the one best question for the
 owner, stop.
 
-### 4. Simple?
+### 4. A product decision?
 
-Every line of the simple bar in `TRIAGE.md` must be true. Check them
-explicitly and write the check into the issue comment — size, blast
-radius, evidence, certainty. One false → `needs-human` with a written
-diagnosis, and stop.
+A reproduced bug goes to To do: labels `triaged` and `todo`, the finding
+and reproduction on the report. Size, files and area never stop it. Only a
+product decision does (the source and the reporter disagree about what the
+product should do, and nothing settles it) → `needs-human` with a written
+diagnosis and a `decision` saying which way you recommend. "Let Claude fix
+this?" is never a decision.
 
 A feature request or a change request is never implemented without the owner authorizing it,
 however much of it the codebase already has. Label, route, note what
@@ -149,6 +151,5 @@ sees it except whoever just read the whole queue.
   authorizing it.
 - Write to a tester.
 - Merge without having run the app through the reporter's own steps.
-- Touch schemas, credentials, payments, networking, concurrency, public
-  APIs, CI, or signing (the blast-radius list) unattended.
+- Hold a reproduced bug for the owner to approve the fix.
 - Close anything without a reply the reporter can understand.

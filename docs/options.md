@@ -486,7 +486,7 @@ Set these in the `FILL IN` block at the top of [the pickup prompt](../Triage/PIC
 | `CODE_ROOT` | The folder that each app's `folder` is relative to. |
 | `NOTIFY` | Where to report a run that filed or worked something: a chat channel through a connector, an email, or `nowhere`. |
 
-How often it runs is up to you: a scheduled task, or a session you start. What triage may do on its own is set by [the triage policy](../Triage/TRIAGE.md). The prompt has a blank where you can relax gate 4 of that policy.
+How often it runs is up to you: a scheduled task, or a session you start. What triage may do on its own is set by [the triage policy](../Triage/TRIAGE.md). A reproduced bug always goes to To do.
 
 ### `beacon-triage.yml`
 

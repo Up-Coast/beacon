@@ -48,7 +48,7 @@ label "cannot-reproduce"      "E4E669" "Couldn't be made to happen again — nob
 label "expectation-mismatch"  "1D76DB" "The app did what it should; the product didn't explain itself"
 label "working-as-intended"   "BFD4F2" "Behaving as designed"
 label "auto-fixed"            "0E8A16" "Fixed, verified by running the app, and merged"
-label "needs-human"           "5319E7" "Past what may be done unattended"
+label "needs-human"           "5319E7" "A product decision only the owner can make"
 
 echo
 echo "Done. Area labels (area:<id>) are created as reports arrive —"

@@ -72,7 +72,7 @@ OPEN_LABELS = [
     ("backlog", ("backlog", "backlog")),
     ("triaged", ("triaged", "todo")),
 ]
-RANK = {"filed": 0, "new": 0, "triaged": 1}  # anything else is 2
+RANK = {"filed": 0, "new": 0, "triaged": 1, "approved": 3, "auto-fixed": 3}  # anything else is 2; a todo label or a closed issue beats every To Triage status
 HELD = {"approved", "todo", "triaging", "declined", "feedback-closed"}
 # Closed is one thing with four reasons (works as designed, canceled, duplicate,
 # feedback); a report in any of these statuses is closed and has no column.

@@ -1,6 +1,6 @@
 # How Beacon reports get triaged
 
-*Last updated: 2026-10-16*
+*Last updated: 2026-10-25*
 
 This is Beacon's triage policy: the app files reports, and this document decides what happens to them. An agent follows it unattended, so every rule is a rule, not a preference. Where a judgement call cannot be avoided, the rule names it and states the safe answer.
 
@@ -19,7 +19,7 @@ Each report also has a column on the dashboard, `column`, with `columnAt` writte
 1. **Is it complete?** If not: `needs-info`.
 2. **Is it actually a bug?** If not: `working-as-intended` or `expectation-mismatch`.
 3. **Can it be reproduced?** If not: `cannot-reproduce`.
-4. **Is it simple?** If not: `needs-human`.
+4. **Is the fix a product decision?** If so: `needs-human`, with the recommendation. Otherwise it goes to To do.
 5. **Fix it, prove it, merge it.**
 
 ---
@@ -66,7 +66,7 @@ When the app did exactly what it was designed to do and the reporter expected so
 3. Link the two issues.
 4. Write on the issue what the app is actually doing and why. "Working as intended" on its own is never the whole comment: the finding is the gap, not the tester's mistake.
 
-Do not fix an `expectation-mismatch` issue by changing the behaviour. The fix is wording, labels and empty states, and those are a person's call unless gate 4's simple-change list covers them.
+Do not fix an `expectation-mismatch` issue by changing the behaviour. The fix is wording, labels and empty states, and those are a person's call; it waits in To Triage for the owner.
 
 ## Gate 3 — Can it be reproduced?
 
@@ -81,38 +81,15 @@ Try up to **three** times, varying only what the report leaves ambiguous. If it 
 - Write the one question most likely to close the gap, for the owner to ask if they choose.
 - Stop. Do not investigate further, and do not change code.
 
-## Gate 4 — Is it simple?
+## Gate 4 — Is the fix a product decision?
 
-A fix may be made and merged without a person **only when every line below is true**. If any line is false, the issue gets `needs-human`.
+A bug that passed gates 1 to 3 is real, reproduced and has a failing check. **It goes to To do and gets built.** Label it `triaged` and `todo`, write the finding and the reproduction onto the report, and the worker builds it through gate 5. That is the normal outcome of a bug, and it needs nobody's approval: the owner's standing decision is that bugs are fixed.
 
-**Size**
+The size of the fix, the number of files, and the area it touches (data, authentication, payments, networking, concurrency, build configuration, anything) are never reasons to stop. Gate 5 is the safeguard: every fix is proven on the built app, the whole suite passes, and a fix that cannot be proven goes up as a pull request instead of a merge.
 
-- Three files or fewer changed.
-- Forty changed lines or fewer, not counting tests.
-- No new dependency, and no dependency version change.
+The one thing that stops a bug here is a **product decision**: the reporter and the source disagree about what the product should do, and nothing in the ticket, the owner's notes, the documents or the existing app settles it. Then the issue gets `needs-human`, a written diagnosis, and a `decision` on the report: which way triage recommends and why. "Let Claude fix this bug?" is never a decision. If the only question is whether to build the fix, the answer is yes, and the report goes to To do.
 
-**Blast radius.** The change touches none of:
-
-- data schemas, migrations, or anything that writes persistent user data
-- authentication, credentials, keychain, tokens, or permissions
-- payments, subscriptions, or pricing
-- networking or transport code
-- concurrency primitives: locks, actors, task groups, isolation attributes
-- any public API of a shipped library
-- build configuration, CI, signing, or entitlements
-- generated or vendored files
-
-**Evidence**
-
-- A failing check existed before the change and passes after it (gate 3).
-- The whole test suite passes.
-- The reproduction steps, re-run against the built app, no longer produce the reported behaviour (gate 5).
-
-**Certainty**
-
-- The cause is understood and can be stated in one sentence. "This makes the symptom go away" is not understanding, and is `needs-human`.
-
-Everything else gets `needs-human`, a written diagnosis in the issue, and stops. That includes anything ambiguous, anything where the right behaviour is a product decision, and anything touching design or copy that is not a plain typo.
+A bug whose cause is not yet understood still goes to To do: finding the cause is the worker's job, and it stops with Blocked if it cannot.
 
 **A feature request or a change request is never implemented without the owner authorizing it.** That holds however small the request looks, and however much of it the codebase already has. Triage it: label it, route it to an area, note what already exists, and leave it open for the owner.
 
@@ -152,7 +129,7 @@ Choose one level higher when any of these is true:
 
 - `impact:blocked` **and** `reproducibility: every-time`
 - more than one person has reported it
-- it involves anything under "Blast radius" above
+- it touches stored user data, authentication, payments or networking
 
 Impact and severity often disagree, and the disagreement is worth noticing. Several `impact:blocked` reports on a `severity:low` issue usually mean the workaround is harder to find than somebody thought.
 
@@ -166,7 +143,7 @@ Set by the app: `beacon`, `type:bug|feature-request|change-request|feedback`, `i
 
 Set by triage: `severity:*`, `needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`, `auto-fixed`, `needs-human`, `triaged`.
 
-`needs-human` is for something that truly needs the owner's call, and the report must say what the call is: write `decision` on the page report (the recommendation, written as one or two plain sentences: approve or decline, and the reason the report itself does not already give. Never a question, a list of choices or an "if nothing is decided" line: approving or declining the report is the choice, so restating it asks nothing.). If you cannot write it, it is not a decision: label `triaged` and leave it for the owner to move.
+`needs-human` is for a product or business choice only the owner can make, never for whether to fix a bug, and the report must say what the call is: write `decision` on the page report (the recommendation, written as one or two plain sentences: approve or decline, and the reason the report itself does not already give. Never a question, a list of choices or an "if nothing is decided" line: approving or declining the report is the choice, so restating it asks nothing.). If you cannot write it, it is not a decision: label `triaged` and leave it for the owner to move.
 
 Create them once per repository with `Scripts/beacon-labels.sh`.
 
@@ -179,5 +156,5 @@ Create them once per repository with `Scripts/beacon-labels.sh`.
 - Close an issue as "working as intended" when the reporter expected something different, without first filing the expectation-mismatch issue.
 - Write to a tester. Triage writes on the issue and on the dashboard, and never contacts the person who reported.
 - Move a report the owner placed, or undo a move the owner made. Approving is the owner's.
-- Touch anything on the blast-radius list.
+- Stop a reproduced bug for approval. Only a product decision stops a bug, and the report must say what it is.
 - Merge without having run the app through the reporter's own steps.

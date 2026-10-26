@@ -12,12 +12,12 @@ Triage takes each report through gates 1 to 4. The worker does gate 5. A report 
 | 1. Is it complete? | What they expected, what happened, and the steps all say something. | `needs-info`, with at most two specific questions on the issue. |
 | 2. Is it actually a bug? | What the product is supposed to do, found in the source and cited by file and line, differs from what happened. | `working-as-intended`, explained and closed. Or `expectation-mismatch`, with a separate issue about the gap in what the app tells people. |
 | 3. Can it be reproduced? | A check fails because of the bug, on the build the report came from, within three attempts. | `cannot-reproduce`, with what was tried and one question. No code is changed. |
-| 4. Is it simple? | Three files or fewer, 40 changed lines or fewer outside tests, no dependency change, nothing on the blast-radius list, and a cause that fits in one sentence. | `needs-human`, with a written diagnosis. |
+| 4. Is the fix a product decision? | It is not: the bug goes to To do and the worker builds it. Size, files and area never stop a bug. | `needs-human`, with a written diagnosis and triage's recommendation, only when what the product should do is genuinely your call. |
 | 5. Prove it, then merge | The whole test suite passes, and running the app through the tester's steps no longer shows the problem. | A pull request labelled `needs-human`, instead of a merge. |
 
 A fix that passes gate 5 is merged, the commit is named on the issue, the issue is closed, and it is labelled `auto-fixed`. If you ticked **Needs PR approval**, the worker opens a pull request instead and you merge it. The report's link to the pull request or the commit shows at the top of the report.
 
-The blast-radius list covers data schemas and stored user data, authentication and credentials, payments, networking, concurrency, public library APIs, build and signing configuration, and generated or vendored files. The exact list is in [TRIAGE.md](../Triage/TRIAGE.md).
+Whether to fix a bug is never a decision: a reproduced bug is fixed. Gate 5 is the safeguard, and a fix that cannot be proven on the built app goes up as a pull request instead of a merge.
 
 ## Tasks only a person can do
 
@@ -43,7 +43,7 @@ Triage sets severity. The app never does. The tester's `impact:` label says what
 - Implement a feature request, or act on feedback, without you authorizing it.
 - Close a report as working as intended, when the tester expected something different, without first filing the expectation-mismatch issue.
 - Write to a tester. Triage writes on the issue and on the dashboard, and you decide whether anyone replies.
-- Touch anything on the blast-radius list.
+- Hold a reproduced bug for you to approve the fix.
 - Merge without running the app through the tester's own steps.
 
 What each status means on the dashboard is in [How it works](how-it-works.md#statuses).

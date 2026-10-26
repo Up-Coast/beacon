@@ -20,7 +20,7 @@ The pickup compares each new report with what is already filed. A repeat is adde
 
 **Will it change my code without asking?**
 
-Only for a bug that reproduces, has a cause that fits in one sentence, stays within the size limits, touches nothing on the blast-radius list, and is proven by running the app. Everything else gets a diagnosis or a pull request for a person. See [What happens to a report](what-happens-to-a-report.md).
+Only for a bug that reproduces and is proven fixed by running the app. A fix that cannot be proven that way goes up as a pull request for you. Features, change requests and feedback wait for you to approve them. See [What happens to a report](what-happens-to-a-report.md).
 
 **Will it build features?**
 
