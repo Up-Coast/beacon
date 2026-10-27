@@ -9,7 +9,7 @@ The button opens one of two things, depending on the app.
 ## If it opens a web page
 
 1. Sign in to Claude if the page asks. You need to be a member of the team's Claude organization.
-2. Choose **Something's broken**, **Something's missing**, **Change request** or **Something else**, and fill in the form. The app is already chosen.
+2. Choose **Something's broken**, **Something's missing**, **Change request**, **Something else** or **I have a feedback document**, and fill in the form. The app is already chosen.
 3. Under **Anything to show us?**, add images if you have them. You can add up to 6. On a Mac you can also paste an image straight into the page.
 4. Fill in **Who you are**: your name or email. Your report is not anonymous, and the team can reach you if they choose to.
 5. Press **Send**. The page shows your reference.
@@ -21,11 +21,13 @@ If someone sends you the page link itself, it opens on the team's dashboard of r
 ## If it opens a form inside the app
 
 1. Read the notice about what happens to your report and accept it. You see it once, and again only if the wording changes.
-2. Choose **Something's broken**, **Something's missing**, **Change request** or **Something else**, fill in the form, and press **Next**. If the form asks **How can we reach you?**, leaving an email or phone number is up to you. Without one, the team can't ask you about your report.
+2. Choose **Something's broken**, **Something's missing**, **Change request**, **Something else** or **I have a feedback document**, fill in the form, and press **Next**. If the form asks **How can we reach you?**, leaving an email or phone number is up to you. Without one, the team can't ask you about your report.
 3. Read **Here's what we'll send**. Nothing has left your device yet.
 4. Press **Check and send**, or **Send** if your device can't run the check.
 
 The first screen starts with a line saying the app uses Beacon, Up Coast's free tool for feedback and suggestions, with a link to Beacon's page on GitHub.
+
+**I have a feedback document** is for feedback you have already written somewhere: notes, a review, a list. Attach the file as it is, in any layout and with any sections. Text, Markdown, PDF, Word, OpenDocument, PowerPoint and Excel files all work. A note about the app or version is optional. The team splits the document into separate items, one report each, and each one points back to your document. It asks nothing about impact, because each item is judged on its own.
 
 **Something's missing** has an optional **Your idea** box for how you think it could work. **Change request** is for something that works today but that you'd like done differently. It asks what you'd like changed, where it is, and what you'd like instead; why it matters to you is optional.
 

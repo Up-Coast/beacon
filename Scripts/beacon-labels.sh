@@ -28,6 +28,7 @@ label "type:bug"              "D73A4A" "Something is broken"
 label "type:feature-request"  "0E8A16" "Something is missing"
 label "type:change-request"   "1D76DB" "Something works, but they'd like it done differently"
 label "type:feedback"         "C5DEF5" "General feedback"
+label "type:feedback-document" "BFD4F2" "A whole feedback document to split into tickets"
 
 # Impact — the reporter's own answer about what this costs them.
 label "impact:blocked"        "B60205" "They can't do what they came to do"

@@ -4,6 +4,19 @@ import Testing
 import Foundation
 @testable import BeaconCore
 
+/// Built one line at a time: as a single array literal of concatenations the
+/// compiler gives up type-checking it.
+private let credentialExamples: [String] = {
+    var examples: [String] = []
+    examples.append("sk-" + "ant-api03-AAAABBBBCCCCDDDDEEEEFFFFGGGG")
+    examples.append("ghp" + "_ABCDEFGHIJKLMNOPQRSTUVWXYZ012345")
+    examples.append("github" + "_pat_11ABCDEFG0abcdefghijklmnop")
+    examples.append("AKI" + "AIOSFODNN7EXAMPLE")
+    examples.append("xoxb" + "-123456789012-abcdefghijklmno")
+    examples.append("sk_" + "live_ABCDEFGHIJKLMNOPQRSTUVWX")
+    return examples
+}()
+
 @Suite("Secrets never reach the issue")
 struct RedactionTests {
 
@@ -11,14 +24,7 @@ struct RedactionTests {
     /// a literal that looks like a real credential. These are invented, but
     /// a repository's own push protection cannot tell that, and a test file
     /// that trips it blocks every push.
-    @Test("Known credential shapes are caught", arguments: [
-        "sk-" + "ant-api03-AAAABBBBCCCCDDDDEEEEFFFFGGGG",
-        "ghp" + "_ABCDEFGHIJKLMNOPQRSTUVWXYZ012345",
-        "github" + "_pat_11ABCDEFG0abcdefghijklmnop",
-        "AKI" + "AIOSFODNN7EXAMPLE",
-        "xoxb" + "-123456789012-abcdefghijklmno",
-        "sk_" + "live_ABCDEFGHIJKLMNOPQRSTUVWX",
-    ])
+    @Test("Known credential shapes are caught", arguments: credentialExamples)
     func credentialShapesAreMasked(_ secret: String) {
         let result = Redactor().sweep("my key is \(secret) ok", location: "your log")
         #expect(!result.text.contains(secret))
@@ -88,13 +94,13 @@ struct RedactionTests {
 struct AcceptedFormatTests {
 
     @Test("Formats the triaging assistant can read are accepted",
-          arguments: ["notes.txt", "log.log", "state.json", "shot.png", "scan.pdf", "clip.mov"])
+          arguments: ["notes.txt", "log.log", "state.json", "shot.png", "scan.pdf", "clip.mov", "plan.docx"])
     func accepted(_ name: String) {
         #expect(AcceptedFormats.accepts(URL(fileURLWithPath: "/tmp/\(name)")))
     }
 
     @Test("Formats nobody downstream can read are refused",
-          arguments: ["archive.zip", "app.dmg", "sheet.xlsx", "binary.bin", "noextension"])
+          arguments: ["archive.zip", "app.dmg", "deck.key", "binary.bin", "noextension"])
     func refused(_ name: String) {
         let url = URL(fileURLWithPath: "/tmp/\(name)")
         #expect(!AcceptedFormats.accepts(url))

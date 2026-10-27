@@ -44,6 +44,7 @@ public final class FeedbackSession {
     public var feature = FeatureBody()
     public var change = ChangeBody()
     public var feedback = FeedbackBody()
+    public var document = DocumentBody()
     public var title = ""
     public var impact: Impact = .slowed
     public var areaID: String?
@@ -231,7 +232,9 @@ public final class FeedbackSession {
     public func submit() async {
         guard blockingIssues.isEmpty else { step = .form; return }
 
-        if review == nil, reviewAvailability.isAvailable {
+        // A document is read by triage, not by the on-device check, which
+        // only judges a single bug or request.
+        if review == nil, kind != .feedbackDocument, reviewAvailability.isAvailable {
             isWorking = true
             workingMessage = "Checking your report on \(PlatformWording.thisDevice)\u{2026}"
             let result = await reviewer.review(draftReport())
@@ -349,6 +352,7 @@ public final class FeedbackSession {
         case .featureRequest: .feature(feature)
         case .changeRequest: .change(change)
         case .feedback: .feedback(feedback)
+        case .feedbackDocument: .document(document)
         }
         var resolvedArea = areaID
         if kind == .featureRequest {

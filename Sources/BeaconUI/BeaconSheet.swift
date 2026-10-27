@@ -221,6 +221,7 @@ struct KindPickerView: View {
         case .featureRequest: "lightbulb"
         case .changeRequest: "arrow.triangle.2.circlepath"
         case .feedback: "bubble.left.and.text.bubble.right"
+        case .feedbackDocument: "doc.text"
         }
     }
 }

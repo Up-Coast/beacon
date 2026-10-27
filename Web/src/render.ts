@@ -24,7 +24,8 @@ function truncate(text: string, limit: number): string {
   return cut + "…";
 }
 
-export function derivedTitle(a: Answers): string {
+export function derivedTitle(a: Answers, firstFilename?: string): string {
+  if (a.kind === "feedback-document") return firstFilename ? truncate(`Feedback document: ${firstFilename}`, 72) : "";
   const source =
     a.kind === "bug"
       ? a.whatHappened
@@ -64,6 +65,10 @@ export function displaySize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** Tells triage the attached file is the whole report and has to be split. */
+const DOCUMENT_LINE =
+  "The attached file(s) below are the whole feedback. Read them and split them into separate tickets, one per item.";
+
 const esc = (v: string) => v.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
 
 export interface RenderInput {
@@ -100,13 +105,18 @@ export function renderIssue(input: RenderInput): Issue {
     out.push("## What they would like changed", "", quote(s(a.whatToChange)), "");
     out.push("## What they would like instead", "", quote(s(a.instead)), "");
     if ((a.why ?? "").trim()) out.push("## Why it matters to them", "", quote(s(a.why)), "");
+  } else if (a.kind === "feedback-document") {
+    out.push("## The document", "", DOCUMENT_LINE, "");
+    for (const f of input.attachments ?? []) out.push(`- \`${f.filename}\` (${displaySize(f.bytes)})`);
+    out.push("");
+    if ((a.note ?? "").trim()) out.push("## Their note", "", quote(s(a.note)), "");
   } else {
     out.push("## What they said", "", quote(s(a.message)), "");
   }
 
-  out.push("## How much this affects them", "", `**${IMPACT_WORDS[a.impact]}**`, "");
+  if (a.kind !== "feedback-document") out.push("## How much this affects them", "", `**${IMPACT_WORDS[a.impact]}**`, "");
 
-  if (input.attachments?.length) {
+  if (a.kind !== "feedback-document" && input.attachments?.length) {
     out.push("## What they attached", "");
     for (const f of input.attachments) out.push(`- \`${f.filename}\` (${displaySize(f.bytes)})`);
     out.push("");
@@ -134,7 +144,7 @@ export function renderIssue(input: RenderInput): Issue {
     report_id: input.reference,
     reference: input.reference,
     kind: a.kind,
-    impact: a.impact,
+    impact: a.kind === "feedback-document" ? "" : a.impact,
     area: "",
     account: input.reporter.accountID,
     app_version: app.version ?? "",
@@ -155,8 +165,8 @@ export function renderIssue(input: RenderInput): Issue {
 
   const written = (a.title ?? "").trim();
   return {
-    title: written || derivedTitle(a) || "Report from the website",
+    title: written || derivedTitle(a, input.attachments?.[0]?.filename) || "Report from the website",
     body: out.join("\n"),
-    labels: ["beacon", `type:${a.kind}`, `impact:${a.impact}`],
+    labels: a.kind === "feedback-document" ? ["beacon", `type:${a.kind}`] : ["beacon", `type:${a.kind}`, `impact:${a.impact}`],
   };
 }

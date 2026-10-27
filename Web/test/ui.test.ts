@@ -67,7 +67,7 @@ describe("the sheet", () => {
     launch.click();
     ([...root.querySelectorAll("button.primary")].find((b) => /understand/.test(b.textContent!)) as HTMLButtonElement).click();
     const titles = [...root.querySelectorAll("button.kind b")].map((b) => b.textContent);
-    expect(titles).toEqual(["Something's broken", "Something's missing", "Change request", "Something else"]);
+    expect(titles).toEqual(["Something's broken", "Something's missing", "Change request", "Something else", "I have a feedback document"]);
     void sheet;
   });
 

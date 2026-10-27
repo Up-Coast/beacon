@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { canSubmit, checkCompleteness, isEmptyInSubstance } from "../src/completeness";
+import { blockingIssues, canSubmit, checkCompleteness, isEmptyInSubstance } from "../src/completeness";
 import { newReference, renderIssue } from "../src/render";
 import { sweep } from "../src/redaction";
 import { sendToRelay } from "../src/transport";
+import { KINDS } from "../src/types";
+import { ACCEPTED_EXTENSIONS } from "../src/wording";
 import type { Answers, WebContext } from "../src/types";
 
 const ctx: WebContext = {
@@ -85,6 +87,33 @@ describe("issue rendering (same layout triage parses)", () => {
     expect(f.labels[1]).toBe("type:feature-request");
     const c = renderIssue({ ...input, answers: { kind: "change-request", impact: "noticed", whatToChange: "a", instead: "b" } });
     expect(c.labels[1]).toBe("type:change-request");
+  });
+  it("has five kinds, the fifth being the feedback document", () => {
+    expect(KINDS).toHaveLength(5);
+    expect(KINDS[4]).toBe("feedback-document");
+  });
+  it("blocks a feedback document until a file is attached", () => {
+    const a = { kind: "feedback-document" as const, impact: "noticed" as const };
+    expect(canSubmit(a)).toBe(false);
+    expect(blockingIssues(a)[0]!.message).toBe("Add the document you want us to read.");
+    expect(canSubmit(a, 1)).toBe(true);
+  });
+  it("renders a feedback document with no impact, and the note only when written", () => {
+    const files = [{ filename: "review.docx", bytes: 2048 }, { filename: "list.pdf", bytes: 10 }];
+    const answers = { kind: "feedback-document" as const, impact: "noticed" as const };
+    const c = renderIssue({ ...input, answers, attachments: files });
+    expect(c.labels).toEqual(["beacon", "type:feedback-document"]);
+    expect(c.title).toBe("Feedback document: review.docx");
+    expect(c.body).toContain("## The document");
+    expect(c.body).toContain("- `review.docx` (2 KB)");
+    expect(c.body).not.toContain("## Their note");
+    expect(c.body).not.toContain("How much this affects them");
+    expect(c.body).not.toContain("What they attached");
+    const n = renderIssue({ ...input, answers: { ...answers, note: "About v2" }, attachments: files });
+    expect(n.body).toContain("## Their note\n\n> About v2");
+  });
+  it("accepts office documents", () => {
+    for (const e of ["docx", "odt", "pptx", "xlsx", "ods", "odp"]) expect(ACCEPTED_EXTENSIONS.has(e)).toBe(true);
   });
   it("makes a BN- reference the relay accepts", () => {
     expect(newReference(new Uint8Array([1, 171, 255]))).toBe("BN-01ABFF");

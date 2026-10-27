@@ -106,6 +106,8 @@ product should do, and nothing settles it) → `needs-human` with a written
 diagnosis and a `decision` saying which way you recommend. "Let Claude fix
 this?" is never a decision.
 
+A report labelled `type:feedback-document` is split, not gated: follow `Triage/TRIAGE.md`, "A feedback document" (read the attached file, file each item as its own issue that starts `> Part of #<parent>`, then label the parent `triaged` and `split`).
+
 A feature request or a change request is never implemented without the owner authorizing it,
 however much of it the codebase already has. Label, route, note what
 already exists, leave open for the owner. Feedback is the same: label

@@ -43,7 +43,11 @@ public enum AcceptedFormats {
         "png", "jpg", "jpeg", "heic", "heif", "gif", "webp", "tiff", "bmp",
     ]
     /// Documents that carry their own text layer.
-    public static let documentExtensions: Set<String> = ["pdf"]
+    public static let documentExtensions: Set<String> = [
+        "pdf",
+        // Office files are zipped XML, which triage unpacks and reads as text.
+        "docx", "odt", "pptx", "xlsx", "ods", "odp",
+    ]
     /// Video, accepted only because Beacon itself produces it; a reporter
     /// can attach one too, and it always travels with extracted frames.
     public static let videoExtensions: Set<String> = ["mov", "mp4", "m4v"]
@@ -63,8 +67,9 @@ public enum AcceptedFormats {
         let named = ext.isEmpty ? "That file" : "A .\(ext) file"
         return "\(named) can't be read by the person or the assistant who will "
             + "look at this report, so adding it wouldn't help. Text, images, "
-            + "PDFs and screen recordings all work — a screenshot of what "
-            + "you're looking at is usually the most useful thing you can add."
+            + "PDFs, Word and other office documents, and screen recordings all "
+            + "work \u{2014} a screenshot of what you're looking at is usually the "
+            + "most useful thing you can add."
     }
 
     /// The sentence for a folder that was dropped or chosen where a file

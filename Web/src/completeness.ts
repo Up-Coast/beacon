@@ -38,7 +38,8 @@ export function cleanSteps(steps: string[] | undefined): string[] {
   return (steps ?? []).map((s) => s.trim()).filter(Boolean);
 }
 
-export function checkCompleteness(a: Answers): CompletenessIssue[] {
+/** `attachmentCount` is how many files the reporter has added; only the feedback-document kind needs one. */
+export function checkCompleteness(a: Answers, attachmentCount = 0): CompletenessIssue[] {
   const issues: CompletenessIssue[] = [];
   switch (a.kind) {
     case "bug": {
@@ -68,9 +69,13 @@ export function checkCompleteness(a: Answers): CompletenessIssue[] {
     case "feedback":
       if (isEmptyInSubstance(a.message) || tooShort(a.message)) issues.push(block("message", C.feedback));
       break;
+    case "feedback-document":
+      if (attachmentCount < 1) issues.push(block("attachments", C.document));
+      break;
   }
   return issues;
 }
 
-export const blockingIssues = (a: Answers) => checkCompleteness(a).filter((i) => i.blocking);
-export const canSubmit = (a: Answers) => blockingIssues(a).length === 0;
+export const blockingIssues = (a: Answers, attachmentCount = 0) =>
+  checkCompleteness(a, attachmentCount).filter((i) => i.blocking);
+export const canSubmit = (a: Answers, attachmentCount = 0) => blockingIssues(a, attachmentCount).length === 0;

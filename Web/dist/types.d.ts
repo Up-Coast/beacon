@@ -1,5 +1,5 @@
-/** The four things a person can file; the same four as Beacon's apps. */
-export type FeedbackKind = "bug" | "feature-request" | "change-request" | "feedback";
+/** The five things a person can file; the same five as Beacon's apps. */
+export type FeedbackKind = "bug" | "feature-request" | "change-request" | "feedback" | "feedback-document";
 export declare const KINDS: readonly FeedbackKind[];
 export type Impact = "blocked" | "slowed" | "irritating" | "noticed";
 export declare const IMPACTS: readonly Impact[];
@@ -24,6 +24,8 @@ export interface Answers {
     instead?: string;
     /** feedback */
     message?: string;
+    /** feedback-document: free text before the document is read (optional). */
+    note?: string;
     /** Optional ways to reach them. */
     name?: string;
     contact?: string;

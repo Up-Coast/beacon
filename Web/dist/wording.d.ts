@@ -18,6 +18,7 @@ export declare const FIELD_LABELS: {
     readonly instead: "What would you like instead?";
     readonly changeWhy: "Why does it matter to you? (optional)";
     readonly message: "What's on your mind?";
+    readonly note: "Anything we should know before reading it?";
     readonly impact: "How much is this affecting you?";
 };
 /** The sentence under a label, where the Mac and iPhone sheet has one. */
@@ -29,6 +30,7 @@ export declare const FIELD_HINTS: {
     readonly why: "Knowing this often turns up a better answer than the one you asked for.";
     readonly idea: "If you have a thought about how it could work, tell us. You can leave this empty.";
     readonly whatToChange: "Say what works today that you'd like done differently.";
+    readonly note: "Which app or version it is about, who wrote it, what you most want looked at. Optional.";
     readonly impact: "This is what decides the order things get looked at, so an honest answer helps more than a dramatic one.";
     readonly contact: "An email or a phone number, if you'd like us to be able to ask you about this. Leave it empty and your report is sent without one.";
 };
@@ -46,6 +48,7 @@ export declare const COMPLETENESS: {
     readonly whatToChange: "Say what you'd like changed — the thing that works today but that you'd do differently.";
     readonly instead: "Say what you'd like instead. A sentence about how it should work is plenty.";
     readonly feedback: "Tell us what's on your mind — a sentence or two is plenty.";
+    readonly document: "Add the document you want us to read.";
 };
 export declare const UI: {
     readonly button: "Report a problem";
@@ -73,7 +76,9 @@ export declare const UI: {
     readonly forget: "Forget them";
     readonly blockingTitle: "Before this can go";
     readonly attachTitle: "Anything to show us?";
-    readonly attachHint: "A picture of what you're looking at is usually worth more than another paragraph. Text, images and PDFs all work.";
+    readonly attachHint: "A picture of what you're looking at is usually worth more than another paragraph. Text, images, PDFs, and Word and other office documents all work.";
+    readonly documentTitle: "Your document";
+    readonly documentHint: "Add the file or files as they are, in any layout. Text, PDFs, Word and other office documents, and images all work.";
     readonly addFile: "Add a file";
     readonly dropHere: "Drop files here";
     readonly remove: "Remove";

@@ -37,7 +37,7 @@ The page adds the browser's user agent to every report. When the link has no lan
 
 - Which app, when the link does not name one the page knows.
 - **Who you are**: a name or email. Required.
-- The kind of report, and its answers. A bug needs what happened, what they expected, the steps and whether it happens again. A feature request needs what they want and, optionally, why and their own idea. A change request needs what they would like changed and what they would like instead, and optionally why. Feedback needs a message.
+- The kind of report, and its answers. A bug needs what happened, what they expected, the steps and whether it happens again. A feature request needs what they want and, optionally, why and their own idea. A change request needs what they would like changed and what they would like instead, and optionally why. Feedback needs a message. A feedback document needs the attached file, and optionally a note; it asks no impact question.
 - **Which part of the app**, in their own words. Optional.
 - **How much this affects you**.
 - Images.

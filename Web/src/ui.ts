@@ -526,11 +526,16 @@ export class BeaconSheet {
       this.text(sheet, "whatToChange", F.whatToChange, H.whatToChange);
       this.text(sheet, "instead", F.instead);
       this.text(sheet, "why", F.changeWhy, undefined, 2);
+    } else if (a.kind === "feedback-document") {
+      this.attachments(sheet, UI.documentTitle, UI.documentHint);
+      this.text(sheet, "note", F.note, H.note, 4);
     } else {
       this.text(sheet, "message", F.message, undefined, 5);
     }
-    this.choice(sheet, "impact", F.impact, H.impact, IMPACTS, IMPACT_WORDS, a.impact, (v) => (a.impact = v));
-    this.attachments(sheet);
+    if (a.kind !== "feedback-document") {
+      this.choice(sheet, "impact", F.impact, H.impact, IMPACTS, IMPACT_WORDS, a.impact, (v) => (a.impact = v));
+      this.attachments(sheet);
+    }
     if (this.opts.reporter) {
       const b = this.block(sheet, "How can we reach you? (optional)", H.contact);
       const i = this.el("input", { type: "text", "aria-label": "How can we reach you?" });
@@ -558,12 +563,12 @@ export class BeaconSheet {
   }
 
   private toReview() {
-    this.blocking = blockingIssues(this.answers).map((i) => i.message);
+    this.blocking = blockingIssues(this.answers, this.files.length).map((i) => i.message);
     if (this.blocking.length) {
       this.render();
       return;
     }
-    this.advisory = checkCompleteness(this.answers)
+    this.advisory = checkCompleteness(this.answers, this.files.length)
       .filter((i) => !i.blocking)
       .map((i) => i.message);
     const bytes = new Uint8Array(3);
@@ -577,8 +582,8 @@ export class BeaconSheet {
 
   // MARK: Attachments
 
-  private attachments(sheet: HTMLElement) {
-    const b = this.block(sheet, UI.attachTitle, UI.attachHint);
+  private attachments(sheet: HTMLElement, title: string = UI.attachTitle, hint: string = UI.attachHint) {
+    const b = this.block(sheet, title, hint);
     const input = this.el("input", { type: "file", multiple: "" });
     input.style.display = "none";
     input.addEventListener("change", () => {

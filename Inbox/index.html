@@ -701,13 +701,13 @@
     closed:                ["hold", "Closed: canceled"],
     duplicate:             ["hold", "Closed: duplicate"],
   };
-  const KIND = { bug: "Bug", "feature-request": "Request", "change-request": "Change request", feedback: "Feedback" };
-  const KIND_FILTER = { bug: "Bugs", "feature-request": "Requests", "change-request": "Change requests", feedback: "Feedback" };
+  const KIND = { bug: "Bug", "feature-request": "Request", "change-request": "Change request", feedback: "Feedback", "feedback-document": "Feedback document" };
+  const KIND_FILTER = { bug: "Bugs", "feature-request": "Requests", "change-request": "Change requests", feedback: "Feedback", "feedback-document": "Feedback documents" };
   // Reports the owner decides: work the pickup stopped on. Approve and
   // Decline appear on these until an approval is written.
   const DECIDABLE = new Set(["needs-human", "triaged", "expectation-mismatch", "cannot-reproduce", "needs-info"]);
   const BEING_WORKED = new Set(["triaging"]);
-  const waitsOnOwner = (r) => !r.approval && DECIDABLE.has(r.status) && r.kind !== "feedback";
+  const waitsOnOwner = (r) => !r.approval && DECIDABLE.has(r.status) && r.kind !== "feedback" && r.kind !== "feedback-document";
   // The four counts at the top of the dashboard, and the filter each sets.
   const GROUPS = [
     ["decide", "Needs your decision", (r) => waitsOnYou(r)],

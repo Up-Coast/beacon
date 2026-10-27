@@ -109,6 +109,16 @@ Deno.test("only Beacon's own labels are passed on", () => {
   equal(checked.payload.labels, ["beacon"]);
 });
 
+Deno.test("the feedback-document label is passed on, with a document attached", () => {
+  const checked = validatePayload(report({
+    labels: ["beacon", "type:feedback-document"],
+    attachments: [{ filename: "review.docx", base64: "aGVsbG8=" }],
+  }));
+  assert("payload" in checked);
+  equal(checked.payload.labels, ["beacon", "type:feedback-document"]);
+  equal(checked.payload.attachments[0].filename, "review.docx");
+});
+
 Deno.test("a body too long to take its attachment links is refused", () => {
   assert("error" in validatePayload(report({ body: "x".repeat(50_001) })));
 });

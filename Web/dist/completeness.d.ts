@@ -11,6 +11,7 @@ export declare const MINIMUM_MEANINGFUL_CHARACTERS = 12;
 export declare function isEmptyInSubstance(text: string | undefined): boolean;
 export declare function tooShort(text: string | undefined): boolean;
 export declare function cleanSteps(steps: string[] | undefined): string[];
-export declare function checkCompleteness(a: Answers): CompletenessIssue[];
-export declare const blockingIssues: (a: Answers) => CompletenessIssue[];
-export declare const canSubmit: (a: Answers) => boolean;
+/** `attachmentCount` is how many files the reporter has added; only the feedback-document kind needs one. */
+export declare function checkCompleteness(a: Answers, attachmentCount?: number): CompletenessIssue[];
+export declare const blockingIssues: (a: Answers, attachmentCount?: number) => CompletenessIssue[];
+export declare const canSubmit: (a: Answers, attachmentCount?: number) => boolean;

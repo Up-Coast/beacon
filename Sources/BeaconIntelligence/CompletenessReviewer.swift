@@ -182,6 +182,9 @@ public struct OnDeviceCompletenessReviewer: CompletenessReviewing {
         case .feedback(let feedback):
             lines.append("KIND: general feedback")
             lines.append("MESSAGE: \(feedback.message)")
+        case .document(let document):
+            lines.append("KIND: feedback document")
+            lines.append("NOTE: \(document.note.isEmpty ? "(none)" : document.note)")
         }
         lines.append("HOW MUCH IT AFFECTS THEM: \(report.impact.question)")
         if report.attachments.isEmpty {

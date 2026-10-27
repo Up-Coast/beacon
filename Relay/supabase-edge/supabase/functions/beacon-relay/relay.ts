@@ -37,6 +37,7 @@ const MAX_BODY = 50_000;
 const FIXED_LABELS = new Set([
   "beacon",
   "type:bug", "type:feature-request", "type:change-request", "type:feedback",
+  "type:feedback-document",
   "impact:blocked", "impact:slowed", "impact:irritating", "impact:noticed",
 ]);
 /** An area label is `area:` and the indexer's id: lowercase words joined by hyphens. */

@@ -77,6 +77,10 @@ public enum IssueRenderer {
         case .feature(let feature): source = feature.whatIWant
         case .change(let change): source = change.whatToChange
         case .feedback(let feedback): source = feedback.message
+        case .document:
+            // A filename has dots in it; the sentence rule below would cut it.
+            let name = report.attachments.first { $0.kind == .userFile }?.filename ?? "untitled"
+            return truncate("Feedback document: " + name, to: 72)
         }
         let firstLine = source.split(whereSeparator: \.isNewline).first.map(String.init) ?? source
         let sentence = firstLine.split(separator: ".").first.map(String.init) ?? firstLine
@@ -93,7 +97,9 @@ public enum IssueRenderer {
     // MARK: Labels
 
     static func labels(for report: FeedbackReport) -> [String] {
-        var labels = [Labels.beacon, Labels.kind(report.kind), Labels.impact(report.impact)]
+        var labels = [Labels.beacon, Labels.kind(report.kind)]
+        // A whole document has no single impact: its items get their own.
+        if report.kind != .feedbackDocument { labels.append(Labels.impact(report.impact)) }
         if let area = report.areaID, area != BeaconIndex.unsureAreaID {
             labels.append(Labels.area(area))
         }
@@ -117,12 +123,15 @@ public enum IssueRenderer {
         case .feature(let feature): out += featureSections(feature, index: index)
         case .change(let change): out += changeSections(change, areaID: report.areaID, index: index)
         case .feedback(let feedback): out += feedbackSections(feedback)
+        case .document(let document): out += documentSections(document)
         }
 
-        out.append("## How much this affects them")
-        out.append("")
-        out.append("**\(report.impact.question)**")
-        out.append("")
+        if report.kind != .feedbackDocument {
+            out.append("## How much this affects them")
+            out.append("")
+            out.append("**\(report.impact.question)**")
+            out.append("")
+        }
 
         if !report.attachments.isEmpty {
             out.append("## What they attached")
@@ -248,6 +257,17 @@ public enum IssueRenderer {
 
     static func feedbackSections(_ feedback: FeedbackBody) -> [String] {
         ["## What they said", "", quote(feedback.message), ""]
+    }
+
+    static func documentSections(_ document: DocumentBody) -> [String] {
+        var out = ["## The document", "",
+                   "The attached file is the whole report. It is a feedback document, "
+                   + "not one item: triage reads it and files each item in it as its own "
+                   + "issue, linked back to this one.", ""]
+        if !document.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            out += ["## Their note", "", quote(document.note), ""]
+        }
+        return out
     }
 
     static func contextSections(_ context: ReportContext) -> [String] {

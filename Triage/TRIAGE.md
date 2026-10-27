@@ -1,6 +1,6 @@
 # How Beacon reports get triaged
 
-*Last updated: 2026-10-25*
+*Last updated: 2026-10-26*
 
 This is Beacon's triage policy: the app files reports, and this document decides what happens to them. An agent follows it unattended, so every rule is a rule, not a preference. Where a judgement call cannot be avoided, the rule names it and states the safe answer.
 
@@ -21,6 +21,18 @@ Each report also has a column on the dashboard, `column`, with `columnAt` writte
 3. **Can it be reproduced?** If not: `cannot-reproduce`.
 4. **Is the fix a product decision?** If so: `needs-human`, with the recommendation. Otherwise it goes to To do.
 5. **Fix it, prove it, merge it.**
+
+---
+
+## A feedback document
+
+A report labelled `type:feedback-document` is not one item. The reporter wrote their feedback somewhere else, in any layout, and attached the file: it is the **parent**. It skips the five gates. Triage reads the document and files each item in it as its own ticket, and the tickets go through the gates like any other report.
+
+1. **Read the attached file.** The issue lists it under "The document" (and "What they attached"), at the link beside its name. Download it with `gh` or the link. Read text, Markdown, JSON, CSV, HTML and RTF as they are, PDFs and images with the file reader, and Word, OpenDocument, PowerPoint and Excel files (`.docx`, `.odt`, `.pptx`, `.xlsx`, `.ods`, `.odp`) by unzipping them and reading the XML text inside (`word/document.xml`, `content.xml`, `ppt/slides/*.xml`, `xl/sharedStrings.xml`). If you cannot read the file, add `needs-info`, comment on what stopped you, and stop; never guess at the contents.
+2. **Split it into items.** One item is one thing someone would build, fix, change or decide: a bug, a missing feature, a change to something that exists, a question or a piece of feedback. Follow the document's own structure, whatever it is (headings, a table, a numbered list, paragraphs, a slide per item), but split a section that holds several separate asks, and keep together things that cannot be done apart. Praise and general remarks are items too, filed as `type:feedback`. Do not drop an item because it looks small, duplicated or out of scope, and do not merge two items to keep the count down. Do not invent items the document does not contain.
+3. **File each item as its own issue** in the same repository, with `gh issue create`, using the labels `beacon` and its kind (`type:bug`, `type:feature-request`, `type:change-request` where the repository has it, or `type:feedback`). Never set `impact:*`, `severity:*`, an assignee or a milestone. Write the body in the layout of [the issue format](../Sources/BeaconCore/IssueRendering.swift) for that kind, so the gates can read it: a bug has the headings "What they expected", "What actually happened" and "Steps to see it", filled only from what the document says (a heading the document does not answer says "Not stated in the document", and gate 1 then marks it `needs-info`). Quote the reporter's words from the document and keep their meaning. Start the body with the line `> Part of #<parent number>, from "<section or place in the document>"` so the item points back to its parent and to where in the document it came from. Add the parent's `area:` label when the item clearly belongs to an area.
+4. **Close the loop on the parent.** Comment on the parent with a list of the new issues (`- #<n> <title> (<kind>)`), the count, and anything in the document you could not turn into an item, with the reason. Label the parent `triaged` and `split`, and leave it open: it holds the original document. It is never implemented, never goes to To do, and never waits on the owner. Do the split once: a parent already labelled `split` is left alone.
+5. **Put every new issue on the board** the way the pickup puts any new report there ([the pickup prompt](PICKUP.md)), and work each through the gates in the same run.
 
 ---
 
@@ -139,9 +151,9 @@ Triage reads every ticket for work an agent is not allowed or able to do: a live
 
 ## The labels
 
-Set by the app: `beacon`, `type:bug|feature-request|change-request|feedback`, `impact:blocked|slowed|irritating|noticed`, `area:<id>`.
+Set by the app: `beacon`, `type:bug|feature-request|change-request|feedback|feedback-document`, `impact:blocked|slowed|irritating|noticed`, `area:<id>`.
 
-Set by triage: `severity:*`, `needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`, `auto-fixed`, `needs-human`, `triaged`.
+Set by triage: `severity:*`, `needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`, `auto-fixed`, `needs-human`, `triaged`, `split` (a feedback document that has been broken into tickets).
 
 `needs-human` is for a product or business choice only the owner can make, never for whether to fix a bug, and the report must say what the call is: write `decision` on the page report (the recommendation, written as one or two plain sentences: approve or decline, and the reason the report itself does not already give. Never a question, a list of choices or an "if nothing is decided" line: approving or declining the report is the choice, so restating it asks nothing.). If you cannot write it, it is not a decision: label `triaged` and leave it for the owner to move.
 

@@ -14,6 +14,9 @@ public enum FeedbackKind: String, Codable, Sendable, CaseIterable {
     case featureRequest = "feature-request"
     case changeRequest = "change-request"
     case feedback
+    /// A document the reporter already wrote. Triage reads it and files
+    /// each item in it as its own report.
+    case feedbackDocument = "feedback-document"
 
     /// The word the reporter sees.
     public var title: String {
@@ -22,6 +25,7 @@ public enum FeedbackKind: String, Codable, Sendable, CaseIterable {
         case .featureRequest: "Something's missing"
         case .changeRequest: "Change request"
         case .feedback: "Something else"
+        case .feedbackDocument: "I have a feedback document"
         }
     }
 
@@ -32,6 +36,9 @@ public enum FeedbackKind: String, Codable, Sendable, CaseIterable {
         case .featureRequest: "You want the app to do something it doesn't do yet \u{2014} or you have an idea."
         case .changeRequest: "You'd like something to work or look differently."
         case .feedback: "Anything else you want to tell us."
+        case .feedbackDocument:
+            "You've already written your feedback somewhere: notes, a review, a list. "
+                + "Add it as it is, in any layout, and we'll split it into separate items."
         }
     }
 }
@@ -215,12 +222,23 @@ public struct FeedbackBody: Codable, Sendable, Equatable {
     }
 }
 
+/// A feedback document: the file is the report. Only the note is typed.
+public struct DocumentBody: Codable, Sendable, Equatable {
+    /// Anything the reporter wants said before the document is read.
+    public var note: String
+
+    public init(note: String = "") {
+        self.note = note
+    }
+}
+
 /// The kind-specific half of a report.
 public enum ReportBody: Codable, Sendable, Equatable {
     case bug(BugBody)
     case feature(FeatureBody)
     case change(ChangeBody)
     case feedback(FeedbackBody)
+    case document(DocumentBody)
 
     public var kind: FeedbackKind {
         switch self {
@@ -228,6 +246,7 @@ public enum ReportBody: Codable, Sendable, Equatable {
         case .feature: .featureRequest
         case .change: .changeRequest
         case .feedback: .feedback
+        case .document: .feedbackDocument
         }
     }
 }

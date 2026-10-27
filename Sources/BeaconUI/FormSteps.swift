@@ -28,10 +28,16 @@ struct FormStepView: View {
                 case .featureRequest: FeatureFormView(session: session)
                 case .changeRequest: ChangeFormView(session: session)
                 case .feedback: FeedbackFormView(session: session)
+                case .feedbackDocument: DocumentFormView(session: session)
                 }
 
-                ImpactPicker(impact: $session.impact)
-                AttachmentsView(session: session, dropTargeted: dropTargeted)
+                if session.kind == .feedbackDocument {
+                    AttachmentsView(session: session, dropTargeted: dropTargeted,
+                                    documentOnly: true)
+                } else {
+                    ImpactPicker(impact: $session.impact)
+                    AttachmentsView(session: session, dropTargeted: dropTargeted)
+                }
 
                 if session.asksForIdentity {
                     IdentityBlock(session: session, gitHubAccount: gitHubAccount)
@@ -250,6 +256,21 @@ struct FeedbackFormView: View {
     }
 }
 
+// MARK: - Document
+
+struct DocumentFormView: View {
+    @Bindable var session: FeedbackSession
+
+    var body: some View {
+        FieldBlock(label: "Anything we should know before reading it?",
+                   hint: "Which app or version it is about, who wrote it, what you "
+                        + "most want looked at. Optional.") {
+            TextEditor(text: $session.document.note)
+                .frame(minHeight: 60).textEditorStyle(.plain)
+        }
+    }
+}
+
 // MARK: - Shared fields
 
 struct FieldBlock<Content: View>: View {
@@ -354,6 +375,9 @@ struct AttachmentsView: View {
     @Bindable var session: FeedbackSession
     /// Whether a drag is over the step, so the drop box can say so.
     var dropTargeted = false
+    /// A feedback document: only a file is wanted, so the screenshot,
+    /// recording and photo buttons are left out.
+    var documentOnly = false
     @State private var importing = false
     @State private var problem: String?
     #if os(iOS)
@@ -362,12 +386,15 @@ struct AttachmentsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Anything to show us?").font(.headline)
-            Text("A picture of what you're looking at is usually worth more "
-                + "than another paragraph. If you can make the problem happen "
-                + "on demand, record it \u{2014} we only record this app's "
-                + "\(PlatformWording.appSurface), never anything else on "
-                + "\(PlatformWording.yourDevice).")
+            Text(documentOnly ? "Your document" : "Anything to show us?").font(.headline)
+            Text(documentOnly
+                ? "Any layout, any sections: write it however suits you. Text, "
+                    + "PDF and Word files all work."
+                : "A picture of what you're looking at is usually worth more "
+                    + "than another paragraph. If you can make the problem happen "
+                    + "on demand, record it \u{2014} we only record this app's "
+                    + "\(PlatformWording.appSurface), never anything else on "
+                    + "\(PlatformWording.yourDevice).")
                 .font(.subheadline).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -375,11 +402,13 @@ struct AttachmentsView: View {
             // phone, and a row that clips its last button hides the one that
             // matters most.
             FlowingButtons {
-                Button {
-                    Task { problem = await session.takeScreenshot() }
-                } label: { Label("Take a screenshot", systemImage: "camera") }
+                if !documentOnly {
+                    Button {
+                        Task { problem = await session.takeScreenshot() }
+                    } label: { Label("Take a screenshot", systemImage: "camera") }
+                }
 
-                if session.configuration.allowsScreenRecording {
+                if !documentOnly, session.configuration.allowsScreenRecording {
                     if session.isRecording {
                         Button {
                             Task { await session.stopRecording() }
@@ -396,14 +425,19 @@ struct AttachmentsView: View {
                 #if os(iOS)
                 // Screenshots and recordings taken with the buttons every
                 // iOS user knows land in Photos, so that is where to look.
-                PhotosPicker(selection: $picked, maxSelectionCount: 6,
-                             matching: .any(of: [.images, .videos])) {
-                    Label("Choose from Photos", systemImage: "photo.on.rectangle")
+                if !documentOnly {
+                    PhotosPicker(selection: $picked, maxSelectionCount: 6,
+                                 matching: .any(of: [.images, .videos])) {
+                        Label("Choose from Photos", systemImage: "photo.on.rectangle")
+                    }
                 }
                 #endif
                 Button {
                     importing = true
-                } label: { Label("Add a file", systemImage: "paperclip") }
+                } label: {
+                    Label(documentOnly ? "Choose the document" : "Add a file",
+                          systemImage: documentOnly ? "doc.badge.plus" : "paperclip")
+                }
             }
             .buttonStyle(.bordered)
 

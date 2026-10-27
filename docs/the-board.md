@@ -72,7 +72,7 @@ The **List**, **Board** and **Triage** switch beside the filters changes how the
 | Column | What is in it |
 |---|---|
 | **Inbox** | Received, not triaged yet. |
-| **To Triage** | Triage read it and it is not going to To do. A flag can say why: needs more info, can't reproduce, confusing to users, or needs your decision. Feature and change requests and feedback wait here until you move them. |
+| **To Triage** | Triage read it and it is not going to To do. A flag can say why: needs more info, can't reproduce, confusing to users, or needs your decision. Feature and change requests and feedback wait here until you move them. A feedback document stays here as the parent of the reports triage split it into; each of them is its own card. |
 | **Backlog** | Kept open, not being worked on now. You park a card here; moving it out puts it back where it was. |
 | **To do** | Queued for the next run: bugs triage will fix on its own, and anything you approved. |
 | **In progress** | Being worked on now. |
@@ -245,7 +245,7 @@ Every opened report has **Your changes** (for people who can edit the page): the
 | App | The tabs. |
 | Status | Every status, or one status. |
 | Flag | Any flag, or one: Needs your decision, Needs more info, Can't reproduce, Confusing to users, Waiting for human, Blocked, Needs PR approval, Ask Claude. |
-| Kind | Every kind, Bugs, Requests, Change requests or Feedback. |
+| Kind | Every kind, Bugs, Requests, Change requests, Feedback or Feedback documents. |
 | Impact | Every impact, or one level. |
 | Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey), or one reporter, with how many reports each has sent in the selected app. The numbers follow your other filters, including Hide done, so each is what picking that person would show. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |
 | Order | Newest first, oldest first, or highest priority first (worst impact first, then what waits on your decision, then oldest). The list starts on newest first and the board on highest priority first; each remembers the choice on this browser. |

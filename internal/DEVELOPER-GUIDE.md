@@ -77,7 +77,7 @@ BugBody       whatHappened, expected, steps [String], reproducibility (every-tim
 FeatureBody   whatIWant, why, areaID?, isNewArea, idea
 ChangeBody    whatToChange, instead, why
 FeedbackBody  message, areaID?
-FeedbackKind  bug | feature-request | change-request | feedback
+FeedbackKind  bug | feature-request | change-request | feedback | feedback-document
 Severity      critical | high | medium | low   (set by triage only)
 ```
 
@@ -100,11 +100,11 @@ Severity      critical | high | medium | low   (set by triage only)
 | Change request | `instead` | Not empty, not a placeholder, at least 12 characters | Yes |
 | Feedback | `message` | Not empty, not a placeholder, at least 12 characters | Yes |
 
-A feature request's `idea`, and a change request's `why` and area, are optional and never block.
+A feedback document (`DocumentBody`: an optional `note`) must have an attached `userFile`; the screenshot and recording buttons are not shown for it, it asks no impact question, the issue carries no `impact:*` label, and the on-device check is skipped. A feature request's `idea`, and a change request's `why` and area, are optional and never block.
 
 `minimumMeaningfulCharacters` is 12. A placeholder is an answer such as "n/a", "idk", "asdf" or "it broke", matched whole and case-insensitively after trimming punctuation. The full list is `CompletenessRules.placeholders`.
 
-The page carries a copy of these rules and their messages in JavaScript. Change `Completeness.swift` first, then `Inbox/index.html`, and keep the messages identical. The page also requires a reporter name of at least 3 characters and a chosen app. It has no area rule for feature requests. The page offers change requests; it does not yet offer the idea box, which only the in-app sheet has.
+The page carries a copy of these rules and their messages in JavaScript. Change `Completeness.swift` first, then `Inbox/index.html`, and keep the messages identical. The page also requires a reporter name of at least 3 characters and a chosen app. It has no area rule for feature requests. The page offers change requests; it does not yet offer the idea box, which only the in-app sheet has. It does not offer the feedback document either: only the in-app sheet and the website widget do. The board shows a feedback document filed that way.
 
 ## Issue rendering and labels
 
@@ -115,7 +115,7 @@ The page carries a copy of these rules and their messages in JavaScript. Change 
 **Body**, in order:
 
 1. A quoted line naming the reporter and saying they agreed to be contacted.
-2. The kind's sections. Bug: `## What they expected`, `## What actually happened`, `## Steps to see it`, `## Does it happen again?`. Feature: `## What they want to be able to do`, a `## Why` section when `why` is set, `## Where it belongs` (with the area's source paths). Change request: `## What they would like changed`, `## What they would like instead`, `## Why it matters to them` when `why` is set, `## Where it is` when an area is named. Feedback: `## What they said`. A feature request adds `## Their idea` when `idea` is set.
+2. The kind's sections. Bug: `## What they expected`, `## What actually happened`, `## Steps to see it`, `## Does it happen again?`. Feature: `## What they want to be able to do`, a `## Why` section when `why` is set, `## Where it belongs` (with the area's source paths). Change request: `## What they would like changed`, `## What they would like instead`, `## Why it matters to them` when `why` is set, `## Where it is` when an area is named. Feedback: `## What they said`. Feedback document: `## The document` (saying the attached file is to be split) and `## Their note` when set; triage splits it by `Triage/TRIAGE.md`, "A feedback document". A feature request adds `## Their idea` when `idea` is set.
 3. `## How much this affects them`.
 4. `## What they attached`, when there are attachments.
 5. Collapsed `<details>` blocks: app, machine and settings; one per folder listing; the log tail.

@@ -47,6 +47,7 @@ public enum ReportField: String, Sendable, Equatable, CaseIterable {
     case message
     case attachments
     case reproducibility
+    case document
 }
 
 /// The deterministic gate. Nothing here needs a model, a network, or a
@@ -101,6 +102,12 @@ public enum CompletenessRules {
             if isEmptyInSubstance(feedback.message) || tooShort(feedback.message) {
                 issues.append(.init(field: .message,
                     message: "Tell us what's on your mind — a sentence or two is plenty.",
+                    blocking: true))
+            }
+        case .document:
+            if !report.attachments.contains(where: { $0.kind == .userFile }) {
+                issues.append(.init(field: .document,
+                    message: "Add the document you want us to read.",
                     blocking: true))
             }
         }

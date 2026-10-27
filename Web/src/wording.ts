@@ -10,6 +10,10 @@ export const KIND_WORDS: Record<FeedbackKind, { title: string; blurb: string }> 
   },
   "change-request": { title: "Change request", blurb: "You'd like something to work or look differently." },
   feedback: { title: "Something else", blurb: "Anything else you want to tell us." },
+  "feedback-document": {
+    title: "I have a feedback document",
+    blurb: "You've already written your feedback somewhere: notes, a review, a list. Add it as it is, in any layout, and we'll split it into separate items.",
+  },
 };
 
 export const IMPACT_WORDS: Record<Impact, string> = {
@@ -38,6 +42,7 @@ export const FIELD_LABELS = {
   instead: "What would you like instead?",
   changeWhy: "Why does it matter to you? (optional)",
   message: "What's on your mind?",
+  note: "Anything we should know before reading it?",
   impact: "How much is this affecting you?",
 } as const;
 
@@ -50,6 +55,7 @@ export const FIELD_HINTS = {
   why: "Knowing this often turns up a better answer than the one you asked for.",
   idea: "If you have a thought about how it could work, tell us. You can leave this empty.",
   whatToChange: "Say what works today that you'd like done differently.",
+  note: "Which app or version it is about, who wrote it, what you most want looked at. Optional.",
   impact: "This is what decides the order things get looked at, so an honest answer helps more than a dramatic one.",
   contact: "An email or a phone number, if you'd like us to be able to ask you about this. Leave it empty and your report is sent without one.",
 } as const;
@@ -72,6 +78,7 @@ export const COMPLETENESS = {
   whatToChange: "Say what you'd like changed — the thing that works today but that you'd do differently.",
   instead: "Say what you'd like instead. A sentence about how it should work is plenty.",
   feedback: "Tell us what's on your mind — a sentence or two is plenty.",
+  document: "Add the document you want us to read.",
 } as const;
 
 export const UI = {
@@ -107,7 +114,10 @@ export const UI = {
   blockingTitle: "Before this can go",
   attachTitle: "Anything to show us?",
   attachHint:
-    "A picture of what you're looking at is usually worth more than another paragraph. Text, images and PDFs all work.",
+    "A picture of what you're looking at is usually worth more than another paragraph. Text, images, PDFs, and Word and other office documents all work.",
+  documentTitle: "Your document",
+  documentHint:
+    "Add the file or files as they are, in any layout. Text, PDFs, Word and other office documents, and images all work.",
   addFile: "Add a file",
   dropHere: "Drop files here",
   remove: "Remove",
@@ -131,6 +141,7 @@ export const ACCEPTED_EXTENSIONS = new Set([
   "txt","md","markdown","log","json","yaml","yml","toml","csv","tsv","xml","html","htm","plist","diff","patch","rtf",
   "swift","js","ts","tsx","jsx","py","rb","go","rs","java","kt","c","h","cpp","hpp","m","mm","sh","sql","conf","ini",
   "png","jpg","jpeg","heic","heif","gif","webp","tiff","bmp","pdf","mov","mp4","m4v",
+  "docx","odt","pptx","xlsx","ods","odp",
 ]);
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MAX_TOTAL_BYTES = 60 * 1024 * 1024;
@@ -140,5 +151,5 @@ export const MAX_SEND_BASE64 = 30 * 1024 * 1024;
 export function refusalFor(filename: string): string {
   const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
   const named = ext ? `A .${ext} file` : "That file";
-  return `${named} can't be read by the person or the assistant who will look at this report, so adding it wouldn't help. Text, images and PDFs all work \u2014 a screenshot of what you're looking at is usually the most useful thing you can add.`;
+  return `${named} can't be read by the person or the assistant who will look at this report, so adding it wouldn't help. Text, images, PDFs, and Word and other office documents all work \u2014 a screenshot of what you're looking at is usually the most useful thing you can add.`;
 }

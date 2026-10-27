@@ -53,7 +53,7 @@ struct ChangeRequestTests {
 
     @Test func theCardIsCalledChangeRequest() {
         #expect(FeedbackKind.changeRequest.title == "Change request")
-        #expect(FeedbackKind.allCases.count == 4)
+        #expect(FeedbackKind.allCases.count == 5)
     }
 
     @Test func bothRequiredFieldsBlock() {
