@@ -1,6 +1,6 @@
 # The dashboard
 
-*Last updated: 2026-10-13*
+*Last updated: 2026-10-30*
 
 The dashboard is where the owner reads every report from every app on the Beacon page, and what happened to each. One page serves all your apps: each app has its own tab, with its own counts. The pickup writes the outcomes. The one thing you write is your decision on work that waits on a person.
 
@@ -215,7 +215,11 @@ Every report carries the tester's answer to "How much is this affecting you?". T
 | An outlined circle with an exclamation mark | `irritating` | It bothers me, but I can keep working |
 | A small open circle | `noticed` | I noticed it — it doesn't really affect me |
 
-To see the worst first, choose **Highest priority first** in the order menu. To see one level only, choose it in the impact menu.
+To see the worst first, choose **Highest priority first** in the order menu.
+
+### Putting reports in your own order
+
+You can place reports yourself in the Triage, List and Board views: the To Triage list, the Backlog and To do bars and columns, and every other column or stage. Drag a card or row by its grip (the six dots) and drop it where you want it; a line shows the spot. On a card or row, the up arrow sends it to the top of its list and the down arrow sends it to the bottom, with no question asked. The first time you place one, the order menu changes to **My order** in all three views, and every view then shows the same sequence. A report you have not placed yet, such as a new arrival, sits at the top of its list until you place it. Your order is saved on the report as `sortOrder`, so it is the same on every browser. Dragging a card onto a different column still changes its status, as before. To see one level only, choose it in the impact menu.
 
 ## Approve or cancel
 
@@ -248,7 +252,7 @@ Every opened report has **Your changes** (for people who can edit the page): the
 | Kind | Every kind, Bugs, Requests, Change requests, Feedback or Feedback documents. |
 | Impact | Every impact, or one level. |
 | Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey), or one reporter, with how many reports each has sent in the selected app. The numbers follow your other filters, including Hide done, so each is what picking that person would show. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. |
-| Order | Newest first, oldest first, or highest priority first (worst impact first, then what waits on your decision, then oldest). The list starts on newest first and the board on highest priority first; each remembers the choice on this browser. |
+| Order | Newest first, oldest first, highest priority first (worst impact first, then what waits on your decision, then oldest), or **My order**. The list starts on newest first and the board on highest priority first; each remembers the choice on this browser. |
 | Hide done | A switch beside the search box. On, it hides everything finished: the Done and Deployed columns, and everything under Closed (canceled, duplicate, works as designed). The page remembers it on this browser. |
 | Search words | Matches the title, the tester's words, the reporter, the area and the reference. |
 

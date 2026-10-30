@@ -291,7 +291,14 @@
   .grip svg { width: 14px; height: 14px; }
   .card.movable { cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
   .card.movable .open { user-select: none; -webkit-user-select: none; }
-  .card.dragging { opacity: .35; }
+  .card.dragging, .list details.dragging { opacity: .35; }
+  .dropbefore { box-shadow: 0 -3px 0 var(--accent); }
+  .dropafter { box-shadow: 0 3px 0 var(--accent); }
+  .ordbtn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-2); color: var(--ink-2); cursor: pointer; }
+  .ordbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .ordbtn svg { width: 14px; height: 14px; }
+  .roworder { display: flex; gap: 6px; align-items: center; flex: none; }
+  .roworder .grip { cursor: grab; }
   .ghost.compact { width: 260px; gap: 2px; padding: 8px 12px; border-color: var(--accent); }
   .ghost.compact .title { font-size: 14px; }
   .ghost.compact .ghostto { font-size: 13px; font-weight: 700; color: var(--accent); }
@@ -378,7 +385,7 @@
       <select id="fKind" aria-label="Kind"><option value="">Every kind</option></select>
       <select id="fImpact" aria-label="Impact"><option value="">Every impact</option></select>
       <select id="fReporter" aria-label="Who sent it"><option value="">Everyone</option></select>
-      <select id="fSort" aria-label="Order"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="priority">Highest priority first</option></select>
+      <select id="fSort" aria-label="Order"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="priority">Highest priority first</option><option value="custom">My order</option></select>
       <input type="text" id="fSearch" placeholder="Search words" aria-label="Search words">
       <label class="toggle"><input type="checkbox" id="fHideDone"><span>Hide done</span></label>
       <span class="count" id="fCount"></span>
@@ -1452,6 +1459,17 @@
     });
     return d;
   });
+  // A list row the owner can place: a grip to drag it and the two arrows.
+  const orderRow = safely((r) => {
+    const d = row(r);
+    if (!canMove()) return d;
+    const grip = el("span", { class: "grip", title: "Drag to reorder", "aria-hidden": "true" });
+    grip.innerHTML = GRIP;
+    grip.addEventListener("pointerdown", (e) => { e.stopPropagation(); startDrag(e, r, d, []); });
+    grip.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); });
+    d.querySelector("summary .row").append(el("div", { class: "roworder" }, grip, ...orderButtons(d, r)));
+    return d;
+  });
   // Everyone who sent a report in the selected app, with how many, so the
   // owner can find what one person submitted.
   // "User submitted" is everything not sent by the owner: the owner's own
@@ -1549,7 +1567,72 @@
     priority: (a, b) => ((IMPACT_RANK[a.impact] ?? 9) - (IMPACT_RANK[b.impact] ?? 9))
       || (waitsOnOwner(b) - waitsOnOwner(a)) || filedMs(a) - filedMs(b),
   };
+  // "My order": the owner's own sequence, kept as `sortOrder` on each report.
+  // A report with none yet (a new arrival) sits above the ordered ones, worst
+  // impact first, so it is seen before it is placed.
+  const ordOf = (r) => (typeof r.sortOrder === "number" ? r.sortOrder : null);
+  ORDERS.custom = (a, b) => {
+    const x = ordOf(a), y = ordOf(b);
+    if (x === null && y === null) return ORDERS.priority(a, b);
+    if (x === null) return -1;
+    if (y === null) return 1;
+    return (x - y) || (filedMs(a) - filedMs(b));
+  };
   const sortBy = () => ORDERS[$("#fSort").value] || ORDERS.newest;
+  // Every list on screen, in the order shown and with nothing cut off by
+  // "Show more", keyed by its `data-list`: a drop or an arrow works on these.
+  let lists = new Map();
+  const listOf = (node) => { const host = node && node.closest("[data-list]"); return host ? host.dataset.list : ""; };
+  const SEND_UP = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2h10M7 12V5M3.5 8.5L7 5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const SEND_DOWN = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 12h10M7 2v7M3.5 5.5L7 9l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  // Put report r after the one named `prevRef` (first when null) in its list.
+  // Where the neighbours already have numbers, r takes one between them; where
+  // they do not, the whole list is numbered once. Only changed ones are written.
+  const placeAfter = async (listKey, r, prevRef) => {
+    const full = lists.get(listKey);
+    if (!full || !canMove()) return;
+    const rest = full.filter((x) => x.reference !== r.reference);
+    const at = prevRef ? rest.findIndex((x) => x.reference === prevRef) + 1 : 0;
+    if (prevRef && at === 0) return;
+    const prev = rest[at - 1], next = rest[at];
+    const p = prev ? ordOf(prev) : null, n = next ? ordOf(next) : null;
+    const changes = [];
+    if ((prev && p === null) || (next && n === null) || (p !== null && n !== null && n - p < 1e-6)) {
+      rest.splice(at, 0, r);
+      rest.forEach((x, i) => { if (ordOf(x) !== (i + 1) * 1000) changes.push([x, (i + 1) * 1000]); });
+    } else {
+      const value = p !== null && n !== null ? (p + n) / 2 : p !== null ? p + 1000 : n !== null ? n - 1000 : 1000;
+      changes.push([r, value]);
+    }
+    if (!changes.length) return;
+    // Once the owner orders anything, every view shows her order.
+    for (const l of ["triage", "list", "board"]) remember("sort-" + l, "custom");
+    $("#fSort").value = "custom";
+    showBoardMsg("");
+    try {
+      for (let i = 0; i < changes.length; i += 20) {
+        await Promise.all(changes.slice(i, i + 20).map(([x, v]) => db.doc("reports/" + x.reference).update({ sortOrder: v })));
+      }
+    } catch (err) { showBoardMsg("That didn't save: " + (err && err.message || err)); }
+    renderBoard();
+  };
+  const sendToEnd = (listKey, r, top) => {
+    const full = lists.get(listKey);
+    if (!full) return;
+    const rest = full.filter((x) => x.reference !== r.reference);
+    return placeAfter(listKey, r, top ? null : rest.length ? rest[rest.length - 1].reference : null);
+  };
+  // The two arrows: all the way to the top or bottom of the list the card is in.
+  const orderButtons = (node, r) => {
+    const make = (top) => {
+      const b = el("button", { type: "button", class: "ordbtn", title: top ? "Send to top" : "Send to bottom", "aria-label": (top ? "Send to top: " : "Send to bottom: ") + (r.title || r.reference) });
+      b.innerHTML = top ? SEND_UP : SEND_DOWN;
+      b.addEventListener("pointerdown", (e) => e.stopPropagation());
+      b.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); sendToEnd(listOf(node), r, top); });
+      return b;
+    };
+    return [make(true), make(false)];
+  };
   const GRIP = '<svg viewBox="0 0 14 14" aria-hidden="true"><g fill="currentColor"><circle cx="4.5" cy="3" r="1.3"/><circle cx="9.5" cy="3" r="1.3"/><circle cx="4.5" cy="7" r="1.3"/><circle cx="9.5" cy="7" r="1.3"/><circle cx="4.5" cy="11" r="1.3"/><circle cx="9.5" cy="11" r="1.3"/></g></svg>';
   // A card that can be moved: a grip, a "Move to" menu and a drag. A mouse or
   // pen drags the whole card; a finger drags by the grip, so a swipe anywhere
@@ -1563,10 +1646,15 @@
       startDrag(e, r, c, moves);
     });
     grip.addEventListener("pointerdown", (e) => startDrag(e, r, c, moves));
-    const menu = el("select", { "aria-label": `Move ${r.title || r.reference} to` },
-      el("option", { value: "", text: "Move to…" }), ...moves.map((m) => el("option", { value: m.key, text: m.label })));
-    menu.addEventListener("change", () => { const m = moves.find((x) => x.key === menu.value); if (m) applyMove(r, m); });
-    c.append(el("div", { class: "move" }, grip, menu));
+    const bar = el("div", { class: "move" }, grip);
+    if (moves.length) {
+      const menu = el("select", { "aria-label": `Move ${r.title || r.reference} to` },
+        el("option", { value: "", text: "Move to…" }), ...moves.map((m) => el("option", { value: m.key, text: m.label })));
+      menu.addEventListener("change", () => { const m = moves.find((x) => x.key === menu.value); if (m) applyMove(r, m); });
+      bar.append(menu);
+    }
+    bar.append(...orderButtons(c, r));
+    c.append(bar);
   };
   const card = safely((r) => {
     const moves = canMove() ? movesFor(r) : [];
@@ -1577,7 +1665,7 @@
       el("div", { class: "meta", text: [ticketId(r), KIND[r.kind] || r.kind, r.app && r.app.name].filter(Boolean).join(" · ") }),
       decisionLine(r),
       el("div", { class: "pills" }, pill(r), ...chips(r)));
-    if (moves.length) makeMovable(c, r, moves);
+    if (canMove()) makeMovable(c, r, moves);
     return c;
   });
   // ---- The Triage view: the To Triage column wide on the left, every other
@@ -1606,7 +1694,7 @@
       const line = decisionLine(r);
       if (line) c.append(line);
     }
-    if (moves.length) makeMovable(c, r, moves);
+    if (canMove()) makeMovable(c, r, moves);
     return c;
   });
   const TRIAGE_ZONES = [
@@ -1623,6 +1711,8 @@
   const renderTriage = (shown) => {
     const list = shown.filter((r) => columnOf(r) === "todo");
     if (!list.some((r) => r.reference === triageOpen)) triageOpen = list.length ? list[0].reference : "";
+    lists.set("triage:todo", list);
+    $("#triageMain").dataset.list = "triage:todo";
     $("#triageMain").replaceChildren(
       el("header", {}, el("h2", {}, document.createTextNode("To Triage"), el("span", { text: String(list.length) })), el("p", { text: "Claude has read and routed these. Open one, then drag it to where it goes." })),
       ...(list.length ? capped("col:triage", list, triageCard) : [el("div", { class: "empty", text: "Nothing to triage." })]));
@@ -1632,7 +1722,9 @@
     // time, each a list row with Your changes inline.
     const movedMs = (r) => Date.parse(r.columnAt) || filedMs(r);
     $("#triageZones").replaceChildren(...TRIAGE_ZONES.map(([key, name]) => {
-      const items = (byZone.get(key) || []).sort((x, y) => movedMs(y) - movedMs(x));
+      // Newest move first, unless the owner has chosen her own order.
+      const items = (byZone.get(key) || []).sort($("#fSort").value === "custom" ? ORDERS.custom : (x, y) => movedMs(y) - movedMs(x));
+      lists.set("zone:" + key, items);
       const open = zonesOpen.has(key);
       const bar = el("button", { type: "button", class: "zonebar", "aria-expanded": String(open) },
         el("span", { class: "chev", text: open ? "▾" : "▸" }), el("span", { class: "zname", text: name }), el("span", { class: "n", text: String(items.length) }));
@@ -1640,7 +1732,7 @@
       const body = [];
       if (open) {
         const shownCount = caps["zone:" + key] || 5;
-        body.push(el("div", { class: "list zonelist" }, ...(items.length ? items.slice(0, shownCount).map(row) : [el("div", { class: "empty", text: "Nothing here." })])));
+        body.push(el("div", { class: "list zonelist", "data-list": "zone:" + key }, ...(items.length ? items.slice(0, shownCount).map((r) => orderRow(r)) : [el("div", { class: "empty", text: "Nothing here." })])));
         if (items.length > shownCount) {
           const more = el("button", { type: "button", class: "linkish more", text: `Show ${Math.min(10, items.length - shownCount)} more of ${items.length - shownCount}` });
           more.addEventListener("click", () => { caps["zone:" + key] = shownCount + 10; renderBoard(); });
@@ -1667,11 +1759,14 @@
     $("#kanban").style.setProperty("--cols", String(visible.length));
     $("#kanban").replaceChildren(...visible.map(([id, name, blurb]) => {
       const list = cols.get(id).sort(sortBy());
-      return el("section", { class: "kcol", "data-col": id, "data-key": id, "aria-label": name },
+      lists.set("board:" + id, list);
+      return el("section", { class: "kcol", "data-col": id, "data-key": id, "data-list": "board:" + id, "aria-label": name },
         el("header", {}, el("h2", {}, document.createTextNode(name), el("span", { text: String(list.length) })), el("p", { text: blurb })),
         ...(list.length ? capped("col:" + id, list, card) : [el("div", { class: "empty", text: "Nothing here." })]));
     }));
     closed.sort(sortBy());
+    lists.set("board:closed", closed);
+    $("#closedList").dataset.list = "board:closed";
     $("#closedArea").hidden = !closed.length || hideDone;
     $("#closedTitle").textContent = `Closed: canceled, duplicate or works as designed (${closed.length})`;
     $("#closedList").replaceChildren(...capped("closed", closed, card));
@@ -1685,7 +1780,7 @@
   const startDrag = (e, r, cardEl, moves) => {
     if (e.button > 0 || drag) return;
     if (e.pointerType !== "touch") e.preventDefault(); // no text selection while dragging
-    drag = { r, cardEl, moves, x: e.clientX, y: e.clientY, ghost: null, over: null, id: e.pointerId };
+    drag = { r, cardEl, moves, x: e.clientX, y: e.clientY, ghost: null, over: null, drop: null, listKey: listOf(cardEl), id: e.pointerId };
     window.addEventListener("pointermove", moveDrag);
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointercancel", cancelDrag);
@@ -1698,11 +1793,11 @@
       if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
       const box = drag.cardEl.getBoundingClientRect();
       drag.dx = drag.x - box.left; drag.dy = drag.y - box.top;
-      if (drag.cardEl.classList.contains("triagecard")) {
+      if (drag.cardEl.classList.contains("triagecard") || drag.cardEl.tagName === "DETAILS") {
         // An opened ticket is far too big to carry: drag a small tag that
         // names where it would land, kept just below and right of the pointer.
         const t = drag.cardEl.querySelector(".title, .open");
-        drag.ghost = el("div", { class: "card ghost compact" }, el("div", { class: "title", text: t ? t.textContent : "" }), el("div", { class: "ghostto", text: "Drop on a status" }));
+        drag.ghost = el("div", { class: "card ghost compact" }, el("div", { class: "title", text: t ? t.textContent : "" }), el("div", { class: "ghostto", text: "" }));
         drag.dx = -16; drag.dy = -16;
       } else {
         drag.ghost = drag.cardEl.cloneNode(true);
@@ -1717,8 +1812,21 @@
     const col = columnAt(e.clientX, e.clientY);
     const ok = col && drag.moves.some((m) => m.key === col.dataset.key) ? col : null;
     if (ok !== drag.over) { if (drag.over) drag.over.classList.remove("over"); if (ok) ok.classList.add("over"); drag.over = ok; }
+    // Over its own list, a drop places it: a line shows where.
+    document.querySelectorAll(".dropbefore, .dropafter").forEach((n) => n.classList.remove("dropbefore", "dropafter"));
+    drag.drop = null;
+    const hover = document.elementFromPoint(e.clientX, e.clientY);
+    const host = !ok && drag.listKey && hover ? hover.closest("[data-list]") : null;
+    if (host && host.dataset.list === drag.listKey) {
+      const items = [...host.children].filter((n) => n.dataset && n.dataset.ref && n !== drag.cardEl);
+      let at = items.findIndex((n) => { const b = n.getBoundingClientRect(); return e.clientY < b.top + b.height / 2; });
+      if (at < 0) at = items.length;
+      drag.drop = { listKey: drag.listKey, prevRef: at ? items[at - 1].dataset.ref : null };
+      if (at < items.length) items[at].classList.add("dropbefore");
+      else if (items.length) items[items.length - 1].classList.add("dropafter");
+    }
     const to = drag.ghost.querySelector(".ghostto");
-    if (to) to.textContent = ok ? "Move to " + (ok.getAttribute("aria-label") || ok.dataset.key) : "Drop on a status";
+    if (to) to.textContent = ok ? "Move to " + (ok.getAttribute("aria-label") || ok.dataset.key) : drag.drop ? "Drop to place here" : drag.moves.length ? "Drop on a status" : "Drop in the list";
   };
   const finishDrag = () => {
     if (!drag) return null;
@@ -1729,12 +1837,13 @@
     if (ghost) ghost.remove();
     cardEl.classList.remove("dragging");
     document.querySelectorAll(".kcol").forEach((col) => col.classList.remove("target", "over"));
+    document.querySelectorAll(".dropbefore, .dropafter").forEach((n) => n.classList.remove("dropbefore", "dropafter"));
     const done = drag; drag = null;
-    return over ? done : null;
+    return done;
   };
-  const endDrag = () => { if (drag && drag.ghost) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); } const d = finishDrag(); if (d) { const m = d.moves.find((x) => x.key === d.over.dataset.key); if (m) applyMove(d.r, m); } };
+  const endDrag = () => { if (drag && drag.ghost) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); } const d = finishDrag(); if (!d) return; if (d.over) { const m = d.moves.find((x) => x.key === d.over.dataset.key); if (m) applyMove(d.r, m); } else if (d.drop) placeAfter(d.drop.listKey, d.r, d.drop.prevRef); };
   const cancelDrag = () => { finishDrag(); };
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && drag) { drag.over = null; finishDrag(); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && drag) { drag.over = null; drag.drop = null; finishDrag(); } });
 
   // ---- An opened card: the same detail as a list row, in a dialog. ----
   const dialog = $("#reportDialog");
@@ -1772,6 +1881,7 @@
     renderTabs(); renderStats(); renderReporters();
     const shown = allReports.filter((r) => passes(r));
     shown.sort(sortBy());
+    lists = new Map();
     $("#fCount").textContent = `${shown.length} of ${allReports.filter(inApp).length}`;
     const onBoard = layout !== "list";
     document.querySelectorAll(".seg [data-layout]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.layout === layout)));
@@ -1799,7 +1909,8 @@
       queue.replaceChildren(...stages.filter(([id]) => byStage.get(id).length).map(([id, name, blurb]) =>
         el("section", { class: "stage" },
           el("h2", {}, document.createTextNode(name), el("span", { class: "n", text: String(byStage.get(id).length) }), el("span", { class: "blurb", text: blurb })),
-          el("div", { class: "list" }, ...capped("list:" + id, byStage.get(id), row, 50)))));
+          el("div", { class: "list", "data-list": "stage:" + id }, ...capped("list:" + id, byStage.get(id), orderRow, 50)))));
+      for (const [id] of stages) lists.set("stage:" + id, byStage.get(id));
     }
   };
   for (const l of FLAGS) $("#fFlag").append(el("option", { value: l, text: l }));
