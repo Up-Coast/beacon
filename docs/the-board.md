@@ -1,6 +1,6 @@
 # The dashboard
 
-*Last updated: 2026-10-30*
+*Last updated: 2026-10-31*
 
 The dashboard is where the owner reads every report from every app on the Beacon page, and what happened to each. One page serves all your apps: each app has its own tab, with its own counts. The pickup writes the outcomes. The one thing you write is your decision on work that waits on a person.
 
@@ -55,7 +55,7 @@ One page serves every app. There is no page per project.
 3. Choose, per app, where its reports are worked:
     - **On this page.** The pickup works the report on the page. The dashboard is the whole record.
     - **As GitHub issues.** The pickup files each page report as an issue in the app's repository, then writes the outcome back onto the report, so it shows on the dashboard like any other. Reports that the in-app or web sheet files straight to GitHub stay in GitHub; the app's tab says so and links to its issues.
-4. Read everything under **All apps**, or one app at a time with its tab. Each tab's number counts that app's reports waiting on your decision, and the four counts follow the tab you choose.
+4. Read everything under **All apps**, or one app at a time with its tab. Each tab shows that app's open reports and how many wait on your decision, and the four counts follow the tab you choose.
 
 The pickup reads the same app list, so it knows each app's repository, folder and where its reports are worked. Adding an app needs no republish and no change to the pickup.
 
@@ -99,7 +99,7 @@ With a mouse, drag the card itself. With a finger, drag it by its grip, the dott
 
 ## Choose an app
 
-The tabs under the heading are **All apps**, then one tab per app in the app list, with its platform: macOS, iOS, Web or Other. A number on a tab counts that app's reports waiting on your decision. The page remembers the tab you chose on this browser. A link with `?app=<id or name>` and nothing else opens on that app's tab.
+The tabs under the heading are **All apps**, then one tab per app in the app list, with its platform: macOS, iOS, Web or Other. The grey number on a tab counts that app's open reports (not Done, Deployed or Closed), and the orange number counts those waiting on your decision. The page remembers the tab you chose on this browser. A link with `?app=<id or name>` and nothing else opens on that app's tab.
 
 A report whose app is not in the app list still shows, under a tab with a dashed border named after the app on the report. This happens when an app is removed from the list, or when a report names an app the list never had. That tab offers **Add this app**, which opens the Apps view with the name, id, platform and repository filled in from the report.
 

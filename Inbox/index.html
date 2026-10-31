@@ -1496,16 +1496,16 @@
     select.value = keep === USERS || names.includes(keep) ? keep : "";
   };
   const renderTabs = () => {
-    // A tab shows how many reports the app has (the grey number) and, in
+    // A tab shows how many open reports the app has (the grey number) and, in
     // orange, how many of them need the owner's decision.
     const tab = (id, name, platform, total, waiting) => {
       const b = el("button", { type: "button", class: "tab", role: "tab", "aria-selected": String(selectedApp === id), "data-app": id },
         el("span", { text: name }), platform ? el("span", { class: "plat", text: platform }) : null,
-        el("span", { class: "total", title: `${total} reports`, text: String(total) }),
+        el("span", { class: "total", title: `${total} open`, text: String(total) }),
         waiting ? el("span", { class: "badge", title: `${waiting} need your decision`, text: `${waiting} to decide` }) : null);
       return b;
     };
-    const inScope = (id) => allReports.filter((r) => (!id || (r.app && r.app.id === id)) && !(hideDone && isFinished(r)));
+    const inScope = (id) => allReports.filter((r) => (!id || (r.app && r.app.id === id)) && !isFinished(r));
     const waitingFor = (id) => inScope(id).filter(waitsOnYou).length;
     $("#tabs").replaceChildren(tab("", "All apps", "", inScope("").length, waitingFor("")), ...boardApps().map((a) => {
       const t = tab(a.id, a.name || a.id, a.platform || "", inScope(a.id).length, waitingFor(a.id));
