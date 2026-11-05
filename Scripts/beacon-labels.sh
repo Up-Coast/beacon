@@ -50,6 +50,7 @@ label "expectation-mismatch"  "1D76DB" "The app did what it should; the product 
 label "working-as-intended"   "BFD4F2" "Behaving as designed"
 label "auto-fixed"            "0E8A16" "Fixed, verified by running the app, and merged"
 label "needs-human"           "5319E7" "A product decision only the owner can make"
+label "red-main"              "B60205" "A check failed on the default branch itself"
 
 echo
 echo "Done. Area labels (area:<id>) are created as reports arrive —"

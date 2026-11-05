@@ -143,7 +143,7 @@ Choose one level higher when any of these is true:
 - more than one person has reported it
 - it touches stored user data, authentication, payments or networking
 
-**A red default branch is always `severity:critical`.** When a check (a test, the build, the type check, a guard) fails on the default branch itself, every push is refused until it is fixed, so nothing else can land. It is filed as a bug with `severity:critical` and `impact:blocked`, goes straight to To do at the top of the list, and is the next thing worked, before any other report. It never waits for the owner and never waits for the daily run. Before filing, run the failing check again on the newest default branch: if it already passes, say so on the stopped report and file nothing.
+**A red default branch is always `severity:critical`.** When a check (a test, the build, the type check, a guard) fails on the default branch itself, every push is refused until it is fixed, so nothing else can land. It is filed as a bug with `severity:critical` and `impact:blocked`, goes straight to To do at the top of the list, and is the next thing worked, before any other report. It never waits for the owner and never waits for the daily run. It also gets the label `red-main`, which is how often it happens is counted: pushes to the default branch run only the tests related to the change, and a red default branch means a change broke something those tests did not cover. Three or more `red-main` issues in one repository within 30 days means the related-tests shortcut is not safe for it, and the owner is told once (WORKER.md, step 7) so every push there can be made to run the whole suite. Before filing, run the failing check again on the newest default branch: if it already passes, say so on the stopped report and file nothing.
 
 Impact and severity often disagree, and the disagreement is worth noticing. Several `impact:blocked` reports on a `severity:low` issue usually mean the workaround is harder to find than somebody thought.
 
@@ -155,7 +155,7 @@ Triage reads every ticket for work an agent is not allowed or able to do: a live
 
 Set by the app: `beacon`, `type:bug|feature-request|change-request|feedback|feedback-document`, `impact:blocked|slowed|irritating|noticed`, `area:<id>`.
 
-Set by triage: `severity:*`, `needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`, `auto-fixed`, `needs-human`, `triaged`, `split` (a feedback document that has been broken into tickets).
+Set by triage: `severity:*`, `red-main`, `needs-info`, `cannot-reproduce`, `expectation-mismatch`, `working-as-intended`, `auto-fixed`, `needs-human`, `triaged`, `split` (a feedback document that has been broken into tickets).
 
 `needs-human` is for a product or business choice only the owner can make, never for whether to fix a bug, and the report must say what the call is: write `decision` on the page report (the recommendation, written as one or two plain sentences: approve or decline, and the reason the report itself does not already give. Never a question, a list of choices or an "if nothing is decided" line: approving or declining the report is the choice, so restating it asks nothing.). If you cannot write it, it is not a decision: label `triaged` and leave it for the owner to move.
 
