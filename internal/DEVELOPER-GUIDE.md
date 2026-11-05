@@ -189,6 +189,7 @@ The artifact's database holds JSON documents at slash paths. A document is at mo
 ```
 apps/<id>                          seeded with write_db; the page never writes it
   name, platform, repository, folder, tracker ("github" | "board"), prefix (optional),
+  agentAccounts, ownerAccounts (optional): GitHub logins. An issue by an agentAccounts login shows as Claude; a GH- issue by an ownerAccounts login with no Beacon metadata (an agent session filing through the owner's own sign-in) also shows as Claude, in the mirror and on the page.
   reporterLookup (optional): {url, tokenEnv}. The mirror POSTs {"accounts": [...]} to url
   with "Authorization: Bearer <$tokenEnv>" and expects {"reporters": {account: {name, email}}};
   the answer becomes the report's reporter on the board only, never the issue

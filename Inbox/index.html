@@ -1474,8 +1474,9 @@
   // owner can find what one person submitted.
   // "User submitted" is everything not sent by the owner: the owner's own
   // reports (her sessions' tasks, her tries of the sheet) are named abbey...
+  // or Claude.
   const USERS = "__users__";
-  const isOwnerReport = (r) => /^abbey(\s|jackson|$)|abbey@/i.test(r.reporter || "");
+  const isOwnerReport = (r) => /^abbey(\s|jackson|$)|abbey@|^Claude\b/i.test(r.reporter || "");
   let reporterKey = "";
   const renderReporters = () => {
     // Counts follow the other filters, so a number here is what picking that
@@ -1865,7 +1866,18 @@
   dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
   dialog.addEventListener("close", () => { dialogRef = ""; dialogShown = ""; });
 
+  // An issue a Claude session filed through the owner's own GitHub sign-in
+  // carries the owner's login; the app's `ownerAccounts` says which logins
+  // those are. Beacon's own reports have BN- references, so only GH- ones
+  // are relabelled. The mirror writes "Claude" for issues filed since.
+  const relabelAgentReports = () => {
+    for (const r of allReports) {
+      const app = apps.find((a) => r.app && a.id === r.app.id);
+      if (app && String(r.reference || "").startsWith("GH-") && (app.ownerAccounts || []).includes(r.reporter)) r.reporter = "Claude";
+    }
+  };
   const renderBoard = () => {
+    relabelAgentReports();
     const known = boardApps();
     if (selectedApp && (appsLoaded || reached) && !known.some((a) => a.id === selectedApp)) {
       const match = matchApp(selectedApp); selectedApp = match ? match.id : "";

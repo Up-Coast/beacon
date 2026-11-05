@@ -267,10 +267,15 @@ def lookup_reporters(app, accounts):
     return out
 
 
-def reporter_of(issue, meta, known=None):
+def reporter_of(issue, meta, known=None, app=None):
     """Who sent it. A report from a website or app comes through the relay, so
     the issue's author is the relay; the person is named in the issue's first
-    lines ("Reported by **Name** ... Reach them at **address**")."""
+    lines ("Reported by **Name** ... Reach them at **address**").
+
+    An issue an agent filed shows as Claude: one by an account in the app's
+    `agentAccounts`, and one by an account in its `ownerAccounts` that Beacon
+    did not file (no metadata block), since sessions that file through the
+    owner's own GitHub sign-in would otherwise show as the owner."""
     account = meta.get("account")
     if known and isinstance(account, str) and account in known:
         return known[account]
@@ -284,6 +289,11 @@ def reporter_of(issue, meta, known=None):
     if name:
         return name
     login = (issue.get("author") or {}).get("login", "")
+    app = app or {}
+    if login in (app.get("agentAccounts") or []):
+        return "Claude"
+    if login in (app.get("ownerAccounts") or []) and not meta:
+        return "Claude (filed as %s)" % login
     if login.startswith("app/") or login.endswith("[bot]"):
         return "Anonymous (%s)" % (meta.get("platform") or "relay")
     return login
@@ -359,7 +369,7 @@ def new_document(app, issue, status, column, known=None):
                 "platform": app.get("platform", ""), "repository": repo},
         "reference": reference, "kind": kind, "filedAt": issue["createdAt"],
         "status": status or "filed", "title": issue["title"],
-        "reporter": reporter_of(issue, meta, known),
+        "reporter": reporter_of(issue, meta, known, app),
         "impact": label_value(labels, "impact:"), "area": label_value(labels, "area:"),
         "body": words, "context": context,
         "attachmentCount": 0, "issueNumber": issue["number"], "issueURL": issue["url"],

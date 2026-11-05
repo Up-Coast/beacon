@@ -1,6 +1,6 @@
 # The dashboard
 
-*Last updated: 2026-10-31*
+*Last updated: 2026-11-04*
 
 The dashboard is where the owner reads every report from every app on the Beacon page, and what happened to each. One page serves all your apps: each app has its own tab, with its own counts. The pickup writes the outcomes. The one thing you write is your decision on work that waits on a person.
 
@@ -251,7 +251,7 @@ Every opened report has **Your changes** (for people who can edit the page): the
 | Flag | Any flag, or one: Needs your decision, Needs more info, Can't reproduce, Confusing to users, Waiting for human, Blocked, Needs PR approval, Ask Claude. |
 | Kind | Every kind, Bugs, Requests, Change requests, Feedback or Feedback documents. |
 | Impact | Every impact, or one level. |
-| Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey), or one reporter, with how many reports each has sent in the selected app. The numbers follow your other filters, including Hide done, so each is what picking that person would show. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. An app that files reports under an account id (so the issue holds no email) can name a lookup on its own system in its `reporterLookup` setting; the board then shows that person's name and address, which never go into the issue. |
+| Who sent it | Everyone, **User submitted** (everyone except you: every reporter whose name does not start with abbey or Claude), or one reporter, with how many reports each has sent in the selected app. The numbers follow your other filters, including Hide done, so each is what picking that person would show. A report that came through the website or an app's sheet is listed under the name and address the reporter gave. An issue a Claude session filed is listed as **Claude**: the app's `agentAccounts` names Claude's GitHub account, and `ownerAccounts` names yours, so a session that filed under your sign-in is still shown as Claude. An app that files reports under an account id (so the issue holds no email) can name a lookup on its own system in its `reporterLookup` setting; the board then shows that person's name and address, which never go into the issue. |
 | Order | Newest first, oldest first, highest priority first (worst impact first, then what waits on your decision, then oldest), or **My order**. The list starts on newest first and the board on highest priority first; each remembers the choice on this browser. |
 | Hide done | A switch beside the search box. On, it hides everything finished: the Done and Deployed columns, and everything under Closed (canceled, duplicate, works as designed). The page remembers it on this browser. |
 | Search words | Matches the title, the tester's words, the reporter, the area and the reference. |
