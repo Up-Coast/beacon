@@ -45,6 +45,13 @@ GitHub (a GH-<repo>-<n> document) onto the board, whatever its status: they
 are edited on GitHub, and the owner only adds a note of her own on the board.
 A report sent from Beacon keeps the reporter's words as sent.
 
+An app whose document carries `reporterLookup` ({"url": ..., "tokenEnv": ...})
+files reports under an opaque account id and keeps people's details on its own
+system. For each such app the script asks that address, once per run, who the
+accounts on its issues are, and writes "Name <address>" as the board's
+reporter. The details go on the board only, never into the issue; when the
+lookup is unset or fails, the reporter is read from the issue as before.
+
 A board document is only moved up: a document already at a more specific
 status than the labels say, or one the owner has decided on (it carries an
 `approval`), has edited by hand (`editedAt`) or the pickup is working
@@ -58,6 +65,8 @@ import os
 import re
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 
 # label -> (status, column); first match in this order wins
 OPEN_LABELS = [
@@ -226,10 +235,45 @@ def metadata(body):
         return {}
 
 
-def reporter_of(issue, meta):
+def lookup_reporters(app, accounts):
+    """{account: "Name <address>"} from the app's own lookup, for the accounts
+    named on its issues. Empty when the app has none, its token is not in the
+    environment, or the call fails (said on stderr, never fatal)."""
+    lookup = app.get("reporterLookup")
+    if not isinstance(lookup, dict) or not accounts:
+        return {}
+    url, env_name = lookup.get("url", ""), lookup.get("tokenEnv", "")
+    token = os.environ.get(env_name, "") if env_name else ""
+    if not url.startswith("https://") or not token:
+        print("reporter lookup for %s skipped: no https url or %s unset" % (app["id"], env_name or "tokenEnv"),
+              file=sys.stderr)
+        return {}
+    request = urllib.request.Request(
+        url, data=json.dumps({"accounts": sorted(accounts)}).encode(), method="POST",
+        headers={"authorization": "Bearer " + token, "content-type": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=20) as res:
+            found = json.load(res).get("reporters", {})
+    except (urllib.error.URLError, ValueError, OSError) as err:
+        print("reporter lookup for %s failed: %s" % (app["id"], err), file=sys.stderr)
+        return {}
+    out = {}
+    for account, who in (found.items() if isinstance(found, dict) else []):
+        if not isinstance(who, dict):
+            continue
+        name, email = str(who.get("name") or "").strip(), str(who.get("email") or "").strip()
+        if name or email:
+            out[account] = "%s <%s>" % (name, email) if name and email else (name or email)
+    return out
+
+
+def reporter_of(issue, meta, known=None):
     """Who sent it. A report from a website or app comes through the relay, so
     the issue's author is the relay; the person is named in the issue's first
     lines ("Reported by **Name** ... Reach them at **address**")."""
+    account = meta.get("account")
+    if known and isinstance(account, str) and account in known:
+        return known[account]
     body = issue.get("body") or ""
     named = re.search(r"Reported by \*\*(.+?)\*\*", body)
     reach = re.search(r"Reach them at \*\*(.+?)\*\*", body)
@@ -294,7 +338,7 @@ def issue_text(issue, kind):
     return words_of(kind, sec, body), sec, body
 
 
-def new_document(app, issue, status, column):
+def new_document(app, issue, status, column, known=None):
     repo = app["repository"]
     labels = [l["name"] for l in issue["labels"]]
     meta = metadata(issue.get("body"))
@@ -315,7 +359,7 @@ def new_document(app, issue, status, column):
                 "platform": app.get("platform", ""), "repository": repo},
         "reference": reference, "kind": kind, "filedAt": issue["createdAt"],
         "status": status or "filed", "title": issue["title"],
-        "reporter": reporter_of(issue, meta),
+        "reporter": reporter_of(issue, meta, known),
         "impact": label_value(labels, "impact:"), "area": label_value(labels, "area:"),
         "body": words, "context": context,
         "attachmentCount": 0, "issueNumber": issue["number"], "issueURL": issue["url"],
@@ -357,14 +401,17 @@ def main():
         if app.get("tracker", "github") != "github" or not app.get("repository"):
             continue
         work = gh_work(app["repository"])
-        for issue in gh_issues(app["repository"]):
+        issues = gh_issues(app["repository"])
+        known = lookup_reporters(app, {
+            a for a in (metadata(i.get("body")).get("account") for i in issues) if isinstance(a, str) and a})
+        for issue in issues:
             # A test submission, labelled test: never on the board.
             if any(l["name"] == "test" for l in issue["labels"]):
                 continue
             status, column = desired(issue)
             found = by_issue.get((app["id"], issue["number"]))
             if not found:
-                doc = new_document(app, issue, status, column)
+                doc = new_document(app, issue, status, column, known)
                 if column:
                     doc["columnAt"] = now
                 writes.append({"op": "set", "collection": "reports", "doc_id": doc["reference"], "data": doc})
@@ -377,6 +424,10 @@ def main():
             # The number a person says out loud, written once so every reader
             # of the board (the worker, the pickup) uses the same one.
             extra = {"ticket": ticket} if d.get("ticket") != ticket else {}
+            # A looked-up reporter follows the app's own record of the person.
+            account = metadata(issue.get("body")).get("account")
+            if isinstance(account, str) and account in known and d.get("reporter") != known[account]:
+                extra["reporter"] = known[account]
             # An issue written on GitHub (no Beacon reference) is edited there:
             # its title and text follow the issue even on a report the owner
             # has decided on, since she only adds her own note on the board. A

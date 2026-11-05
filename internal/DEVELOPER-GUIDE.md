@@ -188,7 +188,10 @@ The artifact's database holds JSON documents at slash paths. A document is at mo
 
 ```
 apps/<id>                          seeded with write_db; the page never writes it
-  name, platform, repository, folder, tracker ("github" | "board"), prefix (optional)
+  name, platform, repository, folder, tracker ("github" | "board"), prefix (optional),
+  reporterLookup (optional): {url, tokenEnv}. The mirror POSTs {"accounts": [...]} to url
+  with "Authorization: Bearer <$tokenEnv>" and expects {"reporters": {account: {name, email}}};
+  the answer becomes the report's reporter on the board only, never the issue
 
 reports/<BN-reference>             written by the page on send
   reference, kind, filedAt (ISO 8601), status ("new"), title, reporter (string),
