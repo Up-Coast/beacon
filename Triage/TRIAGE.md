@@ -1,6 +1,6 @@
 # How Beacon reports get triaged
 
-*Last updated: 2026-10-26*
+*Last updated: 2026-11-05*
 
 This is Beacon's triage policy: the app files reports, and this document decides what happens to them. An agent follows it unattended, so every rule is a rule, not a preference. Where a judgement call cannot be avoided, the rule names it and states the safe answer.
 
@@ -142,6 +142,8 @@ Choose one level higher when any of these is true:
 - `impact:blocked` **and** `reproducibility: every-time`
 - more than one person has reported it
 - it touches stored user data, authentication, payments or networking
+
+**A red default branch is always `severity:critical`.** When a check (a test, the build, the type check, a guard) fails on the default branch itself, every push is refused until it is fixed, so nothing else can land. It is filed as a bug with `severity:critical` and `impact:blocked`, goes straight to To do at the top of the list, and is the next thing worked, before any other report. It never waits for the owner and never waits for the daily run. Before filing, run the failing check again on the newest default branch: if it already passes, say so on the stopped report and file nothing.
 
 Impact and severity often disagree, and the disagreement is worth noticing. Several `impact:blocked` reports on a `severity:low` issue usually mean the workaround is harder to find than somebody thought.
 
