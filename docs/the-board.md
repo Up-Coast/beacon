@@ -1,6 +1,6 @@
 # The dashboard
 
-*Last updated: 2026-11-04*
+*Last updated: 2026-11-05*
 
 The dashboard is where the owner reads every report from every app on the Beacon page, and what happened to each. One page serves all your apps: each app has its own tab, with its own counts. The pickup writes the outcomes. The one thing you write is your decision on work that waits on a person.
 
@@ -176,7 +176,7 @@ A bug that shows only in Safari can be proved only in Safari. The worker can dri
 
 The worker flags a report **Blocked** when it started the work and cannot finish it: it needs a decision, the fix did not stop the problem, the bug would not reproduce, or it needs something only you can do. [The worker prompt](../Triage/WORKER.md#why-the-worker-stops) lists every reason.
 
-- The card stays in To do, with an orange **Blocked** chip and a line saying why. It counts in **Needs your decision**.
+- The card stays in To do, with an orange **Blocked** chip and a line saying why. It counts in **Needs your decision** only when the worker needs something from you: a decision, something only you can do, or a ticket it can't read one way. A failing check, a conflict or a fix that didn't take is the worker's to solve, so it doesn't count, and neither does a Blocked flag you set yourself.
 - The report shows **Why the work stopped**: what the worker needs from you, what it tried, and the branch where it kept its work.
 - The issue has a comment in the same words and the label `flag:blocked`.
 

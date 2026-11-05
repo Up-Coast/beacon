@@ -127,13 +127,13 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
    - Remove the worktree. Delete the merged branch.
 
 6. Stop on it, when it cannot be finished
-   Stop when you genuinely cannot finish it without something from the owner. First try to settle it yourself from the ticket, her note, the code and the app's existing patterns. These are the usual reasons, not the only ones: if none fits, use "other" and say what is missing.
+   Stop when you genuinely cannot finish it without something from the owner. First try to settle it yourself from the ticket, her note, the code and the app's existing patterns. Engineering calls are yours, never hers: a test deadline, splitting a suite, a slow or flaky gate, tooling, a refactor the fix needs. Make the call, or, when it is bigger than this report, file it as its own bug (search first; it may already be open) and stop with checks-failing and the note "Waits on <its ticket>. Nothing needed from you." Only needs-decision, needs-you and unclear count as waiting on the owner on the dashboard. These are the usual reasons, not the only ones: if none fits, use "other" and say what is missing.
      needs-decision    a product, business or design choice nothing you can read settles, and a wrong guess wastes real work
      still-happening   three fixes did not make the reproduction pass
      cannot-reproduce  three tries did not show the bug
      needs-you         it needs a sign-in, account, secret, physical device, infrastructure change, payment, or a go-ahead to apply a migration to a live database (step 4f), that you cannot do or make yourself
      unclear           the intended behaviour or UX is not clear and the readings differ enough that the wrong one wastes the work
-     checks-failing    the suite or build fails for a reason this change cannot fix
+     checks-failing    the suite or build fails for a reason this change cannot fix, including a gate that times out
                        If the same check fails on the default branch without your change, the default branch is red: run it again on the newest default branch, and if it still fails, file it (once: search the open issues first) as a bug with labels beacon, type:bug, severity:critical, impact:blocked and red-main, naming the check, its output and the commit that broke it. On the page, add it to To do with impact "blocked", a sortOrder below every other report in To do, and write blocked.note "Waits on <its ticket>, which is being fixed first. Nothing needed from you." Then work that bug next, in this same run.
      conflict          the change no longer merges cleanly with the default branch
      other             anything else, said in the note

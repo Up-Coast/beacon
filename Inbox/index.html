@@ -1106,7 +1106,12 @@
   // (Triage/WORKER.md). It skips the report until the owner clears the flag.
   const BLOCK_FLAG = "Blocked";
   const isBlocked = (r) => flagsOf(r).includes(BLOCK_FLAG);
-  const waitsOnYou = (r) => needsDecision(r) || isBlocked(r);
+  // Only these stops wait on the owner. A failing check, a conflict or a fix
+  // that did not take is the worker's to solve, and a Blocked flag the owner
+  // set herself (no `blocked` record) is her own hold, not a question for her.
+  const OWNER_STOPS = new Set(["needs-decision", "needs-you", "unclear"]);
+  const blockedOnOwner = (r) => isBlocked(r) && OWNER_STOPS.has(r.blocked && r.blocked.reason);
+  const waitsOnYou = (r) => needsDecision(r) || blockedOnOwner(r);
   const BLOCK_REASON = {
     "needs-decision": "Needs your decision", "still-happening": "Fix tried, still happening",
     "cannot-reproduce": "Can't reproduce", "needs-you": "Needs something only you can do",
