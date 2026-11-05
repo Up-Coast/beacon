@@ -1,6 +1,6 @@
 # The worker: a task prompt that builds what is in To do
 
-*Last updated: 2026-10-16*
+*Last updated: 2026-11-04*
 
 The worker is the prompt for a Claude Code scheduled task that builds, proves and merges every report in the dashboard's To do column. [The pickup](PICKUP.md) decides what goes into To do. The worker does the work. When it cannot finish, it comments on the issue, flags the report **Blocked** and moves on.
 
@@ -38,7 +38,7 @@ To send a blocked report back to the worker, write your answer or question in yo
 | `needs-decision` | Needs your decision | A product, business or design choice that the ticket, your note and the existing app do not settle, and where a wrong guess would waste real work. |
 | `still-happening` | Fix tried, still happening | A fix was built, but the reproduction still fails after it. |
 | `cannot-reproduce` | Can't reproduce | Three tries did not show the bug, so there is nothing to prove a fix against. |
-| `needs-you` | Needs something only you can do | A sign-in, an account, a secret, a physical device, infrastructure or a payment. |
+| `needs-you` | Needs something only you can do | A sign-in, an account, a secret, a physical device, infrastructure, a payment, or a go-ahead to apply a migration to a live database (write **go** in your note). |
 | `unclear` | Not clear what to build | The ticket can be read two ways, or the intended behaviour or UX is not clear, and the readings differ enough that the wrong one wastes the work. |
 | `checks-failing` | Checks won't pass | The test suite or build fails, and the failure is not one this change can fix. |
 | `conflict` | Conflicts with other work | The default branch moved and the change no longer merges cleanly. |
@@ -95,6 +95,7 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
 
 3b. Read everything before you change anything
    - The issue: gh issue view <n> --repo <repository> --comments. The report on the page: its body, finding, triageNote, ownerNote, approval.note, and the owner's images in "reports/<reference>/ownerAttachments" (decode each dataURL to a file and look at it).
+   - The owner cannot edit the ticket, only add a note. Where ownerNote or approval.note differs from the ticket body, the note wins: build the note's version and say in the issue comment that you did. A note that disagrees with the ticket is never a reason to stop.
    - If the report carries `blocked` from an earlier stop, the owner has cleared the flag: their answer is in ownerNote, approval.note, or an issue comment newer than blocked.at. Act on it. If there is no answer, use what you have and try again once.
    - An approved report is the owner's decision: build what the ticket and the note ask, even where a spec says otherwise, and update that spec in the same commit (TRIAGE.md, gate 2). A report queued by triage (status todo, no approval) is a reproduced bug: build it the same way; nothing about its size or area stops it, and gate 5 is the proof.
 
@@ -111,8 +112,9 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
    a. Find the app's checkout at CODE_ROOT/<folder>. Ask it for the default branch (gh repo view --json defaultBranchRef), fetch, and make a new worktree from the up-to-date default branch on work.branch (or reuse that branch when resuming). Never work in a checkout another session may be using.
    b. A bug: reproduce it first with a check that fails (TRIAGE.md, gate 3), up to three tries. Then fix it.
    c. A feature or change the owner approved: build it as the ticket and the note describe.
-   d. Run the whole test suite and the build. Prove it by running the app through the steps where you can (TRIAGE.md, gate 5): a screenshot of the step that used to be wrong, or the check failing before and passing after.
+   d. Run the whole test suite and the build. Prove it by running the app through the steps (TRIAGE.md, gate 5): a screenshot of the step that used to be wrong, or the check failing before and passing after. Running the app is your job, not the owner's: build it, launch it yourself and look. A Mac app: open the built .app and capture it with the computer-use tools (app_screenshot, app_click) or `screencapture`. An iOS app: the iOS Simulator tools. A web page: a local dev server and the browser tools. A change that needs checking in the running app, spans several screens or is large is still yours to build and check: never stop for size or for "needs live verification". If a run ends before you finish, leave the report in To do without Blocked so the next run resumes it.
    e. If the fix does not make the reproduction pass, try again with what you learned, up to three fixes. Then stop on it with reason "still-happening".
+   f. A database migration: write it and test it against a local database. Apply it to a live database only when the owner's note or an issue comment newer than the approval says to (for example "go"). Without that, push the code with the migration file unapplied only if the code works before the migration runs; otherwise keep the work on its branch and stop with reason "needs-you", the note saying what the migration changes, the exact command, and "Write go in your note and the next run applies it."
 
 5. Finish it
    Merge as normal, unless the report carries the flag "Needs PR approval", or the owner's note or an issue comment says not to merge. Then push the branch and open a pull request (not a draft) instead, write pullRequest {number, url, state: "open"} onto the report, and move on: the owner merges it, and the report moves to Done by itself.
@@ -128,7 +130,7 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
      needs-decision    a product, business or design choice nothing you can read settles, and a wrong guess wastes real work
      still-happening   three fixes did not make the reproduction pass
      cannot-reproduce  three tries did not show the bug
-     needs-you         it needs a sign-in, account, secret, physical device, infrastructure change or payment that you cannot do or make yourself
+     needs-you         it needs a sign-in, account, secret, physical device, infrastructure change, payment, or a go-ahead to apply a migration to a live database (step 4f), that you cannot do or make yourself
      unclear           the intended behaviour or UX is not clear and the readings differ enough that the wrong one wastes the work
      checks-failing    the suite or build fails for a reason this change cannot fix
      conflict          the change no longer merges cleanly with the default branch
@@ -153,6 +155,8 @@ THE WORDS. Columns: upnext is To do, inprogress is In progress, done is Done. Wh
 
 GitHub only (BEACON_PAGE "none")
    The queue is the open issues labelled todo, without flag:blocked or flag:waiting-for-human, in every repository you work. Do steps 2 to 7 with labels and comments only: in-progress when you start, auto-fixed and closed when done, flag:blocked and the comment when you stop. To send one back, the owner removes flag:blocked.
+
+A push that fails because a file could not be written on this Mac ("couldn't be saved", "Operation not permitted") is the session's sandbox, not a refusal: run the same push again with the sandbox off. Only a refusal from the remote (branch protection, permission denied by GitHub) or a failing gate check stops a push. Never stop with "push it from your own checkout".
 
 Never: build anything for a report whose only request is a question (flag "Ask Claude"); message the owner about a finished or blocked report; decide what goes into To do; touch a report flagged "Waiting for human" or "Blocked"; change infrastructure, secrets, CI, signing or deployments; merge with a failing check; force-push a default branch; write to a tester; write approval, statusBeforeApproval or editedAt; work on two reports at once.
 ```
