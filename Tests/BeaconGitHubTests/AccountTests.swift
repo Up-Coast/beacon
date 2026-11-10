@@ -196,3 +196,43 @@ struct DeviceFlowPollingTests {
         }
     }
 }
+
+@Suite("Finishing a sign-in GitHub has already granted")
+struct ConnectRetryTests {
+
+    /// The token has arrived; looking up whose it is fails once on the
+    /// connection iOS closed while the app was away. Asking again keeps the
+    /// sign-in instead of sending the person back to the start.
+    @Test func aNetworkFailureIsAskedAgain() async throws {
+        var answers: [Result<String, Error>] = [
+            .failure(TransportError.network("The network connection was lost.")),
+            .success("octocat"),
+        ]
+        let login = try await GitHubAccount.retryingNetwork(delay: .zero) {
+            try answers.removeFirst().get()
+        }
+        #expect(login == "octocat")
+    }
+
+    @Test func gitHubsRefusalIsNotRetried() async {
+        var calls = 0
+        await #expect(throws: TransportError.self) {
+            try await GitHubAccount.retryingNetwork(delay: .zero) { () -> String in
+                calls += 1
+                throw TransportError.rejected(status: 401, detail: "expired")
+            }
+        }
+        #expect(calls == 1)
+    }
+
+    @Test func itGivesUpAfterAFewTries() async {
+        var calls = 0
+        await #expect(throws: TransportError.network("down")) {
+            try await GitHubAccount.retryingNetwork(attempts: 3, delay: .zero) { () -> String in
+                calls += 1
+                throw TransportError.network("down")
+            }
+        }
+        #expect(calls == 3)
+    }
+}

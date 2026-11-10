@@ -81,9 +81,29 @@ public struct GitHubAccount: Sendable {
     /// than anything typed. Returns that login.
     @discardableResult
     public func connect(token: String) async throws -> String {
-        let login = try await GitHubClient(owner: "", repository: "", token: token).currentLogin()
+        let login = try await Self.retryingNetwork {
+            try await GitHubClient(owner: "", repository: "", token: token).currentLogin()
+        }
         try remember(token: token, login: login)
         return login
+    }
+
+    /// Ask again when the network, not GitHub, was the problem. The token
+    /// usually arrives just as the person comes back from the browser, when
+    /// the connection iOS closed while the app was suspended is the one
+    /// tried first. Failing there would throw away a sign-in GitHub has
+    /// already granted.
+    static func retryingNetwork<T>(attempts: Int = 4, delay: Duration = .seconds(2),
+                                   _ work: () async throws -> T) async throws -> T {
+        var attempt = 1
+        while true {
+            do {
+                return try await work()
+            } catch TransportError.network(_) where attempt < attempts {
+                attempt += 1
+                try await Task.sleep(for: delay)
+            }
+        }
     }
 
     func remember(token: String, login: String) throws {
