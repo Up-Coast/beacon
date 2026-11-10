@@ -2,20 +2,19 @@
 
 import { RateLimiter } from "../beacon-relay/relay.ts";
 import {
-  ANSWERS, type Config, type Dependencies, handle, loadConfig, MAX_SEALED_BYTES, storeInBucket,
+  ANSWERS, type Config, type Dependencies, handle, loadConfig, loadSupabaseStoreConfig, MAX_SEALED_BYTES,
+  type SupabaseStoreConfig, storeInBucket,
 } from "./private.ts";
 
 function assert(condition: unknown, message = "assertion failed"): asserts condition {
   if (!condition) throw new Error(message);
 }
 
-const config: Config = {
-  appToken: "app-token",
+const config: Config = { appToken: "app-token", perIp: 2, apps: new Set() };
+const supabase: SupabaseStoreConfig = {
   supabaseUrl: "https://x.supabase.co",
   secretKey: "secret",
-  perIp: 2,
   bucket: "beacon-private",
-  apps: new Set(),
 };
 const APP = "com.example.harbour";
 const EVENT = "11111111-2222-3333-4444-555555555555";
@@ -100,7 +99,7 @@ Deno.test("the bucket write never upserts and treats an existing object as store
     call = { url: String(url), init: init! };
     return Promise.resolve(new Response('{"error":"Duplicate"}', { status: 409 }));
   };
-  const result = await storeInBucket(config, fake as typeof fetch)(`${APP}/${EVENT}.bin`, new Uint8Array(60));
+  const result = await storeInBucket(supabase, fake as typeof fetch)(`${APP}/${EVENT}.bin`, new Uint8Array(60));
   assert(result === "exists");
   assert(call!.url === `https://x.supabase.co/storage/v1/object/beacon-private/${APP}/${EVENT}.bin`);
   assert((call!.init.headers as Record<string, string>)["x-upsert"] === "false");
@@ -122,7 +121,7 @@ Deno.test("the first write creates the private bucket, then stores", async () =>
         : new Response('{"error":"Bucket not found"}', { status: 404 }),
     );
   };
-  const result = await storeInBucket(config, fake as typeof fetch)(`${APP}/${EVENT}.bin`, new Uint8Array(60));
+  const result = await storeInBucket(supabase, fake as typeof fetch)(`${APP}/${EVENT}.bin`, new Uint8Array(60));
   assert(result === "stored");
   assert(calls.length === 3);
   const settings = JSON.parse(calls[1].body);
@@ -136,13 +135,30 @@ Deno.test("refuses an app not on the list when a list is set", async () => {
   assert((await handle(post({ id: EVENT, app: APP, ciphertext: sealed() }), d)).status === 403);
 });
 
-Deno.test("is not set up without its token, address and key", () => {
-  let failed = false;
+function refuses(load: () => unknown): boolean {
   try {
-    loadConfig(() => undefined);
+    load();
+    return false;
   } catch {
-    failed = true;
+    return true;
   }
-  assert(failed);
+}
+
+Deno.test("every host needs only the token; Supabase also needs its address and key", () => {
+  assert(refuses(() => loadConfig(() => undefined)));
+  assert(loadConfig((name) => (name === "BEACON_PRIVATE_TOKEN" ? "t" : undefined)).perIp === 30);
+  assert(refuses(() => loadSupabaseStoreConfig(() => undefined)));
+  const store = loadSupabaseStoreConfig((name) =>
+    ({ SUPABASE_URL: "https://x.supabase.co/", SUPABASE_SERVICE_ROLE_KEY: "k" })[name]
+  );
+  assert(store.supabaseUrl === "https://x.supabase.co" && store.bucket === "beacon-private");
   assert(ANSWERS.unauthorized.length > 0);
+});
+
+Deno.test("a host's own address function is what the limiter counts", async () => {
+  const d = { ...deps(), clientAddressOf: (request: Request) => request.headers.get("X-Test-Caller") ?? "none" };
+  const send = (caller: string) => handle(post({ id: EVENT, app: APP, ciphertext: sealed() }, { "X-Test-Caller": caller }), d);
+  assert((await send("a")).status === 200 && (await send("a")).status === 200);
+  assert((await send("a")).status === 429);
+  assert((await send("b")).status === 200, "another address is counted on its own");
 });

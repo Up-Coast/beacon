@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// No app reads or writes the bucket. Only the function and the owner's tool
+// reach it, both with service credentials, which these rules do not apply to.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -335,3 +335,19 @@ Deno.test("a browser on any other site is refused before anything is read", asyn
   const none = await handle(browserPost("https://site.test"), { ...deps, config: { ...config, allowedOrigins: [] } });
   equal(none.status, 403);
 });
+
+Deno.test("a host's own address function is what the address limit counts", async () => {
+  const config = { ...await testConfig(), perIPPerHour: 1 };
+  const deps = {
+    ...dependencies(config, pretendGitHub([])), log: () => {},
+    clientAddressOf: (request: Request) => request.headers.get("X-Test-Caller") ?? "none",
+  };
+  const from = (caller: string, account: string) => {
+    const request = post(report({ account }));
+    request.headers.set("X-Test-Caller", caller);
+    return handle(request, deps);
+  };
+  equal((await from("a", "one")).status, 201);
+  equal((await from("a", "two")).status, 429);
+  equal((await from("b", "three")).status, 201);
+});

@@ -54,12 +54,16 @@ let package = Package(
 
         // The owner's end of private delivery, run on their own Mac: makes the
         // keypair and reads back what apps sealed to it.
-        .executableTarget(name: "beacon-private", dependencies: ["BeaconCore"]),
+        // Its stores (Supabase and Google Cloud Storage) are a library, with the HTTP client
+        // passed in, so a test can answer for the bucket; the tool itself is the thin shell.
+        .target(name: "BeaconPrivateStore", dependencies: ["BeaconCore"], path: "Sources/beacon-private/Store"),
+        .executableTarget(name: "beacon-private", dependencies: ["BeaconCore", "BeaconPrivateStore"], exclude: ["Store"]),
 
         .testTarget(name: "BeaconCoreTests", dependencies: ["BeaconCore"]),
         .testTarget(name: "BeaconDiagnosticsTests", dependencies: ["BeaconDiagnostics"]),
         .testTarget(name: "BeaconIntelligenceTests", dependencies: ["BeaconIntelligence"]),
         .testTarget(name: "BeaconCaptureTests", dependencies: ["BeaconCapture"]),
+        .testTarget(name: "BeaconPrivateStoreTests", dependencies: ["BeaconPrivateStore", "BeaconCore"]),
         .testTarget(name: "BeaconGitHubTests", dependencies: ["BeaconGitHub"]),
         .testTarget(name: "BeaconTests", dependencies: ["Beacon"]),
         .testTarget(name: "BeaconUITests", dependencies: ["BeaconUI"]),

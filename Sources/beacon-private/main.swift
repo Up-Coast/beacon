@@ -13,6 +13,7 @@
 //       Prints the public key of <name>'s existing keypair.
 //
 //   beacon-private read <name> --project-ref <ref> [--bucket <bucket>] [--keep]
+//   beacon-private read <name> --store gcs --bucket <bucket> [--keep]
 //       Downloads every sealed message from the private bucket, opens each
 //       with <name>'s private key, writes it to
 //       ~/Library/Application Support/Beacon/private/<name>/<app>/<id>.json
@@ -21,10 +22,14 @@
 //       secret key, taken from this Mac's keychain (account <name>, service
 //       beacon-private-store-key) when you saved it there, or else from the
 //       Supabase CLI's own sign-in. It never writes the key anywhere.
+//       With --store gcs the bucket is a Google Cloud Storage bucket (the
+//       messages sit under beacon-private/) and the tool reads it with an
+//       access token from the Cloud CLI (`gcloud auth print-access-token`).
 //       What it writes is the owner's to read; it does not belong in an
 //       issue, a pull request or a commit.
 
 import BeaconCore
+import BeaconPrivateStore
 import CryptoKit
 import Foundation
 import Security
@@ -66,6 +71,19 @@ func pubkey(_ name: String) {
     print(key.publicKey.rawRepresentation.base64EncodedString())
 }
 
+/// What a command-line tool prints, or a failure naming `tool` when it cannot be run.
+func run(_ arguments: [String], tool: String) -> Data {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+    process.arguments = arguments
+    let pipe = Pipe()
+    process.standardOutput = pipe
+    do { try process.run() } catch { fail("Could not run the \(tool): \(error.localizedDescription)") }
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    process.waitUntilExit()
+    return data
+}
+
 /// The project's secret key: the copy saved in this Mac's keychain for
 /// <name>, else the one the Supabase CLI's sign-in can read.
 func projectAccess(_ projectRef: String, name: String) -> String {
@@ -82,14 +100,7 @@ func projectAccess(_ projectRef: String, name: String) -> String {
         return saved.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     query.removeAll()
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    process.arguments = ["supabase", "projects", "api-keys", "--project-ref", projectRef, "-o", "json"]
-    let pipe = Pipe()
-    process.standardOutput = pipe
-    do { try process.run() } catch { fail("Could not run the Supabase CLI: \(error.localizedDescription)") }
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    process.waitUntilExit()
+    let data = run(["supabase", "projects", "api-keys", "--project-ref", projectRef, "-o", "json"], tool: "Supabase CLI")
     guard let keys = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
         let value = keys.first(where: { ($0["name"] as? String) == "service_role" })?["api_key"] as? String
     else {
@@ -101,63 +112,26 @@ func projectAccess(_ projectRef: String, name: String) -> String {
     return value
 }
 
-struct Store {
-    let base: URL
-    let bucket: String
-    let access: String
-
-    func call(_ method: String, _ path: String, body: [String: Any]? = nil) async -> (Int, Data) {
-        var request = URLRequest(url: base.appendingPathComponent("storage/v1/\(path)"))
-        request.httpMethod = method
-        request.setValue("Bearer \(access)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let body { request.httpBody = try? JSONSerialization.data(withJSONObject: body) }
-        guard let (data, response) = try? await URLSession.shared.data(for: request) else { return (0, Data()) }
-        return ((response as? HTTPURLResponse)?.statusCode ?? 0, data)
-    }
-
-    /// The entries under `prefix`: folders have no id, objects do.
-    func list(_ prefix: String) async -> [(path: String, isFolder: Bool)] {
-        let (status, data) = await call("POST", "object/list/\(bucket)", body: ["prefix": prefix, "limit": 1000])
-        guard status == 200, let entries = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
-        else { fail("Could not list the bucket (status \(status)).") }
-        return entries.compactMap { entry in
-            guard let entryName = entry["name"] as? String else { return nil }
-            let path = prefix.isEmpty ? entryName : "\(prefix)/\(entryName)"
-            return (path, entry["id"] is NSNull || entry["id"] == nil)
-        }
-    }
+func send(_ request: URLRequest) async -> (status: Int, data: Data) {
+    guard let (data, response) = try? await URLSession.shared.data(for: request) else { return (0, Data()) }
+    return ((response as? HTTPURLResponse)?.statusCode ?? 0, data)
 }
 
-func read(_ name: String, projectRef: String, bucket: String, keep: Bool) async {
+func read(_ name: String, store: some SealedStore, keep: Bool) async {
     guard let key = storedKey(name) else { fail("No key for \(name) in this Mac's keychain.") }
-    let store = Store(
-        base: URL(string: "https://\(projectRef).supabase.co")!, bucket: bucket, access: projectAccess(projectRef, name: name))
     let folder = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Application Support/Beacon/private/\(name)")
-    var saved = 0
-    var unreadable = 0
-    for app in await store.list("") where app.isFolder {
-        for object in await store.list(app.path) where !object.isFolder && object.path.hasSuffix(".bin") {
-            let (status, blob) = await store.call("GET", "object/\(bucket)/\(object.path)")
-            guard status == 200, let details = try? PrivateSealing.open(blob, with: key) else {
-                unreadable += 1
-                continue
-            }
-            let target = folder.appendingPathComponent(app.path, isDirectory: true)
-            try? FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            encoder.dateEncodingStrategy = .iso8601
-            guard let json = try? encoder.encode(details),
-                (try? json.write(to: target.appendingPathComponent("\(details.id).json"), options: .atomic)) != nil
-            else { continue }
-            if !keep { _ = await store.call("DELETE", "object/\(bucket)/\(object.path)") }
-            saved += 1
+    do {
+        let summary = try await readSealedMessages(from: store, key: key, into: folder, keep: keep)
+        print("Saved \(summary.saved) message(s) to \(folder.path).")
+        if summary.unreadable > 0 {
+            print("\(summary.unreadable) message(s) could not be opened with this key and were left in the bucket.")
         }
+    } catch StoreError.listFailed(let status) {
+        fail("Could not list the bucket (status \(status)).")
+    } catch {
+        fail("Could not read the bucket: \(error.localizedDescription)")
     }
-    print("Saved \(saved) message(s) to \(folder.path).")
-    if unreadable > 0 { print("\(unreadable) message(s) could not be opened with this key and were left in the bucket.") }
 }
 
 let arguments = Array(CommandLine.arguments.dropFirst())
@@ -172,9 +146,21 @@ case ("keygen", let name?):
 case ("pubkey", let name?):
     pubkey(name)
 case ("read", let name?):
-    guard let projectRef = option("--project-ref") else { fail("read needs --project-ref <ref>.") }
-    await read(name, projectRef: projectRef, bucket: option("--bucket") ?? "beacon-private",
-               keep: arguments.contains("--keep"))
+    let keep = arguments.contains("--keep")
+    if option("--store") == "gcs" {
+        guard let bucket = option("--bucket") else { fail("--store gcs needs --bucket <bucket>.") }
+        let token = String(decoding: run(["gcloud", "auth", "print-access-token"], tool: "Cloud CLI"), as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if token.isEmpty { fail("The Cloud CLI gave no access token. Sign in with: gcloud auth login") }
+        await read(name, store: CloudStorageStore(bucket: bucket, accessToken: token, send: send), keep: keep)
+    } else {
+        guard let projectRef = option("--project-ref") else { fail("read needs --project-ref <ref>, or --store gcs --bucket <bucket>.") }
+        let bucket = option("--bucket") ?? "beacon-private"
+        let store = SupabaseStore(
+            base: URL(string: "https://\(projectRef).supabase.co")!, bucket: bucket,
+            access: projectAccess(projectRef, name: name), send: send)
+        await read(name, store: store, keep: keep)
+    }
 default:
-    fail("usage: beacon-private keygen <name> | pubkey <name> | read <name> --project-ref <ref> [--bucket <bucket>] [--keep]")
+    fail("usage: beacon-private keygen <name> | pubkey <name> | read <name> --project-ref <ref> [--bucket <bucket>] [--keep] | read <name> --store gcs --bucket <bucket> [--keep]")
 }

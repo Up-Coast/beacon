@@ -90,4 +90,12 @@ swift run beacon-private read <name> --project-ref <project-ref>
 
 Each message is saved as `~/Library/Application Support/Beacon/private/<name>/<bundle-id>/<id>.json` and deleted from the bucket. Add `--keep` to leave it in the bucket. A message that cannot be opened with this key is left in the bucket and counted.
 
+If the store is the Firebase host's bucket, read it from Google Cloud Storage instead. The tool takes an access token from the Cloud CLI, so sign in first with `gcloud auth login`:
+
+```bash
+swift run beacon-private read <name> --store gcs --bucket <bucket-name>
+```
+
+It lists the objects under `beacon-private/` page by page, then saves and deletes each one exactly as above, and `--keep` works the same. `--store` defaults to Supabase, so the Supabase commands do not change.
+
 What you read there is your customers' data. Keep it out of issues, pull requests and commits.

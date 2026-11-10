@@ -12,7 +12,7 @@ export const MAX_SEALED_BYTES = 64 * 1024;
 /** The request body limit: the sealed bytes as base64, plus the JSON around them. */
 export const MAX_REQUEST_BYTES = Math.ceil(MAX_SEALED_BYTES * 4 / 3) + 512;
 
-/** The bucket sealed messages go to when `PRIVATE_BUCKET` is not set. */
+/** The Supabase bucket sealed messages go to when `PRIVATE_BUCKET` is not set. */
 export const DEFAULT_BUCKET = "beacon-private";
 
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -31,34 +31,46 @@ export const ANSWERS = {
 } as const;
 
 export interface Config {
-  /** The token the app sends, compared in constant time. Not a Supabase credential. */
+  /** The token the app sends, compared in constant time. Not a storage credential. */
   appToken: string;
-  /** The project's address, e.g. https://abc.supabase.co. */
-  supabaseUrl: string;
-  /** The project's secret key; stays inside this function. */
-  secretKey: string;
   /** Messages one address may store in an hour. */
   perIp: number;
-  /** The private bucket. */
-  bucket: string;
   /** The apps allowed to store here (bundle identifiers); empty allows any. */
   apps: Set<string>;
 }
 
+/** What the Supabase store needs on top of `Config`; only the Supabase entry point reads it. */
+export interface SupabaseStoreConfig {
+  /** The project's address, e.g. https://abc.supabase.co. */
+  supabaseUrl: string;
+  /** The project's secret key; stays inside this function. */
+  secretKey: string;
+  /** The private bucket. */
+  bucket: string;
+}
+
+const needed = (env: (name: string) => string | undefined, name: string) => {
+  const value = env(name);
+  if (!value) throw new Error(`${name} is not set`);
+  return value;
+};
+
+/** The settings every host needs. */
 export function loadConfig(env: (name: string) => string | undefined): Config {
-  const need = (name: string) => {
-    const value = env(name);
-    if (!value) throw new Error(`${name} is not set`);
-    return value;
-  };
   const perIp = Number(env("PRIVATE_RATE_LIMIT_PER_IP") ?? 30);
   return {
-    appToken: need("BEACON_PRIVATE_TOKEN"),
-    supabaseUrl: need("SUPABASE_URL").replace(/\/+$/, ""),
-    secretKey: need("SUPABASE_SERVICE_ROLE_KEY"),
+    appToken: needed(env, "BEACON_PRIVATE_TOKEN"),
     perIp: Number.isFinite(perIp) && perIp > 0 ? perIp : 30,
-    bucket: env("PRIVATE_BUCKET") || DEFAULT_BUCKET,
     apps: new Set((env("PRIVATE_APPS") ?? "").split(",").map((app) => app.trim()).filter(Boolean)),
+  };
+}
+
+/** The Supabase store's own settings. */
+export function loadSupabaseStoreConfig(env: (name: string) => string | undefined): SupabaseStoreConfig {
+  return {
+    supabaseUrl: needed(env, "SUPABASE_URL").replace(/\/+$/, ""),
+    secretKey: needed(env, "SUPABASE_SERVICE_ROLE_KEY"),
+    bucket: env("PRIVATE_BUCKET") || DEFAULT_BUCKET,
   };
 }
 
@@ -69,6 +81,8 @@ export interface Dependencies {
   config: Config;
   limiter: RateLimiter;
   store: (path: string, bytes: Uint8Array) => Promise<StoreResult>;
+  /** The caller's address, for hosts whose platform reports it some other way than X-Forwarded-For. */
+  clientAddressOf?: (request: Request) => string;
 }
 
 /** The bucket's settings: private, one sealed message per object, no other kinds of file. */
@@ -83,7 +97,7 @@ export const BUCKET_SETTINGS = {
  * object. The first write creates the bucket with `BUCKET_SETTINGS`, so setting
  * the store up needs no access to the project's keys.
  */
-export function storeInBucket(config: Config, fetchFn: typeof fetch = fetch) {
+export function storeInBucket(config: SupabaseStoreConfig, fetchFn: typeof fetch = fetch) {
   const authorization = `Bearer ${config.secretKey}`;
   const put = (path: string, bytes: Uint8Array) =>
     fetchFn(`${config.supabaseUrl}/storage/v1/object/${config.bucket}/${path}`, {
@@ -116,8 +130,8 @@ export function storeInBucket(config: Config, fetchFn: typeof fetch = fetch) {
   };
 }
 
-export function dependencies(config: Config, fetchFn: typeof fetch = fetch): Dependencies {
-  return { config, limiter: new RateLimiter(config.perIp), store: storeInBucket(config, fetchFn) };
+export function dependencies(config: Config, store: Dependencies["store"]): Dependencies {
+  return { config, limiter: new RateLimiter(config.perIp), store };
 }
 
 const json = (status: number, message: string) =>
@@ -138,7 +152,7 @@ export async function handle(request: Request, deps: Dependencies): Promise<Resp
   if (!tokenMatches(request.headers.get("Authorization"), deps.config.appToken)) {
     return json(401, ANSWERS.unauthorized);
   }
-  if (!deps.limiter.allow(clientAddress(request))) return json(429, ANSWERS.tooMany);
+  if (!deps.limiter.allow((deps.clientAddressOf ?? clientAddress)(request))) return json(429, ANSWERS.tooMany);
 
   const text = await readCapped(request, MAX_REQUEST_BYTES);
   if (text === null) return json(413, ANSWERS.tooLarge);
