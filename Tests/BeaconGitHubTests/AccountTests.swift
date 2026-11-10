@@ -151,3 +151,48 @@ struct RefusalWordingTests {
         #expect(GitHubTokenStore.explain(-12345).contains("-12345"))
     }
 }
+
+@Suite("Waiting for the person to finish on GitHub")
+struct DeviceFlowPollingTests {
+
+    private func challenge(expiresIn: TimeInterval = 60) -> GitHubDeviceFlow.Challenge {
+        .init(userCode: "ABCD-1234", verificationURL: URL(string: "https://github.com/login/device")!,
+              deviceCode: "device", expiresAt: Date().addingTimeInterval(expiresIn), pollInterval: 0)
+    }
+
+    /// The tester switches to GitHub, iOS suspends the app, and the first
+    /// check after they come back fails on a closed connection. That is not
+    /// a failed sign-in; the next check finds the token.
+    @Test func aCheckThatNeverReachedGitHubIsRetried() async throws {
+        var answers: [Result<[String: Any], Error>] = [
+            .success(["error": "authorization_pending"]),
+            .failure(URLError(.networkConnectionLost)),
+            .success(["access_token": "gho_example"]),
+        ]
+        let token = try await GitHubDeviceFlow.awaitToken(challenge()) {
+            try answers.removeFirst().get()
+        }
+        #expect(token == "gho_example")
+    }
+
+    @Test func aRefusalFromGitHubStillEndsIt() async {
+        await #expect(throws: GitHubDeviceFlow.DeviceFlowError.declined) {
+            try await GitHubDeviceFlow.awaitToken(challenge()) { ["error": "access_denied"] }
+        }
+    }
+
+    /// Unreachable until the code ran out: say what was wrong with the
+    /// network rather than blaming the person for being slow.
+    @Test func neverReachingGitHubNamesTheNetwork() async {
+        do {
+            _ = try await GitHubDeviceFlow.awaitToken(challenge(expiresIn: 0.05)) {
+                throw URLError(.notConnectedToInternet)
+            }
+            Issue.record("expected a failure")
+        } catch let error as GitHubDeviceFlow.DeviceFlowError {
+            guard case .failed = error else { Issue.record("got \(error)"); return }
+        } catch {
+            Issue.record("got \(error)")
+        }
+    }
+}

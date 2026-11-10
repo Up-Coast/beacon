@@ -76,10 +76,15 @@ public struct GitHubDeviceFlow: Sendable {
     static let tokenURL = URL(string: "https://github.com/login/oauth/access_token")!
 
     public func begin() async throws -> Challenge {
-        let response = try await post(Self.deviceCodeURL, form: [
-            "client_id": clientID,
-            "scope": scopes.joined(separator: " "),
-        ])
+        let response: [String: Any]
+        do {
+            response = try await post(Self.deviceCodeURL, form: [
+                "client_id": clientID,
+                "scope": scopes.joined(separator: " "),
+            ])
+        } catch {
+            throw DeviceFlowError.failed(error.localizedDescription)
+        }
         guard let deviceCode = response["device_code"] as? String,
               let userCode = response["user_code"] as? String,
               let verification = (response["verification_uri"] as? String)
@@ -99,14 +104,40 @@ public struct GitHubDeviceFlow: Sendable {
     /// Wait for the person to finish in their browser. Honours GitHub's
     /// `slow_down` by widening the gap rather than hammering on.
     public func awaitToken(_ challenge: Challenge) async throws -> String {
-        var interval = challenge.pollInterval
-        while Date() < challenge.expiresAt {
-            try await Task.sleep(for: .seconds(interval))
-            let response = try await post(Self.tokenURL, form: [
+        try await Self.awaitToken(challenge) {
+            try await post(Self.tokenURL, form: [
                 "client_id": clientID,
                 "device_code": challenge.deviceCode,
                 "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
             ])
+        }
+    }
+
+    /// The polling itself, with GitHub's answer passed in so it can be
+    /// tested without GitHub.
+    ///
+    /// A check that never reaches GitHub is not a refusal, so it is retried
+    /// rather than ending the sign-in. On a phone this is the usual case,
+    /// not an edge: the person leaves the app to enter the code, iOS
+    /// suspends it, and the first check after they come back fails on the
+    /// connection iOS closed in the meantime. Ending there told them to try
+    /// again just as they were about to finish.
+    static func awaitToken(_ challenge: Challenge,
+                           ask: () async throws -> [String: Any]) async throws -> String {
+        var interval = challenge.pollInterval
+        var unreachable: Error?
+        while Date() < challenge.expiresAt {
+            try await Task.sleep(for: .seconds(interval))
+            let response: [String: Any]
+            do {
+                response = try await ask()
+                unreachable = nil
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                unreachable = error
+                continue
+            }
             if let token = response["access_token"] as? String { return token }
             switch response["error"] as? String {
             case "authorization_pending": continue
@@ -117,6 +148,7 @@ public struct GitHubDeviceFlow: Sendable {
             case nil: throw DeviceFlowError.failed("GitHub sent back an answer we didn't understand.")
             }
         }
+        if let unreachable { throw DeviceFlowError.failed(unreachable.localizedDescription) }
         throw DeviceFlowError.expired
     }
 
@@ -130,12 +162,8 @@ public struct GitHubDeviceFlow: Sendable {
             "\(key)=\(value.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? value)"
         }.joined(separator: "&").utf8)
 
-        do {
-            let (data, _) = try await URLSession.shared.data(for: request)
-            return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
-        } catch {
-            throw DeviceFlowError.failed(error.localizedDescription)
-        }
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
     }
 }
 
