@@ -4,9 +4,9 @@
 
 People report from inside your app with no GitHub account, and the reports become issues in your private repository. They never see the word GitHub: the sheet says their report goes to the team, and thanks them with a reference they can quote. Use this path when the people reporting are your app's users, not developers.
 
-The app sends each report to a small function you run, the relay. The relay holds the only GitHub credential, a GitHub App's private key, and the app holds only a token that lets it talk to the relay. Beacon ships a reference relay for Supabase Edge Functions in [`Relay/supabase-edge`](https://github.com/Up-Coast/beacon/tree/main/Relay/supabase-edge).
+The app sends each report to a small function you run, the relay. The relay holds the only GitHub credential, a GitHub App's private key, and the app holds only a token that lets it talk to the relay. Beacon ships two reference relays that share one set of logic: one for Supabase Edge Functions in [`Relay/supabase-edge`](https://github.com/Up-Coast/beacon/tree/main/Relay/supabase-edge), and one for Firebase in [`Relay/firebase-functions`](https://github.com/Up-Coast/beacon/tree/main/Relay/firebase-functions). Steps 3 and 4 below use Supabase. To host the relay on Firebase instead, follow [Host the relay on Firebase](#host-the-relay-on-firebase) in place of step 3.
 
-You need admin access to the repository, a Supabase project, and the [Supabase CLI](https://supabase.com/docs/guides/cli) signed in with `supabase login`.
+You need admin access to the repository and either a Supabase project with the [Supabase CLI](https://supabase.com/docs/guides/cli) signed in with `supabase login`, or a Firebase project on the Blaze plan with the [Firebase CLI](https://firebase.google.com/docs/cli) signed in.
 
 Triage works the same as on the GitHub path. To set that up, follow [Setup: the GitHub path](setup-github.md) steps 1 and 3, and skip its steps 2, 4 and 6.
 
@@ -75,6 +75,41 @@ To route several apps through one relay, select each of their repositories here.
 6. Delete the `.pem` file from your Downloads folder.
 
 The relay's address is `https://<project-ref>.supabase.co/functions/v1/beacon-relay`.
+
+### Host the relay on Firebase
+
+The Firebase host runs the same relay and private store as 2nd-generation functions. It needs Node 22 and the Firebase CLI.
+
+1. Go to the folder and install:
+
+    ```bash
+    cd ~/beacon/Relay/firebase-functions
+    npm install
+    ```
+
+2. Put every setting into one secret, `RELAY_SECRETS`, a JSON object with the setting names from the [Supabase relay's settings table](https://github.com/Up-Coast/beacon/blob/main/Relay/supabase-edge/README.md#settings). `TARGETS` is a nested object, and the private key keeps its line breaks as `\n`. Save it as `relay-secrets.json`:
+
+    ```json
+    {
+      "BEACON_APP_TOKEN": "<the app token>",
+      "GITHUB_APP_ID": "<the App ID>",
+      "GITHUB_APP_PRIVATE_KEY": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----\n",
+      "TARGETS": { "com.example.harbour": "your-org/harbour" },
+      "BEACON_PRIVATE_TOKEN": "<the private store's token>"
+    }
+    ```
+
+3. Store it, delete the file, and deploy:
+
+    ```bash
+    firebase functions:secrets:set RELAY_SECRETS --data-file relay-secrets.json --project <project-id>
+    rm relay-secrets.json
+    firebase deploy --only functions --project <project-id>
+    ```
+
+    The deploy builds one bundle with esbuild first. Choose the region once: the functions and the bucket must share it, and a project's region cannot be changed afterwards.
+
+The relay's address is the `beaconRelay` URL the deploy prints. The [Firebase README](https://github.com/Up-Coast/beacon/blob/main/Relay/firebase-functions/README.md) lists the limits to check on the deployed function before you point an app at it.
 
 ## 4. Configure the app
 

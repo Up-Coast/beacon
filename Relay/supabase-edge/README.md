@@ -26,6 +26,7 @@ Set these as Supabase secrets.
 | `GITHUB_INSTALLATION_ID` | No | The app's installation. Left out, the relay asks GitHub which installation covers each repository, once per repository. |
 | `TARGET_OWNER`, `TARGET_REPO` | One of these or `TARGETS` | The repository reports are filed in. |
 | `TARGETS` | One of these or the pair above | Several apps through one relay. A JSON object from bundle identifier to `"owner/repo"`, or to `{"repo": "owner/repo", "installation": "123"}` for a repository in another installation. An app not listed goes to `TARGET_OWNER`/`TARGET_REPO`, or is refused when those are not set. |
+| `ALLOWED_ORIGINS` | No | Websites allowed to send from a browser, separated by commas, such as `https://reports.example.com`. A request with an `Origin` header from any other site is refused with `403`; a request with none (a native app) is unaffected. Empty allows no browser. |
 | `RATE_LIMIT_PER_IP` | No | Reports one address may send in an hour. Default 30. |
 | `RATE_LIMIT_PER_DEVICE` | No | Reports one install may send in an hour. Default 10. |
 
@@ -62,7 +63,7 @@ Filenames are made safe before they become a path, the same way the app's saved 
 | File | What it is |
 |---|---|
 | `supabase/functions/beacon-private/private.ts` | Everything it does. It reuses the relay's token check, rate limiter, address and capped body reader. |
-| `supabase/functions/beacon-private/index.ts` | The entry point. |
+| `supabase/functions/beacon-private/index.ts` | The entry point. It reads the Supabase store's settings, which `private.ts` does not need. |
 | `supabase/functions/beacon-private/private_test.ts` | Tests with no network. |
 
 It accepts a `POST` of `{"id": "<lowercase uuid>", "app": "<bundle id>", "ciphertext": "<base64>"}` from a caller whose `Authorization: Bearer` value is `BEACON_PRIVATE_TOKEN`. It writes the bytes to `<app>/<id>.bin` in the private bucket and answers `200`. It never replaces a stored object: an id already stored answers `409`.
@@ -79,9 +80,9 @@ It refuses:
 |---|---|---|
 | `BEACON_PRIVATE_TOKEN` | Yes | The value the app sends. A door key the app ships: it can store messages and cannot read any. |
 | `PRIVATE_APPS` | No | Bundle identifiers allowed to store, separated by commas. Empty allows any app with the token. |
-| `PRIVATE_BUCKET` | No | The bucket. Default `beacon-private`. |
+| `PRIVATE_BUCKET` | No | The Supabase bucket. Default `beacon-private`. |
 | `PRIVATE_RATE_LIMIT_PER_IP` | No | Messages one address may store in an hour. Default 30. |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Supplied by Supabase | The project's address and secret key. The key stays inside the function. |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Supplied by Supabase | The project's address and secret key, read only by the Supabase entry point. The key stays inside the function. |
 
 The bucket is private, 64 KiB per object, `application/octet-stream` only, with no policies, so only the function's secret key reaches it. Deploy it with `--no-verify-jwt`, like the relay.
 

@@ -392,6 +392,8 @@ export interface Dependencies {
   byIP: RateLimiter;
   byDevice: RateLimiter;
   log?: (message: string) => void;
+  /** The caller's address, for hosts whose platform reports it some other way than X-Forwarded-For. */
+  clientAddressOf?: (request: Request) => string;
 }
 
 const answer = (status: number, body: unknown) =>
@@ -473,7 +475,7 @@ async function handleReport(request: Request, deps: Dependencies): Promise<Respo
   if (Number(request.headers.get("Content-Length") ?? 0) > MAX_REQUEST_BYTES) {
     return answer(413, { error: ANSWERS.tooLarge });
   }
-  if (!deps.byIP.allow(clientAddress(request))) return answer(429, { error: ANSWERS.tooMany });
+  if (!deps.byIP.allow((deps.clientAddressOf ?? clientAddress)(request))) return answer(429, { error: ANSWERS.tooMany });
 
   // Read with a running count: a request without Content-Length, or one
   // that lies in it, is cut off at the limit instead of filling memory.

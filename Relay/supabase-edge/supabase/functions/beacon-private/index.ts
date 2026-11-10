@@ -1,10 +1,13 @@
 // The Supabase Edge Function entry point. Everything it does is in private.ts.
 
-import { ANSWERS, dependencies, type Dependencies, handle, loadConfig } from "./private.ts";
+import {
+  ANSWERS, dependencies, type Dependencies, handle, loadConfig, loadSupabaseStoreConfig, storeInBucket,
+} from "./private.ts";
 
 let deps: Dependencies | undefined;
 try {
-  deps = dependencies(loadConfig((name) => Deno.env.get(name)));
+  const env = (name: string) => Deno.env.get(name);
+  deps = dependencies(loadConfig(env), storeInBucket(loadSupabaseStoreConfig(env)));
 } catch (error) {
   console.error(`beacon-private is not set up: ${error instanceof Error ? error.message : String(error)}`);
 }
