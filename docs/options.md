@@ -66,7 +66,7 @@ Pass it to `Beacon.configure(_:gitHubAccount:audience:)` once at launch, before 
 | `consentStore` | `any ConsentStoring` | `UserDefaultsConsentStore()` | Where the tester's acceptance of the privacy notice is kept. |
 | `identityStore` | `any ReporterIdentityStoring` | `UserDefaultsReporterIdentityStore()` | Where an anonymous tester's name and email are kept, so they are asked once. Stored under the key `beacon.reporter-identity`. |
 | `reportArchiveDirectory` | `URL?` | see below | Where each report is saved on the device before it is sent. |
-| `showsFloatingButton` | `Bool` | `true` | Whether Beacon shows a round report button that floats above the app's windows. Set it to `false` when testers should report only from your own button or settings. |
+| `showsFloatingButton` | `Bool` | `true` | Whether Beacon shows a round report button that floats above the app's windows. Set it to `false` when testers should report only from your own button or settings. The walkthrough's first card shows the button and says where it is either way. |
 | `privateDelivery` | `PrivateDelivery?` | `nil` | Sends sealed details privately, away from GitHub, when the app calls `Beacon.sendPrivately`. Off unless set. See [`PrivateDelivery`](#privatedelivery). |
 | `floatingButtonBottomOffset` | `Double` | `0` | How many points higher than its usual spot the floating button sits, so it clears a bar along the bottom of the app's window or screen. A negative value counts as `0`. |
 

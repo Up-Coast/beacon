@@ -145,7 +145,8 @@ public extension View {
     func beaconWalkthroughSheet(isPresented: Binding<Bool>) -> some View {
         sheet(isPresented: isPresented) {
             BeaconWalkthrough(appName: Beacon.configuration.app.name,
-                             allowsRecording: Beacon.configuration.allowsScreenRecording) {
+                             allowsRecording: Beacon.configuration.allowsScreenRecording,
+                             showsFloatingButton: Beacon.configuration.showsFloatingButton) {
                 Beacon.markWalkthroughSeen()
             }
         }

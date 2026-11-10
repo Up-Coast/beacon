@@ -46,4 +46,14 @@ public enum PlatformWording {
         "screen"
         #endif
     }()
+
+    /// "Click" / "Tap" — how the reporter presses a button, at the start of
+    /// a sentence.
+    public static let press: String = {
+        #if os(macOS)
+        "Click"
+        #else
+        "Tap"
+        #endif
+    }()
 }

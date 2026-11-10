@@ -6,6 +6,10 @@
 // is what this is. It is four cards, it takes under a minute, and it can
 // always be opened again from wherever the host puts it.
 //
+// The first card shows the report button itself, Beacon's lighthouse mark,
+// and says to press it. A walkthrough that explains reporting without
+// showing where to start leaves the tester hunting for the button.
+//
 // The example on the third card is doing the most work. It shows a weak
 // report and a strong one side by side, because "be specific" means
 // nothing and "say the window went white instead of saying it broke"
@@ -19,15 +23,20 @@ public struct BeaconWalkthrough: View {
     @Environment(\.dismiss) private var dismiss
     let appName: String
     let allowsRecording: Bool
+    /// Whether Beacon's floating button is on screen, so the first card can
+    /// say where to find it.
+    let showsFloatingButton: Bool
     /// Called when they finish, so the host can remember not to show it
     /// again. Also called on skip: somebody who skipped it once should not
     /// be shown it every launch.
     let onFinish: () -> Void
 
     public init(appName: String, allowsRecording: Bool = true,
+                showsFloatingButton: Bool = true,
                 onFinish: @escaping () -> Void = {}) {
         self.appName = appName
         self.allowsRecording = allowsRecording
+        self.showsFloatingButton = showsFloatingButton
         self.onFinish = onFinish
     }
 
@@ -67,12 +76,16 @@ public struct BeaconWalkthrough: View {
     var pages: [WalkthroughContent] {
         var all: [WalkthroughContent] = [
             WalkthroughContent(
-                symbol: "ladybug",
-                title: "Found something wrong? Tell us from inside \(appName)",
-                body: "There's a report button right in the app. It picks up your "
-                    + "version, your settings and what the app was doing, so you "
-                    + "don't have to describe any of that. You write the part only "
-                    + "you know.",
+                symbol: nil,
+                title: "Found something wrong? \(PlatformWording.press) this button",
+                body: (showsFloatingButton
+                    ? "It sits in the corner of every \(PlatformWording.appSurface) in "
+                        + "\(appName), and you can drag it out of the way. "
+                    : "Look for it next to Report a problem in \(appName). ")
+                    + "\(PlatformWording.press) it to send us a bug, a feature request "
+                    + "or feedback. It picks up your version, your settings and what "
+                    + "the app was doing, so you don't have to describe any of that. "
+                    + "You write the part only you know.",
                 points: []),
 
             WalkthroughContent(
@@ -121,7 +134,8 @@ public struct BeaconWalkthrough: View {
 }
 
 struct WalkthroughContent {
-    var symbol: String
+    /// An SF Symbol, or nil for Beacon's own mark: the report button itself.
+    var symbol: String?
     var title: String
     var body: String
     var points: [String]
@@ -135,8 +149,12 @@ struct WalkthroughPage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Image(systemName: page.symbol)
-                    .font(.system(size: 40)).foregroundStyle(.tint)
+                if let symbol = page.symbol {
+                    Image(systemName: symbol)
+                        .font(.system(size: 40)).foregroundStyle(.tint)
+                } else {
+                    BeaconMark().frame(width: 64, height: 64)
+                }
                 Text(page.title).font(.title2).bold()
                     .fixedSize(horizontal: false, vertical: true)
                 Text(page.body).fixedSize(horizontal: false, vertical: true)
