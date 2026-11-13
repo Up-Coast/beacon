@@ -789,6 +789,8 @@
   // The most reports the dashboard loads, newest first.
   const REPORT_LIMIT = 1000;
   let db = null, artifact = null, apps = [], allReports = [], reportsWatched = false, reached = null;
+  // The signed-in Claude viewer's name and address, for "Who you are".
+  let signedInAs = "";
   // appsLoaded: the first `apps` snapshot has arrived. canEdit: the viewer
   // can edit this page (the `user` capability's canEdit), which is who may
   // change the app list, as with Approve and Decline.
@@ -1057,7 +1059,7 @@
     showReceipt(report.reference);
     form.reset(); resetSteps(); clearProblems(); setKind(kind);
     attachments.length = 0; renderThumbs();
-    if (q.get("reporter")) $("#reporter").value = q.get("reporter");
+    $("#reporter").value = q.get("reporter") || signedInAs;
     submitButton.disabled = false; submitButton.textContent = "Send";
   });
   const showReceipt = (ref) => {
@@ -1199,6 +1201,10 @@
     }
     if (r.finding) prose.append(words("Finding", [r.finding.verdict, r.finding.intent, ...(r.finding.citations || [])].filter(Boolean).join("\n")));
     if (r.triageNote) prose.append(words("Triage note", r.triageNote));
+    // Why it was closed: the comment that closed the GitHub issue, which the
+    // mirror copies here, so a close never shows without its reason.
+    const cn = r.closeNote && typeof r.closeNote === "object" ? r.closeNote : null;
+    if (cn && cn.text) prose.append(words("Why it was closed", cn.text + (cn.by || cn.at ? `\n(${[cn.by === "upcoastai" ? "Claude" : cn.by, cn.at ? fmtWhen(cn.at) : ""].filter(Boolean).join(", ")})` : "")));
     const detail = el("div", { class: "detail" });
     const decision = renderDecision(r);
     if (showDecision && needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
@@ -2103,6 +2109,14 @@
       // Without the user capability the page can't tell, and the store's
       // own rules decide, as they do for Approve and Decline.
       if (u) canEdit = Boolean(await u.canEdit());
+      // Someone signed in to Claude is already known: fill "Who you are" with
+      // their name and address unless the link or they have filled it.
+      if (u && !$("#reporter").value.trim()) {
+        const me = await u.me();
+        const who = [me && me.name, me && me.email ? `<${me.email}>` : ""].filter(Boolean).join(" ");
+        signedInAs = who;
+        if (who && !$("#reporter").value.trim()) $("#reporter").value = who;
+      }
     } catch (err) { console.warn("runtime", err && err.message); }
     if (!db) { reached = false; $("#dbState").hidden = false; renderBoard(); renderApps(); return; }
     db.collection("apps").orderBy("name").onSnapshot((snap) => {

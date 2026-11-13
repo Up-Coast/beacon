@@ -93,7 +93,7 @@ BODY_LIMIT = 6000
 def gh_issues(repo):
     out = subprocess.run(
         ["gh", "issue", "list", "--repo", repo, "--state", "all",
-         "--limit", "2000", "--json", "number,title,state,stateReason,labels,body,url,createdAt,author"],
+         "--limit", "2000", "--json", "number,title,state,stateReason,labels,body,url,createdAt,author,comments"],
         check=True, capture_output=True, text=True).stdout
     # Filtered here, not with --label: that goes through GitHub's search
     # index, which has returned no issues at all for a repository that has them.
@@ -299,6 +299,21 @@ def reporter_of(issue, meta, known=None, app=None):
     return login
 
 
+def close_note(issue):
+    """Why a closed issue was closed: the last comment on it, which is where
+    whoever closed it says why. None for an open issue, so a reopened report
+    loses its old note."""
+    if (issue.get("state") or "").upper() != "CLOSED":
+        return None
+    comments = issue.get("comments") or []
+    if not comments:
+        return None
+    last = comments[-1]
+    who = (last.get("author") or {}).get("login", "")
+    text = re.sub(r"\s+", " ", last.get("body") or "").strip()[:600]
+    return {"text": text, "by": who, "at": last.get("createdAt", "")} if text else None
+
+
 def attachments_of(sec):
     """The links under "What they attached": - [`name`](url) (size)."""
     out = []
@@ -370,6 +385,7 @@ def new_document(app, issue, status, column, known=None):
         "reference": reference, "kind": kind, "filedAt": issue["createdAt"],
         "status": status or "filed", "title": issue["title"],
         "reporter": reporter_of(issue, meta, known, app),
+        "closeNote": close_note(issue),
         "impact": label_value(labels, "impact:"), "area": label_value(labels, "area:"),
         "body": words, "context": context,
         "attachmentCount": 0, "issueNumber": issue["number"], "issueURL": issue["url"],
@@ -452,6 +468,9 @@ def main():
                 impact = label_value([l["name"] for l in issue["labels"]], "impact:")
                 if impact and d.get("impact") != impact:
                     extra["impact"] = impact
+            note = close_note(issue)
+            if note != d.get("closeNote"):
+                extra["closeNote"] = note
             linked = link_change(d, issue, work.get(issue["number"]))
             linked.update(extra) if linked else None
             if linked:

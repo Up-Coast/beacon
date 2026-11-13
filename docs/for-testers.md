@@ -11,7 +11,7 @@ The button opens one of two things, depending on the app.
 1. Sign in to Claude if the page asks. You need to be a member of the team's Claude organization.
 2. Choose **Something's broken**, **Something's missing**, **Change request**, **Something else** or **I have a feedback document**, and fill in the form. The app is already chosen.
 3. Under **Anything to show us?**, add images if you have them. You can add up to 6. On a Mac you can also paste an image straight into the page.
-4. Fill in **Who you are**: your name or email. Your report is not anonymous, and the team can reach you if they choose to.
+4. Fill in **Who you are**: your name or email. When you open the page signed in to Claude, it is filled in for you. Your report is not anonymous, and the team can reach you if they choose to.
 5. Press **Send**. The page shows your reference.
 
 ![The Beacon page's report form on a phone, opened from an app: the app's version and device at the top, then the four kinds of report](assets/page-form-phone.png)
