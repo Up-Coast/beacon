@@ -184,7 +184,7 @@ To send it back, write your answer in your note (or comment on the issue). The n
 
 ## Read a row
 
-The list groups reports by the same stages as the board, in the same order: Backlog, Inbox, To Triage, To do, In progress, Done, Deployed, and Closed. A stage with nothing in it is left out. Only a report that truly needs your call has the flag **Needs your decision**.
+The list groups reports by the same stages as the board, in the same order: Backlog, Inbox, To Triage, To do, In progress, Done, Deployed, and Closed. A stage with nothing in it is left out. Only a report that truly needs your call has the flag **Needs your decision**. A Done, Deployed or Closed report never counts as waiting on you, whatever flags it still carries.
 
 Each row shows an impact icon, the report's title, its status, and one line with the reference, kind, app and version, who sent it, when, and how many images it has.
 

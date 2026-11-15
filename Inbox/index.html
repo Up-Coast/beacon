@@ -1113,7 +1113,9 @@
   // set herself (no `blocked` record) is her own hold, not a question for her.
   const OWNER_STOPS = new Set(["needs-decision", "needs-you", "unclear"]);
   const blockedOnOwner = (r) => isBlocked(r) && OWNER_STOPS.has(r.blocked && r.blocked.reason);
-  const waitsOnYou = (r) => needsDecision(r) || blockedOnOwner(r);
+  // A finished report (Done, Deployed or Closed) waits on no one, whatever
+  // flags it still carries from before it was finished.
+  const waitsOnYou = (r) => (needsDecision(r) || blockedOnOwner(r)) && !isFinished(r);
   const BLOCK_REASON = {
     "needs-decision": "Needs your decision", "still-happening": "Fix tried, still happening",
     "cannot-reproduce": "Can't reproduce", "needs-you": "Needs something only you can do",
@@ -1127,7 +1129,7 @@
   };
   const decisionLine = (r) => (isBlocked(r)
     ? el("div", { class: "decide-line", text: "Work stopped. " + blockedText(r) })
-    : needsDecision(r)
+    : needsDecision(r) && !isFinished(r)
     ? el("div", { class: "decide-line" + (decisionText(r) ? "" : " missing"), text: decisionText(r) ? "Recommendation: " + decisionText(r) : "Recommendation not written yet: triage has to say whether to approve or decline, and why." })
     : null);
   // The owner's own flag: the report can sit in To do, but the pickup leaves it
@@ -1207,7 +1209,7 @@
     if (cn && cn.text) prose.append(words("Why it was closed", cn.text + (cn.by || cn.at ? `\n(${[cn.by === "upcoastai" ? "Claude" : cn.by, cn.at ? fmtWhen(cn.at) : ""].filter(Boolean).join(", ")})` : "")));
     const detail = el("div", { class: "detail" });
     const decision = renderDecision(r);
-    if (showDecision && needsDecision(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
+    if (showDecision && needsDecision(r) && !isFinished(r)) detail.append(el("div", { class: "decide-text" + (r.decision ? "" : " missing") },
       el("h3", { text: "Recommendation" }), el("p", { text: decisionText(r) || "Not written yet. Triage has to say whether it recommends approving or declining, and why." })));
     if (isBlocked(r)) {
       const b = r.blocked && typeof r.blocked === "object" ? r.blocked : {};
